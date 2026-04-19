@@ -1,0 +1,66 @@
+public void RightUpLiner() {
+    for (ColorChannel channel : DeltaEncodedImage.getColorChannels()) {
+
+        ArrayDeque<Integer> pixelIndexNext = new ArrayDeque<>(){{add(0);}};
+        HashSet<Integer> lookingFor = new HashSet<>(){{add(0);}};
+        ArrayList<ConcurrentPixelSet> ChannelConcurrency = new ArrayList<>();
+        int[] deltaData = channel.getChannelData();
+
+        while (!pixelIndexNext.isEmpty()) {
+            int pixelIndex = pixelIndexNext.remove();
+            int currentPixelColor = deltaData[pixelIndex];
+
+            int verticalChange = ImageDataHolder.width;
+            int height = 1;
+            int width = 1;
+
+            while (IndexInImage(pixelIndex+verticalChange*height) && deltaData[pixelIndex+verticalChange*height]==currentPixelColor) height++;
+            while (IndexInImage(pixelIndex+width) && IndexsInSameRow(pixelIndex, pixelIndex+width) && deltaData[pixelIndex+width]==currentPixelColor) width++;
+
+            ConcurrentPixelSet dataLine = new ConcurrentPixelSet(pixelIndex, width, height, currentPixelColor);
+            ChannelConcurrency.add(dataLine);
+
+            int newHeightIndex = pixelIndex+verticalChange*height;
+            int newWidthIndex = pixelIndex+width;
+            int newCornerIndex = pixelIndex+1+verticalChange;
+
+            if (IndexInImage(newHeightIndex) && deltaData[newHeightIndex]!=currentPixelColor && !lookingFor.contains(newHeightIndex)) {
+                pixelIndexNext.add(newHeightIndex);
+                lookingFor.add(newHeightIndex);
+            }
+            if (IndexInImage(newWidthIndex) && deltaData[newWidthIndex]!=currentPixelColor && !lookingFor.contains(newWidthIndex)) {
+                pixelIndexNext.add(newWidthIndex);
+                lookingFor.add(newWidthIndex);
+            }
+            if (IndexInImage(newCornerIndex) && !lookingFor.contains(newCornerIndex)) {
+                pixelIndexNext.add(newCornerIndex);
+                lookingFor.add(newCornerIndex);
+            }
+        }
+        channel.setConcurrentPixelSets(ChannelConcurrency);
+    }
+}
+
+public class ConcurrentPixelSet {
+    public int width;
+    public int height;
+    public int bottomEnd;
+    public int rightEnd;
+    public int startPixel;
+    public int pixelValue;
+
+    public ConcurrentPixelSet(int pixelIndex, int width, int height, int pixelValue) {
+            this.startPixel = pixelIndex;
+            this.width = width;
+            this.height = height;
+            this.pixelValue = pixelValue;
+
+            bottomEnd = startPixel + height*ImageDataHolder.width-ImageDataHolder.width;
+            rightEnd = startPixel + (width-1);
+    }
+
+    @Override
+    public String toString() {
+        return "Concurrent Set: "+"\n\t Initial Index: "+startPixel+"; Color/Delta: "+pixelValue+"; Width: "+width+" {"+rightEnd+"} Height: "+height+" {"+bottomEnd+"}";
+    }
+}

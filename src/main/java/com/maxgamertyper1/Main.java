@@ -1,0 +1,76 @@
+package com.maxgamertyper1;
+
+import com.maxgamertyper1.compressor.FinalizedCompressorData;
+import com.maxgamertyper1.compressor.QuadralizedDataCompressor;
+import com.maxgamertyper1.datatypes.*;
+import com.maxgamertyper1.imagereading.ImageDataHolder;
+import com.maxgamertyper1.imagereading.ImageReader;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+
+//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
+// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+public class Main {
+    public static void main(String[] args) {
+        long start = System.currentTimeMillis();
+        long end;
+
+        ImageReader.ReadAllImageContent("Lenna.png");
+        System.out.println("Image Data: \n" +"Name: "+ ImageDataHolder.metaImageName +"\nWidth: "+ImageDataHolder.width + "\nHeight: " + ImageDataHolder.height +"\nExtension: "+ImageDataHolder.fileType +"\nGrayscale:"+ImageDataHolder.isGrayscale + "\nUniform Maximum Alpha:" + ImageDataHolder.UniformMaxAlpha + "\nUsing Version: "+ FinalizedCompressorData.compressionVersionMajor+"."+FinalizedCompressorData.compressionVersionMinor);
+
+        end = System.currentTimeMillis();
+        System.out.println("IO processing took: " + (end - start) + "ms");
+        start = System.currentTimeMillis();
+
+        QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
+        QDC.PaethDeltaEncoder();
+
+        end = System.currentTimeMillis();
+        System.out.println("Paeth encoding took: " + (end - start) + "ms");
+        start = System.currentTimeMillis();
+
+
+        ChannelConcurrencyPercents dataPercents = QDC.getChannelConncurrencyPercents(); // IMPORTANT FOR LATER
+        boolean useColoredBFSPrediction = dataPercents.colorChunkRate() >= dataPercents.deltaChunkRate();
+        FinalizedCompressorData.usesColorCompression = useColoredBFSPrediction;
+
+        end = System.currentTimeMillis();
+        System.out.println("Prediction processing took: " + (end - start) + "ms");
+        start = System.currentTimeMillis();
+
+        ChunkedImageRepresentative chunkedImage;
+        GetChunksReturn DB;
+        if (useColoredBFSPrediction) {
+            DB = QDC.GetChunks(ImageDataHolder.channeledColors, dataPercents.colorChunkRate(), ImageDataHolder.isGrayscale, ImageDataHolder.UniformMaxAlpha);
+        } else {
+            DB = QDC.GetChunks(QDC.DeltaEncodedImage, dataPercents.deltaChunkRate(), QDC.DeltaEncodedImage.isGrayScale(), QDC.DeltaEncodedImage.isUniformMaxAlpha());
+        }
+
+        end = System.currentTimeMillis();
+        System.out.println("BFS took: " + (end - start) + "ms");
+        start = System.currentTimeMillis();
+
+        chunkedImage = QDC.FlattenChunks(DB,ImageDataHolder.isGrayscale, ImageDataHolder.UniformMaxAlpha);
+
+        end = System.currentTimeMillis();
+        System.out.println("Flattening took: " + (end - start) + "ms");
+        start = System.currentTimeMillis();
+
+        chunkedImage.SequentiallyOrder();
+
+        end = System.currentTimeMillis();
+        System.out.println("Sorting took: " + (end - start) + "ms");
+
+        System.out.println("Colored Chunking? "+useColoredBFSPrediction+";\nChunked:\n\t Actual Chunks: "+chunkedImage.getChunkCount()+"; Isolated Indexes: "+chunkedImage.getIndexCount());
+
+        /*for (ChunkedColorChannel channel : chunkedImage.getChunkedChannels()) {
+            System.out.println("Color type: "+channel.getChannelType());
+            System.out.println("-------------------------------Chunks: ");
+            System.out.println(Arrays.toString(channel.getChannelChunks()));
+
+            System.out.println("----------------------------------Isolated Indexes: ");
+            System.out.println(Arrays.toString(channel.getChannelIsolatedIndexes()));
+        }*/
+    }
+}

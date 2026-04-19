@@ -1,0 +1,538 @@
+preface: i think this could be done way easier with a fourier transform but im a junior in hs so idk how to do those
+
+
+2/3/2026
+Starting blog:
+
+So I need to find the starting coordinate for each color (exculde the most prominent)
+
+Incase something is filled, we need to find the top and bottom parts of it along with the left and right bounds
+
+First idea is to search top down (starting at the left to determine the left bound) and find the top and bottom bounds
+    Once a color is found, it'll store that number in a variable (top bound since its top->down)
+    Once it changes color, that'll be determined as the bottom bound
+    *For this x-axis check
+
+Then the next step would be to check the next pixel for the same color in all directions (excluding negative x / left)
+    finds the slope of the line which we can use to find the degree of the polynomial later
+    redetermines the bottom and top of the colored line
+    IN ADDITION CHECK IF ITS TILL FILLED WITH ONE COLOR, IF NOT FIND A NEW TOP
+    if all pixels end in a dead-end that'll be considered the right-bound
+
+Time to code ts!
+I do have a lot of school work tho
+
+Ima take a break till after my SATs since those are pretty damn important - 2/13/2026
+I might work on it every so often though, im not sure
+
+
+2/19/26
+I made the first search of the pixel iterator work so that it grabs upper and lower bounds of each color
+(renamed it VerticalBoundaries)
+
+2/20/26
+I'm thinking of making a class that links critical points and marks the derivative between upper and lower bounds
+
+2/21/26
+changed the VerticalBoundaries method so that it'll also find horizontal boundaries that way I won't have to check every single point to find the derivative
+I've come up with a 2nd kind of conversion type so maybe I'll make another project for that (basically an equation for the derivative of the color, idr know how to explain it)
+
+Also started the DerivativeDataHandler since all the other stuff seems to be working
+the horizontal extremea allow me to find the upper and lower bounds without needing to check all the points so
+i lwk dont know if i need them or not now that i think about it
+im not sure
+
+2/23/26
+I just realised i kinda have all the data i need with just this vertical test and can check for it relatively easily
+so i am going to delete this derivative code and write it better
+
+I think im going to try to group the lines by finding "merge", "divergence", and maybe "bounce" points to represent intersections
+then i'll subdivide each line into its x-range and extrema grouping to find the derivative then to try and form an equation for it
+I'm going to sleep though since im tired and need to think about this some more.
+
+2/24/26
+made the potential line seperator so that there is only one XValue per line. I.E each is a function
+now i need to make sure the XPoints are touching so i can link them to a line
+the issue is that sometimes they're not and its just a singular point
+so i was thinking about trying smth like a spotted line almost
+basically y = x*(x modulo 2) making it that only even numbers are shown and then replacing modulo 2 with the LCF
+but idk
+i might just make it leave single points as they are for now
+
+2/27/26
+Finishing up the line seperation so that concurrent Xs are grouped together
+Looking it up and I can combine 2 linear equations into an ABS by using
+LaTEX: \frac{\left(m_{1}+m_{2}\right)}{2}\left(x-h\right)+\frac{\left(m_{2}-m_{1}\right)}{2}\left|x-h\right|+k
+so i'll do that
+Using that and a Min or Max I can jump between abs functions at their zeros
+
+2/28/26
+lwk, im gonna switch to doing the partial derivatives first since they don't seem that hard to code from what i know
+if i have c_x and c_y i can get c(x,y) so ts lwk seems easy
+
+3/5/26
+finished finals, time for sat study time
+I think for the derivative method i won't reinvent the wheel and instead i'll use a parabola regressor if thats avaliable here in java
+
+3/28/26 (warning: yappa-tron [probably because this is the only free time ill get for another while (mid-april prob)])
+I have decided to move more towards this silly little plan me and my friends Astro_void and Mintysharky came up with for college apps which is to host a website that changes images into this format
+So i've come up with the QDC compression algorithm to run the images in and compress them into a new format (QCI)
+QDC is Quadralized Data Compression
+QCI is Quadralizied Compressed Image
+I'm sure there's an official name for this kind of compression but i made this up on the spot
+originally i had an algorithim that estimated points with a linear line
+but it was more encryption because it didnt really shrink the data size; just obscured it
+So i'll be working on the backend
+SAT coming up soon
+uhhh
+FBLA states coming up next week actually
+hopefully i can get into MIT with these cool projects and scores
+I really like algorithmic development mr MIT, please accept me, thanks, max
+
+Later:
+I was thinking i could include a greyscale mode to make save even more data on grayscale images
+metadata info: signature, height, width (may be not necessary; we'll see), original file type (1 or 0), maybe some of the default metadata like author name, description, and copyright just to be safe
+it might look really good if i also make it renderable by things like a canvas object or smth (or a custom htmnl object)
+i think im going to use a bit-stream as itll be smaller and probably "easier" to work with *compared to just normal bytes*
+
+general format:
+signature
+version number (1 byte)
+height
+width
+payload
+
+
+the payload going to be sequential, but also kind of stupid (to deconstruct) lwk
+*index data wont be included to make it smaller*
+
+payload format:
+R channel, G channel, B Channel, A Channel
+
+*Very subject to change btw*
+channel format:
+value, value, value, line or rectangle *whichever has more area then gets put in*
+
+*since it'll be more like a bit-stream so i can minimize size, i need to figure out how im seperating info; originally i was going to have 2 "payloads" so i might have to do that*
+rectangle example:
+1, 4, 18,
+
+NOTE: figure out *mathematically* what the most efficient minimum rectangle size is!
+rn im just going to set it for having an area of 6
+new idea alert!
+also add possibilties for lines
+
+
+side note: my code rn looks so buns i have like triple-nested for loops
+so i know i need to fix that
+and im thinking of making a
+HashMap<Integer, ArrayList<ArrayList<ArrayList<Integer>>>> which looks absolutley *pardon my french* fucking stupid
+So I'll need to remake this in a way more object-oriented way later
+explaining it to my friend, its reasonable why i need it, but its so ugly looking and stupid
+
+
+Yap sesh below where i figure the bit-stream format and file structure out
+OH IDEA FOR LINE 116:
+RGB is 0(00000000)-255(11111111)
+so i have a byte-based payload where square or line info is represented as any missing number
+or maybe a length-prefixed bit area i.e 255 is (111 *prefix representing the next 8* 11111111) and 0 is (000 *meaning the next bit* 0) etc
+3rd or holy moly
+or a length-prefixed byte area i.e it tells me the size of every number up till the next square and then it inserts it
+4th or insane holy moly *i think this is most optimal on average*
+a length-prefixed byte area which is bit-prefixed so *the byte length index would be in the meta data ig*
+
+let byte-prefix length be 3
+
+010 (2 bytes aka 16 bits) [000 *next bit* 1]
+() = byte indexing
+[] = bytes
+{} = bit indexing
+
+(001)[{000}1{010}101{010}111]
+and if theres extra fill information i can set it as 0s since the index will specify how much is next
+it could interpret it as a 000 like the next bit though
+uhhh
+i could add a counting like
+byte amount, bit padding (000 for no bits and 111 for 7 bits *8 bits would be a full byte*)
+but that wastes a lot of bits...
+hmmmm
+
+holy insane 5th and probably the solution im looking for OR
+OR i bit-prefix the bit-prefix
+meta data would have to contain the largest size and every index would need to be set to that size
+*unoptimal btw*
+so maybe i have some code?
+OK after about an hour of pondering, this is the final *i think* most optimal solution
+
+3 "word" types
+bit-ant-pre *short for bit antecendant-prefix* {}
+bit-pre *short for bit prefix* ()
+bit *just a bit; 1 or 0* []
+
+file:
+
+Metadata *the only byte-driven part* (16 bytes):
+File signature (4 bytes)
+Image Height (4 bytes *so its compatible with PNG at highest*)
+Image Width (4 bytes *so its compatible with PNG at highest*)
+Compressor version major (1 byte)
+Compressor version minor (1 byte)
+Variable Command (1 byte *dynamic so its optimal to size*)
+Initial variable size (1 byte)
+
+Payload:
+
+Section 1* (literal color values):
+{bit-ant-pre *length determined by Initial bit-prefix size in metadata*} [(000) *always 3 bits in size as 0-255 is 8 bits and 000 has 8 combinations* 0 (000) 1]
+oh hey! data ended! find the next square data and insert it. Is there a command to change the bit-ant-pre bit size?
+do that a lot
+
+Section 2* (rectangle information):
+check for indexing command
+read 2 indexing command lengths (length,width)
+
+* each contains 4 channels for R,G,B,A
+
+Tail:
+Integrity Hash (32 bytes since its sha-256)
+
+
+there are 3 reading modes: Master, Variable (has square version too), and Data
+reading always starts as master where the 16 bytes of metadata are read
+while reading, the variable command is set and the Initial variable size is set
+the master reads the next *ant-pre variable* bits for the bit-ant-pre
+it then goes into Data mode where Commands dont need to be checked as its raw data
+once the data ends, master takes over
+data block end means that a rectangle should be inserted *its built sequentially*
+master checks for a variable command *if one is found it goes into square variable for its length*
+Master goes into data and reads the information
+then goes back to where it left off in the literal values
+repeat
+once its done it reads the tail and verifys the results with the sha-256 hash
+ill go into more detail once i actually need to code this part!
+
+4/4/26:
+I've started writing down ideas in my phone (holy nerd btw)
+I got #1 for FBLA SLC so now i need to work on SAT and then ill half-work on this APES exam because its shouldnt be too hard
+so theoretically i can start finalizing things at around 4/16/26 and coding
+
+4/5/26:
+uhhh since im going to use delta encoding, im going to need to find what im doing it relative to
+maybe do something like png and average it and store the result or smth
+the only issue would be things like huge jumps
+so
+maybe store that as a normal value
+but mathematically, the delta is always smaller than the value
+unless its from 0 to 255 where the value is 255
+so i think its fine to just store the delta
+BUT ACTUALLY
+the delta could be negative
+which would mean an extra bit (ewww)
+ill probably do a prediction thing like png so (top+left)/2 rounded down = delta
+and then group that info
+
+4/12/26:
+I might add a 9-bit section in the metadata for a solid alpha image
+1 bit for if the next bit is the uniform alpha and a byte for the number
+and only 1 if its not uniform
+
+I coded the delta calculations in the QDC and made it more object-oriented (ColorChannel and ImageRepresentative classes)
+im going to go work on other stuff now!
+SAT wednesday so im a little scared but we hope i do good; im hoping 1520+ but ideally 1550+
+my practices have been averaging 1520 so i should be ok
+
+4/13/26:
+bruh i keep taking these sats and only getting a 1520 or 1510 just give me something else
+my test is in 2 days and im just really hoping for around a 1550
+
+i checked that the paeth encoding works and it does
+im now thinking about how to quadralize the image
+basically the "issue" im running into is that the first color is stored normally "ewww"
+so if an image is one color (like my testing image) it'd need to be 2 rectangles.
+SO
+im thinking that basically it works like the opcodes in the other sequence
+basically
+0 -> normal rectangle; length byte or smth, width byte
+1 -> index line; length of how many indexes it skips covers (would be closer to a loop than a rectangle)
+
+OR
+i could store the initial color at the very start and then label everything as 0 and thats it
+idk
+ill think about it
+
+maybe i do both
+so basically
+the first byte of a channel is always the original initial size (maybe not set to zero in the encode though, just ignore)
+then have a check on rectangles for if a length x 1 is bigger to store than a length x width and a length x 1
+
+4/14/26
+wish me luck; sat time
+ill code later today as a kind of mind reset
+and then test day *gulp*
+
+4/15/26
+alright, its done...
+theres one math question i know i got wrong but the rest i feel were right
+*otherwise i wouldnt have picked them*
+im hoping for a 1550 with like 790 math
+so
+hopecore
+
+anyway coding time!
+
+add an oppacity bit to the metadata since most images are full 255 alpha so if the bit is 1 assume that
+
+since grayscale is when RGB is all the same, i could do like a magentascale, yellowscale, and tealscale, but that seems incredibly niche and useless
+im getting into the coding of the rectangles and its hard to figure out
+but im going to try
+finding the maximum length and heigh of concurrent areas at each diagonal and then if it ends itll loop over to it
+ok, i made it so that it makes right angles in a 180-degree rotated L shape
+now the method is finding lines that align with each other and then finding squares in there
+
+ts lwk might not be the method actually...
+it might be better to make multiple split arrays of the indexes of the same values
+and then we can find squares that way
+
+V2 idea: since my data is sequential, theoretically, rectangles could overlap
+
+lwk just got a crazy idea
+i isolate different chunks; i.e i check the bounds and then isolate it
+I can then find the max size shape in each chunk so like
+lets say theres a 3x12 vertical rectangle and then a 8x10 rectangle and then another 3x12 rectangle
+i'd isolate it
+then i'd check for the widest rectangle at x=1 which would be 14x10 which leaves 2 3x2 rectangles with it
+i could check for the tallest rectangle at x=1 which would be 3x12 which leaves the rest.
+i could check for the largest square at x=1 which would be 8x8 and leaves the rest.
+i could have it check every x and y value at the edge of the shape (middle would be way too much for 1, and for 2, just the outside would cover it)
+also the largest possible shape in a chunk would have to touch a boundary or else why not just expand it yknow
+
+every edge is inefficient tho....
+
+SINCE THE SHAPE HAS TO END AT EVERY CORNER, WE CAN JUST CHECK BEFORE EVERY CORNER
+holy guacamole
+and then we do a greedy algorithm so it cuts the chunk into the most efficient it can and then it takes the remaining chunks and does the same until theres 0 remaining
+
+lwk might make the file signature
+3C 4D 41 58 41
+in ascii thats <MAXA
+which means MAXA is greater than
+and guess what! im MAX A
+dab
+
+
+made the color representative
+
+thought of finding the chunk edge by doing a wall-follower but realized that it could be bad with hollow-ish shapes
+im just going to do a BFS of every block because i cant think of another way *not optimal i know, maybe i can fix it later*
+
+OK!!!!
+its done and coded *only took like 5 hours* (holy debugging)
+but now i just have to make the rectangle algorithm and I should be done with the actual algorithm
+
+then i have to make the writer and reader
+I might add a bit to the metadata to indicate whether to use paeth or not since with a few colors it could actually make the image bigger
+
+4/16/26
+there might be something wrong with the BFS but i cant tell so im going to "flatten" the chunks into one object and seperate out individual items
+Running the BFS twice seems really inefficient but IDK how to make it choose the optimal one without it
+
+for a checkerboard pattern I got a great result!
+
+Color chunked:
+	 Actual Chunks: 26; Isolated Indexes: 0
+
+	 Chunks:
+	 25 of them are the squares *its a 5x5*
+	 1 is the alpha
+
+this shows my BFS is working correctly!
+
+So i dont have to run the BFS twice to check which is more efficient *ewwww*
+I made it calculate which has a higher channelconcurrency (more points interlinked *side by side* same as the BFS)
+so that way I dont have to run it twice and its just a loop over the paeth data and a loop over the raw data.
+
+It does work, i have discord images.
+
+Uhh my chunks were being grouped ignoring color data so a chunk could have like
+left edge: 100
+right edge: 100
+*because it was different colors, it could also just have that*
+
+so I made the
+TChunkHolder to group them temporarily
+and it is then split into ChunkedColorChannels
+which are then made into a ChunkedImageRepresentative
+
+my test prints now look like this!
+
+Image Data:
+Name: blankimage.png
+Width: 24
+Height: 24
+Extension: PNG
+Grayscale:false
+Using Version: 1.0
+Colored Chunk? true;
+ Chunked:
+	 Actual Chunks: 4; Isolated Indexes: 0
+Color type: Red
+-------------------------------Chunks:
+[Color Type: Red; Color Value: 0; Starting Index: 0
+Top Edges: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]; Bottom Edges: [552, 553, 554, 555, 556, 557, 558, 559, 560, 561, 562, 563, 564, 565, 566, 567, 568, 569, 570, 571, 572, 573, 574, 575]; Left Edges: [0, 96, 192, 288, 384, 480, 72, 168, 264, 360, 456, 552, 48, 144, 240, 336, 432, 528, 24, 120, 216, 312, 408, 504]; Right Edges: [71, 167, 263, 359, 455, 551, 47, 143, 239, 335, 431, 527, 23, 119, 215, 311, 407, 503, 95, 191, 287, 383, 479, 575]; Corners: [0, 23, 552, 575]]
+----------------------------------Isolated Indexes:
+[]
+Color type: Green
+-------------------------------Chunks:
+[Color Type: Green; Color Value: 0; Starting Index: 0
+Top Edges: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]; Bottom Edges: [552, 553, 554, 555, 556, 557, 558, 559, 560, 561, 562, 563, 564, 565, 566, 567, 568, 569, 570, 571, 572, 573, 574, 575]; Left Edges: [0, 96, 192, 288, 384, 480, 72, 168, 264, 360, 456, 552, 48, 144, 240, 336, 432, 528, 24, 120, 216, 312, 408, 504]; Right Edges: [71, 167, 263, 359, 455, 551, 47, 143, 239, 335, 431, 527, 23, 119, 215, 311, 407, 503, 95, 191, 287, 383, 479, 575]; Corners: [0, 23, 552, 575]]
+----------------------------------Isolated Indexes:
+[]
+Color type: Blue
+-------------------------------Chunks:
+[Color Type: Blue; Color Value: 0; Starting Index: 0
+Top Edges: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]; Bottom Edges: [552, 553, 554, 555, 556, 557, 558, 559, 560, 561, 562, 563, 564, 565, 566, 567, 568, 569, 570, 571, 572, 573, 574, 575]; Left Edges: [0, 96, 192, 288, 384, 480, 72, 168, 264, 360, 456, 552, 48, 144, 240, 336, 432, 528, 24, 120, 216, 312, 408, 504]; Right Edges: [71, 167, 263, 359, 455, 551, 47, 143, 239, 335, 431, 527, 23, 119, 215, 311, 407, 503, 95, 191, 287, 383, 479, 575]; Corners: [0, 23, 552, 575]]
+----------------------------------Isolated Indexes:
+[]
+Color type: Alpha
+-------------------------------Chunks:
+[Color Type: Alpha; Color Value: 0; Starting Index: 0
+Top Edges: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]; Bottom Edges: [552, 553, 554, 555, 556, 557, 558, 559, 560, 561, 562, 563, 564, 565, 566, 567, 568, 569, 570, 571, 572, 573, 574, 575]; Left Edges: [0, 96, 192, 288, 384, 480, 72, 168, 264, 360, 456, 552, 48, 144, 240, 336, 432, 528, 24, 120, 216, 312, 408, 504]; Right Edges: [71, 167, 263, 359, 455, 551, 47, 143, 239, 335, 431, 527, 23, 119, 215, 311, 407, 503, 95, 191, 287, 383, 479, 575]; Corners: [0, 23, 552, 575]]
+----------------------------------Isolated Indexes:
+[]
+
+which is very good!
+now im working on modifying stuff so that I can have a uniform alpha bit so that if its no transparency we can remove the channel
+
+Took some debugging but it wasnt too bad, basically just needed to delete a part of the channel and label that
+works with non-full transparency images too
+so thats cool
+
+im testing the chunk calculations of different image sizes to see their times and man does it scale big
+I'm guessing my algorithm has O(N^2) time complexity somewhere
+so we'll have to fix that once we start optimizing
+
+for a 1440p drawing it took about 6 seconds
+and for this 8k drawing its taking 2+ minutes which is really fucking bad
+so maybe the complexities of the images are just super different or something
+but i need to lower this algorithmic time
+
+*this would probably mainly be for drawings like PNG because for photographs it'd take a while to compress*
+but maybe i could optimize it to run faster, idk
+
+I just micro-profiled it and its actually crazy
+everything up to the BFS takes like 400ms (mostly since its IO and has to read the image)
+
+Here's the common Lenna image's print statement (512x512)
+
+Image Data:
+Name: Lenna.png
+Width: 512
+Height: 512
+Extension: PNG
+Grayscale:false
+Uniform Maximum Alpha:true
+Using Version: 1.0
+IO processing took: 113ms
+Paeth encoding took: 23ms
+Prediction processing took: 26ms
+BFS took: 4281ms
+Flattening took: 306ms
+Sorting took: 61ms
+Colored Chunking? true;
+Chunked:
+	 Actual Chunks: 59326; Isolated Indexes: 639671
+
+If i run it multiple times, the BFS is relatively consistent but everything else gets faster
+maybe once i finish the writing and decoding ill try to switch it to a wall-following encoding
+
+I think that the most inefficient part is probably chaning int to Integer so often
+so i might try to fix that
+additionally, hashset collisons or something but idk much about that
+
+think about turining it into a boolean[] where true is just if its visited
+might be faster
+should still be O(1) look up since arrays are
+
+You know maybe it'd be better to just store the outline of the shape
+since the inside would just be filled
+I dont think so though
+
+maybe ill try it eventually
+
+
+I made the PixelChunk class have a ton more data but it's all useful and I'd have to derive it later anyway
+by a ton more I meant more seperation; from corners and edges to corners and boxes
+
+And i changed it so i dont need a PixelType class and made it just a boolean[] as flags
+which then gets turned into an integer-mask where it's then used in a switch-case to determine the variable it goes into
+
+Example Print Statement:
+Color type: Red
+-------------------------------Chunks:
+[Color Type: Red; Color Value: 0; Starting Index: 0
+Corners:
+	Upper-Left Corner: [0]; Upper-Right Corner: [23];  Bottom-Left Corner: [552]; Bottom-Right Corner: [575]
+Boxes:
+	Bottom Open: []; Top Open: []; Left Open: []; Right Open: []]
+----------------------------------Isolated Indexes:
+[]
+
+
+Ok, i need to fix this shit like stat
+i have so many conversions from int to Integer and back
+and the way the data is stored
+holy moly man
+ok
+whatever
+
+4/18/26
+i think im going to think about how to actually store where the corners are before i recode anything
+i want it to be where i can check where the bounds of a chunk is by putting in an x or y value
+so ill have to think about it
+
+I just redid the base of the BFS so that it has an initial size so it doesnt have to make a new array super often
+idk if the calculation is good but whatever
+
+apparently there's this thing called a bitset and i could use that to mark what pixels are of a certain color
+so i might have to try that
+
+ok, it's better, but i feel it could be even better; but its good enough for now so im going to move on
+here's the improved info with the same image
+
+Image Data:
+Name: Lenna.png
+Width: 512
+Height: 512
+Extension: PNG
+Grayscale:false
+Uniform Maximum Alpha:true
+Using Version: 1.0
+IO processing took: 118ms
+Paeth encoding took: 22ms
+Delta chunk rate: 0.058993164
+Color chunk rate: 0.08248354
+Prediction processing took: 31ms
+base BFS arraylist size: 25600
+BFS took: 879ms
+Flattening took: 3ms
+Sorting took: 40ms
+Colored Chunking? true;
+Chunked:
+	 Actual Chunks: 59326; Isolated Indexes: 639671
+
+
+so the flattening and the BFS is way faster
+which is good enough for me **for now**
+it is way more space efficient
+it doesnt use like 8gb of ram
+its closer to 3 now
+and its faster
+but i need it to be even faster
+so ill figure that out later
+
+I wonder if i could do something with multi-core processing since i havent done that
+or multi-thread for that matter
+
+I changed the "chunk rate" print statement to a noise percent print statement so now it looks like this
+Delta noise percent: 95.197784
+Color noise percent: 95.05535
