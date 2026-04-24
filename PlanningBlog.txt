@@ -1,3 +1,5 @@
+double preface: this was a project originally meant to convert images into lines (quadratics, linears, etc.) so the starting part up until i'd bet march is about that
+
 preface: i think this could be done way easier with a fourier transform but im a junior in hs so idk how to do those
 
 
@@ -536,3 +538,123 @@ or multi-thread for that matter
 I changed the "chunk rate" print statement to a noise percent print statement so now it looks like this
 Delta noise percent: 95.197784
 Color noise percent: 95.05535
+
+saved it to github for the first time
+idk how to like delete commits so
+if the images have copyright oh well
+ill figure it out later
+
+ok I'm going to change it so that i dont need the if statements and i can just change the flagmask
+cool that was pretty easy
+*should be more space efficient and it doesnt have to do a ton of computations*
+
+ill go back and make the BFS more efficient later :C
+now i need to figure out how to do a lookup table for chunk edges
+ill do that tmrw as i have hw still
+
+4/22/26:
+NOTE: i was thinking that rather than the BFS I could potentially do a linear scan to get each top pixel and bottom pixel and then group them somehow
+but ill implement that later i guess
+
+4/23/26:
+ok I'm going to try and implement this linear scan i thought of instead and see how that
+so it finds the flags supe easily, i dont want to scan over it again
+so i need to think of how i can group them without another scan over it
+
+ok i thought of a way to group them inside a certain area but i'd need to do a while loop to find the bucket it belongs in
+it'd just be go left as far as possible always and then up until you get to a upper-left corner
+which wouldnt actually work
+
+new solution idea
+i make the flags
+and then i can use another O(n) loop to check
+
+secret third solution idea
+apparently there's this thing called Union-Find
+so basically i just have another array with a kind of "Shape ID"
+Ok, i made the ShapeUnionFind class
+
+NOTE: might not need "shapeOrganizer.Finalize();" since i can do it as i search for shapes
+
+
+Before:
+Image Data:
+Name: Lenna.png
+Width: 512
+Height: 512
+Extension: PNG
+Grayscale:false
+Uniform Maximum Alpha:true
+Using Version: 0.1
+IO processing took: 131ms
+Paeth encoding took: 30ms
+Delta noise percent: 94.100685
+Color noise percent: 91.75165
+Prediction processing took: 29ms
+base BFS arraylist size: 25600
+BFS took: 849ms
+Flattening took: 2ms
+Sorting took: 36ms
+Colored Chunking? true;
+Chunked:
+	 Actual Chunks: 59326; Isolated Indexes: 639671
+
+
+Ok, I just coded the 150+ lines and 5+ new classes and records so lets see if its faster or if i wasted my time
+i think it just needs some fixing, that or my BFS code was wrong, right now i get this
+
+Im going to make a test file that recreates the shapes found in the image with a specific color when only using color encoding
+
+but it can actually do the 8k image in like 4 seconds
+whereas before i waited like 6 minutes and it still didnt finish
+
+It looks like its not storing all edges so ill have to fix that
+Ok, I think it's actually correct now and maybe my BFS was off
+
+Image Data:
+Name: Lenna.png
+Width: 512
+Height: 512
+Extension: PNG
+Grayscale:false
+Uniform Maximum Alpha:true
+Using Version: 0.2
+IO processing took: 124ms
+Paeth encoding took: 24ms
+Delta noise percent: 94.100685
+Color noise percent: 91.75165
+Prediction processing took: 31ms
+Flag Processing and Shaping (concurrent) took: 75ms
+Sorting took: 12ms
+Colored Chunking? true;
+Chunked:
+	 Actual Chunks: 87201; Isolated Indexes: 571817
+
+so It's way faster, but it gets different results which is weird, i fixed all the obvious issues I saw
+but it doesnt make sense that their different
+I added the test for the stuff but it looks correct, idk
+This is 10x faster than the previous and 50x faster than the super old one *specifically on this image
+it can actually run the 8kDrawing now which is crazy
+
+Image Data:
+Name: 8kDrawing.jpg
+Width: 7680
+Height: 4320
+Extension: JPG
+Grayscale:false
+Uniform Maximum Alpha:true
+Using Version: 0.2
+IO processing took: 2661ms
+Paeth encoding took: 749ms
+Delta noise percent: 31.928612
+Color noise percent: 35.98339
+Prediction processing took: 751ms
+Flag Processing and Shaping (concurrent) took: 3231ms
+Sorting took: 351ms
+Colored Chunking? false;
+Chunked:
+	 Actual Chunks: 3559057; Isolated Indexes: 16213171
+
+that was like 4 seconds which compared to like 6+ minutes is so much faster
+
+I'm going to push these changes *but leave the old code for safety* just in case

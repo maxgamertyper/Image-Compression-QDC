@@ -16,7 +16,7 @@ public class Main {
         long start = System.currentTimeMillis();
         long end;
 
-        ImageReader.ReadAllImageContent("Lenna.png");
+        ImageReader.ReadAllImageContent("TestingImages/8kDrawing.jpg");
         System.out.println("Image Data: \n" +"Name: "+ ImageDataHolder.metaImageName +"\nWidth: "+ImageDataHolder.width + "\nHeight: " + ImageDataHolder.height +"\nExtension: "+ImageDataHolder.fileType +"\nGrayscale:"+ImageDataHolder.isGrayscale + "\nUniform Maximum Alpha:" + ImageDataHolder.UniformMaxAlpha + "\nUsing Version: "+ FinalizedCompressorData.compressionVersionMajor+"."+FinalizedCompressorData.compressionVersionMinor);
 
         end = System.currentTimeMillis();
@@ -40,6 +40,17 @@ public class Main {
         start = System.currentTimeMillis();
 
         ChunkedImageRepresentative chunkedImage;
+        if (useColoredBFSPrediction) {
+            chunkedImage = QDC.chunkImage(ImageDataHolder.channeledColors);
+        } else {
+            chunkedImage = QDC.chunkImage(QDC.DeltaEncodedImage);
+        }
+
+        end = System.currentTimeMillis();
+        System.out.println("Flag Processing and Shaping (concurrent) took: " + (end - start) + "ms");
+        start = System.currentTimeMillis();
+
+        /*ChunkedImageRepresentative chunkedImage;
         GetChunksReturn DB;
         if (useColoredBFSPrediction) {
             DB = QDC.GetChunks(ImageDataHolder.channeledColors, dataPercents.colorChunkRate(), ImageDataHolder.isGrayscale, ImageDataHolder.UniformMaxAlpha);
@@ -55,7 +66,7 @@ public class Main {
 
         end = System.currentTimeMillis();
         System.out.println("Flattening took: " + (end - start) + "ms");
-        start = System.currentTimeMillis();
+        start = System.currentTimeMillis();*/
 
         chunkedImage.SequentiallyOrder();
 

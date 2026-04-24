@@ -10,10 +10,12 @@ public class ChunkedImageRepresentative {
     private final boolean uniformMaxAlpha;
     private int ChunkCount;
     private int IndexCount;
+    private final boolean IsPaeth;
 
-    public ChunkedImageRepresentative(boolean isGrayscale, boolean uniformMaxAlpha) {
+    public ChunkedImageRepresentative(boolean isGrayscale, boolean uniformMaxAlpha, boolean IsPaeth) {
         this.grayScale = isGrayscale;
         this.uniformMaxAlpha = uniformMaxAlpha;
+        this.IsPaeth = IsPaeth;
         InitializeChunkChannels();
     }
 

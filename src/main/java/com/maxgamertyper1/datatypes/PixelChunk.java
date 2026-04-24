@@ -1,6 +1,7 @@
 package com.maxgamertyper1.datatypes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 
 public class PixelChunk {
@@ -41,7 +42,7 @@ public class PixelChunk {
 
     @Override
     public String toString() {
-        return "Color Type: "+colorType+"; Color Value: "+colorValue+"; Starting Index: "+StartingIndex;
+        return "Color Type: "+colorType+"; Color Value: "+colorValue+"; Starting Index: "+StartingIndex+"\nCorners: "+cornerPoints;
     }
 
 }

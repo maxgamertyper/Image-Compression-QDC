@@ -140,6 +140,8 @@ public class QuadralizedDataCompressor {
             isolatedIndexes[i] = new IntArrayList(finalSize);
         }
 
+        Queue<Integer> BFSQueue = new ArrayDeque<>();
+
         for (ColorChannel channel : IR.getColorChannels()) {
             ColorRepresentative[] IndependentColors = IsolateSeperateColors(channel.getChannelType());
 
@@ -149,7 +151,9 @@ public class QuadralizedDataCompressor {
 
                 int index=remainingData.nextSetBit(0);
                 while (index!=-1) {
-                    FindChunkReturn chunkReturn = FindChunk(CR,visited,index);
+                    BFSQueue.add(index);
+                    visited.set(index);
+                    FindChunkReturn chunkReturn = FindChunk(CR,visited,BFSQueue);
 
                     PixelChunk PC = chunkReturn.PixelChunk();
                     int channelIndex = ImageRepresentative.staticGetChannelIndex(CR.getColorType(),grayscale,uniformMaxAlpha);
@@ -167,11 +171,8 @@ public class QuadralizedDataCompressor {
         return new GetChunksReturn(isolatedIndexes, chunks);
     }
 
-    private FindChunkReturn FindChunk(ColorRepresentative CR, BitSet visited, int seedIndex) {
+    private FindChunkReturn FindChunk(ColorRepresentative CR, BitSet visited, Queue<Integer> BFSQueue) {
         BitSet CRData = CR.getPixelIndexes();
-        visited.flip(seedIndex);
-        Queue<Integer> BFSQueue = new ArrayDeque<>(){{add(seedIndex);}};
-
         PixelChunk dataBlock = new PixelChunk(CR.getColorType(),CR.getColorValue());
         int smallestIndex = ImageDataHolder.flatsize;
 
@@ -179,12 +180,12 @@ public class QuadralizedDataCompressor {
             int currentIndex = BFSQueue.poll();
             smallestIndex = Math.min(currentIndex,smallestIndex);
 
-            boolean[] flags = {false,false,false,false};
-
             // left, right, down, up
             int[] toSearch = new int[]{currentIndex - 1, currentIndex + 1, currentIndex + ImageDataHolder.width, currentIndex - ImageDataHolder.width};
+            int flagmask = 0;
             // {go left one, go right one, go down one, go up one} *wraps*
 
+            // maybe unwrap this loop; it migh be faster that way (less GC cleanup)
             for (int directionalIndex = 0; directionalIndex < toSearch.length; directionalIndex++) {
                 int directionalColor = toSearch[directionalIndex];
 
@@ -192,7 +193,7 @@ public class QuadralizedDataCompressor {
                 boolean inSameRow = IndexsInSameRow(directionalColor,currentIndex);
 
                 if (outOfBounds || (!inSameRow && directionalIndex<2)) {
-                    flags[directionalIndex] = true;
+                    flagmask |= 1 << directionalIndex;
                     continue;
                 }
 
@@ -202,15 +203,9 @@ public class QuadralizedDataCompressor {
                         BFSQueue.add(directionalColor);
                     }
                 } else {
-                    flags[directionalIndex] = true;
+                    flagmask |= 1 << directionalIndex;
                 }
             }
-
-            int flagmask = 0;
-            if (flags[0]) flagmask |= 1; // 0001; left
-            if (flags[1]) flagmask |= 2; // 0010; right
-            if (flags[2]) flagmask |= 4; // 0100; down
-            if (flags[3]) flagmask |= 8; // 1000; up
 
             if (flagmask==15) {
                 dataBlock.setIsolatedIndex(currentIndex);
@@ -253,7 +248,148 @@ public class QuadralizedDataCompressor {
         return result;
     }
 
-    public ChunkedImageRepresentative FlattenChunks(GetChunksReturn data, boolean grayscale, boolean uniformMaxAlpha) {
+    public ChunkedImageRepresentative chunkImage(ImageRepresentative IR) {
+        ColorChannel[] currentChannels = IR.getColorChannels();
+        ChunkedColorChannel[] returnData = new ChunkedColorChannel[currentChannels.length];
+
+        for (int i=0;i<currentChannels.length;i++) {
+            ColorChannel CR = currentChannels[i];
+            ShapeGrouperReturn SGR = ConvertToPixelChunks(NeighborScan(CR), CR);
+
+            IntArrayList isoIndexes = SGR.IsolatedIndexes();
+            PixelChunk[] PCs = SGR.Chunks();
+            ChunkedColorChannel CCC = new ChunkedColorChannel(CR.getChannelType(),PCs.length,isoIndexes.size());
+
+            CCC.setIsolatedIndexes(isoIndexes.toIntArray());
+            CCC.setChannelChunks(PCs);
+            returnData[i] = CCC;
+        }
+
+        ChunkedImageRepresentative CIR = new ChunkedImageRepresentative(ImageDataHolder.isGrayscale,ImageDataHolder.UniformMaxAlpha, IR.isDeltaEncoded());
+        CIR.setChunkedChannels(returnData);
+        CIR.SetImageCompressionInformation();
+
+        return CIR;
+    }
+
+    private NeighborScanReturn NeighborScan(ColorChannel CR) {
+        int[] pixelData = CR.getChannelData();
+        int width = ImageDataHolder.width;
+        int[] pixelFlags = new int[ImageDataHolder.flatsize];
+        ShapeUnionFind shapeOrganizer = new ShapeUnionFind(ImageDataHolder.flatsize);
+
+        for (int yValue=0; yValue<ImageDataHolder.height;yValue++) {
+            for (int xValue=0; xValue<width;xValue++) {
+                int currentFlatCoordinate = PixelHelper.IndexCalculator(width,xValue,yValue);
+                int currentColor = pixelData[currentFlatCoordinate];
+
+                int flagBitMask = 0;
+                // first bit is left
+                // second bit is right
+                // third bit is down
+                // fourth bit is up
+
+                int topCoordinate = currentFlatCoordinate - width;
+                int leftCoordinate = currentFlatCoordinate - 1;
+                int bottomCoordinate = currentFlatCoordinate + width;
+                int rightCoordinate = currentFlatCoordinate + 1;
+
+                if (IndexInImage(topCoordinate)) {
+                    if (pixelData[topCoordinate]==currentColor) {
+                        shapeOrganizer.Union(currentFlatCoordinate, topCoordinate); // if the same color, add to the shape
+                    } else  {
+                        flagBitMask |= 1<<3; // if not the same color, mark as an edge
+                    }
+                } else {
+                    flagBitMask |= 1<<3;
+                }
+                if (IndexInImage(leftCoordinate) && IndexsInSameRow(currentFlatCoordinate,leftCoordinate)) {
+                    if (pixelData[leftCoordinate]==currentColor) {
+                        shapeOrganizer.Union(currentFlatCoordinate, leftCoordinate);
+                    } else  {
+                        flagBitMask |= 1;
+                    }
+                } else {
+                    flagBitMask |= 1;
+                }
+                if (!IndexInImage(bottomCoordinate) || pixelData[bottomCoordinate]!=currentColor) {
+                    flagBitMask |= 1<<2;
+                }
+                if (!IndexInImage(rightCoordinate) || !IndexsInSameRow(currentFlatCoordinate,rightCoordinate) || pixelData[rightCoordinate]!=currentColor) {
+                    flagBitMask |= 1<<1;
+                }
+
+
+                pixelFlags[currentFlatCoordinate]=flagBitMask;
+            }
+        }
+
+        shapeOrganizer.Finalize(); // MIGHT NOT NEED
+
+        return new NeighborScanReturn(shapeOrganizer,pixelFlags);
+    }
+
+    private ShapeGrouperReturn ConvertToPixelChunks(NeighborScanReturn data, ColorChannel CR) {
+        ShapeUnionFind shapeOrganizer = data.Shapes();
+        int[] shapeHolder = shapeOrganizer.getRawData();
+        int[] flagHolder = data.Flags();
+        int[] rawPixels = CR.getChannelData();
+
+
+        IntArrayList IsolatedPixels = new IntArrayList(2048);
+        PixelChunk[] returnHolder = new PixelChunk[shapeOrganizer.getTotalShapeCount()];
+        int[] keyMapper = new int[ImageDataHolder.flatsize];
+        int currentNextIndex = 0;
+        Arrays.fill(keyMapper,-1);
+
+        for (int pixelIndex=0; pixelIndex<shapeHolder.length; pixelIndex++) {
+            int shapeID = shapeHolder[pixelIndex];
+            int flag = flagHolder[pixelIndex];
+            int dataKey = keyMapper[shapeID];
+
+            if (dataKey==-1) {
+                if (flag==15) {
+                    IsolatedPixels.Add(pixelIndex);
+                    continue;
+                }
+
+                PixelChunk PC = new PixelChunk(CR.getChannelType(),rawPixels[pixelIndex]);
+                PC.StartingIndex = shapeID;
+
+                if (flag!=8 && flag!=12 && flag>4) {
+                    PC.cornerPoints.add(new CornerPoint(pixelIndex,flag));
+                }
+
+                returnHolder[currentNextIndex] = PC;
+                keyMapper[shapeID] = currentNextIndex++;
+            } else {
+                // first bit is left
+                // second bit is right
+                // third bit is down
+                // fourth bit is up
+                if (flag!=8 && flag!=12 && flag>4) {
+                    returnHolder[dataKey].cornerPoints.add(new CornerPoint(pixelIndex,flag));
+                }
+            }
+        }
+
+        int actualCount = 0;
+        for (PixelChunk pc : returnHolder) {
+            if (pc != null) actualCount++;
+        }
+
+        PixelChunk[] noNullChunks = new PixelChunk[actualCount];
+        int index = 0;
+        for (PixelChunk pc : returnHolder) {
+            if (pc != null) {
+                noNullChunks[index++] = pc;
+            }
+        }
+
+        return new ShapeGrouperReturn(noNullChunks,IsolatedPixels);
+    }
+
+    public ChunkedImageRepresentative FlattenChunks(GetChunksReturn data, boolean grayscale, boolean uniformMaxAlpha, boolean usesPaeth) {
         int size = (grayscale ? 2 : 4) - (uniformMaxAlpha ? 1 : 0);
         ChunkedColorChannel[] returnData = new ChunkedColorChannel[size];
 
@@ -266,7 +402,7 @@ public class QuadralizedDataCompressor {
             returnData[i].setIsolatedIndexes(IC.toIntArray());
         }
 
-        ChunkedImageRepresentative CIR = new ChunkedImageRepresentative(grayscale,uniformMaxAlpha);
+        ChunkedImageRepresentative CIR = new ChunkedImageRepresentative(grayscale,uniformMaxAlpha, usesPaeth);
         CIR.setChunkedChannels(returnData);
         CIR.SetImageCompressionInformation();
 

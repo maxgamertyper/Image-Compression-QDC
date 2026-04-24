@@ -1,7 +1,5 @@
 package com.maxgamertyper1.datatypes;
 
-import java.util.Arrays;
-
 public class ImageRepresentative {
     private ColorChannel[] colorChannels;
     private final boolean deltaEncoded;

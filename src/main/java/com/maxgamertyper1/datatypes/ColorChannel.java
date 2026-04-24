@@ -1,7 +1,5 @@
 package com.maxgamertyper1.datatypes;
 
-import java.util.ArrayList;
-
 public class ColorChannel {
     private int[] channelData;
     private final ChannelColorTypes channelColor;
