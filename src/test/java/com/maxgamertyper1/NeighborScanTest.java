@@ -3,6 +3,7 @@ package com.maxgamertyper1;
 import com.maxgamertyper1.compressor.FinalizedCompressorData;
 import com.maxgamertyper1.compressor.QuadralizedDataCompressor;
 import com.maxgamertyper1.datatypes.*;
+import com.maxgamertyper1.datatypes.records.CornerPoint;
 import com.maxgamertyper1.imagereading.ImageDataHolder;
 import com.maxgamertyper1.imagereading.ImageReader;
 import com.maxgamertyper1.imagereading.PixelHelper;
@@ -58,7 +59,7 @@ public class NeighborScanTest {
         long start = System.currentTimeMillis();
         long end;
 
-        ImageReader.ReadAllImageContent("TestingImages/testingimage.jpg");
+        ImageReader.ReadAllImageContent("TestingImages/whiteboard.png");
         System.out.println("Image Data: \n" +"Name: "+ ImageDataHolder.metaImageName +"\nWidth: "+ImageDataHolder.width + "\nHeight: " + ImageDataHolder.height +"\nExtension: "+ImageDataHolder.fileType +"\nGrayscale:"+ImageDataHolder.isGrayscale + "\nUniform Maximum Alpha:" + ImageDataHolder.UniformMaxAlpha + "\nUsing Version: "+ FinalizedCompressorData.compressionVersionMajor+"."+FinalizedCompressorData.compressionVersionMinor);
 
         end = System.currentTimeMillis();
@@ -70,6 +71,42 @@ public class NeighborScanTest {
         System.out.println("Skipping Paeth Encoding and Prediction Processing since this is the BlockedColorTestVisual");
 
         ChunkedImageRepresentative chunkedImage = QDC.chunkImage(ImageDataHolder.channeledColors);
+
+        end = System.currentTimeMillis();
+        System.out.println("Flag Processing and Shaping (concurrent) took: " + (end - start) + "ms");
+        start = System.currentTimeMillis();
+
+        for (ChunkedColorChannel channel : chunkedImage.getChunkedChannels()) {
+            System.out.println("Color type: "+channel.getChannelType());
+            System.out.println("-------------------------------Chunks: ");
+            System.out.println(Arrays.toString(channel.getChannelChunks()));
+
+            System.out.println("----------------------------------Isolated Indexes: ");
+            System.out.println(Arrays.toString(channel.getChannelIsolatedIndexes()));
+        }
+
+        generateEdgeColoredBlockChannels(chunkedImage,ImageDataHolder.width,ImageDataHolder.height,ImageDataHolder.metaImageName);
+    }
+
+
+    @Test
+    public void BlockedPaethTestVisual() throws Exception {
+        long start = System.currentTimeMillis();
+        long end;
+
+        ImageReader.ReadAllImageContent("TestingImages/whiteboard.png");
+        System.out.println("Image Data: \n" +"Name: "+ ImageDataHolder.metaImageName +"\nWidth: "+ImageDataHolder.width + "\nHeight: " + ImageDataHolder.height +"\nExtension: "+ImageDataHolder.fileType +"\nGrayscale:"+ImageDataHolder.isGrayscale + "\nUniform Maximum Alpha:" + ImageDataHolder.UniformMaxAlpha + "\nUsing Version: "+ FinalizedCompressorData.compressionVersionMajor+"."+FinalizedCompressorData.compressionVersionMinor);
+
+        end = System.currentTimeMillis();
+        System.out.println("IO processing took: " + (end - start) + "ms");
+        start = System.currentTimeMillis();
+
+        QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
+        QDC.PaethDeltaEncoder();
+
+        System.out.println("Skipping Paeth Encoding and Prediction Processing since this is the BlockedColorTestVisual");
+
+        ChunkedImageRepresentative chunkedImage = QDC.chunkImage(QDC.DeltaEncodedImage);
 
         end = System.currentTimeMillis();
         System.out.println("Flag Processing and Shaping (concurrent) took: " + (end - start) + "ms");

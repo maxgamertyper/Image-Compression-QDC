@@ -75,4 +75,12 @@ public class ChunkedImageRepresentative {
     public int getIndexCount() {
         return IndexCount;
     }
+
+    public boolean isGrayScale() {
+        return grayScale;
+    }
+
+    public boolean isUniformMaxAlpha() {
+        return uniformMaxAlpha;
+    }
 }

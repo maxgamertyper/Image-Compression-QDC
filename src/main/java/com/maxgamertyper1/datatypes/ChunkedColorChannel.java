@@ -1,16 +1,37 @@
 package com.maxgamertyper1.datatypes;
 
+import com.maxgamertyper1.datatypes.records.EdgeMapHolder;
+
 import java.util.Arrays;
 
 public class ChunkedColorChannel {
     private PixelChunk[] channelChunks;
     private int[] channelIsolatedIndexes;
+    private int[] channelIsolatedCorrespondingColor;
     private final ChannelColorTypes channelColor;
+    private final ShapeUnionFind shapeOrganizer;
+    private final EdgeMapHolder cardinalMaps;
+    private final int[] computedFlags;
 
-    public ChunkedColorChannel(ChannelColorTypes channelColor, int pixelChunkDataLength, int isolatedIndexesDataLength) {
+    public ChunkedColorChannel(ChannelColorTypes channelColor, int pixelChunkDataLength, int isolatedIndexesDataLength, ShapeUnionFind shapeOrganizer, EdgeMapHolder cardinalMaps, int[] computedFlags) {
         this.channelColor=channelColor;
+        this.shapeOrganizer = shapeOrganizer;
+        this.cardinalMaps = cardinalMaps;
+        this.computedFlags = computedFlags;
         channelChunks = new PixelChunk[pixelChunkDataLength];
         channelIsolatedIndexes = new int[isolatedIndexesDataLength];
+    }
+
+    public EdgeMapHolder getCardinalMaps() {
+        return cardinalMaps;
+    }
+
+    public int[] getComputedFlags() {
+        return computedFlags;
+    }
+
+    public ShapeUnionFind getShapeOrganizer() {
+        return shapeOrganizer;
     }
 
     public void setChannelChunks(PixelChunk[] pixeldata) {
@@ -34,12 +55,17 @@ public class ChunkedColorChannel {
         return this.channelColor;
     }
 
-    public void setIsolatedIndexes(int[] isolatedIndexesData) {
+    public void setIsolatedIndexes(int[] isolatedIndexesData, int[] IsolatedCorrespondingColor) {
         channelIsolatedIndexes = isolatedIndexesData;
+        channelIsolatedCorrespondingColor = IsolatedCorrespondingColor;
     }
 
     public int[] getChannelIsolatedIndexes() {
         return channelIsolatedIndexes;
+    }
+
+    public int[] getChannelIsolatedCorrespondingColor() {
+        return channelIsolatedCorrespondingColor;
     }
 
     public void SequentiallyOrder() {

@@ -5,7 +5,7 @@ public class ImageRepresentative {
     private final boolean deltaEncoded;
     private final boolean grayScale;
     private int[] initialPixels;
-    private boolean uniformMaxAlpha;
+    private final boolean uniformMaxAlpha;
 
     public ImageRepresentative(boolean grayScale, boolean uniformMaxAlpha, boolean deltaEncoded, int flatsize) {
         this.grayScale=grayScale;

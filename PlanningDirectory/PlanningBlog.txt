@@ -79,8 +79,7 @@ I think for the derivative method i won't reinvent the wheel and instead i'll us
 3/28/26 (warning: yappa-tron [probably because this is the only free time ill get for another while (mid-april prob)])
 I have decided to move more towards this silly little plan me and my friends Astro_void and Mintysharky came up with for college apps which is to host a website that changes images into this format
 So i've come up with the QDC compression algorithm to run the images in and compress them into a new format (QCI)
-QDC is Quadralized Data Compression
-QCI is Quadralizied Compressed Image
+QDC is Quadralized Data Codec
 I'm sure there's an official name for this kind of compression but i made this up on the spot
 originally i had an algorithim that estimated points with a linear line
 but it was more encryption because it didnt really shrink the data size; just obscured it
@@ -128,7 +127,7 @@ also add possibilties for lines
 side note: my code rn looks so buns i have like triple-nested for loops
 so i know i need to fix that
 and im thinking of making a
-HashMap<Integer, ArrayList<ArrayList<ArrayList<Integer>>>> which looks absolutley *pardon my french* fucking stupid
+HashMap<Integer, ArrayList<ArrayList<ArrayList<Integer>>>> which looks absolutley *pardon my french* really damn stupid
 So I'll need to remake this in a way more object-oriented way later
 explaining it to my friend, its reasonable why i need it, but its so ugly looking and stupid
 
@@ -414,7 +413,7 @@ I'm guessing my algorithm has O(N^2) time complexity somewhere
 so we'll have to fix that once we start optimizing
 
 for a 1440p drawing it took about 6 seconds
-and for this 8k drawing its taking 2+ minutes which is really fucking bad
+and for this 8k drawing its taking 2+ minutes which is really damn bad
 so maybe the complexities of the images are just super different or something
 but i need to lower this algorithmic time
 
@@ -480,7 +479,7 @@ Boxes:
 []
 
 
-Ok, i need to fix this shit like stat
+Ok, i need to fix this like stat
 i have so many conversions from int to Integer and back
 and the way the data is stored
 holy moly man
@@ -658,3 +657,180 @@ Chunked:
 that was like 4 seconds which compared to like 6+ minutes is so much faster
 
 I'm going to push these changes *but leave the old code for safety* just in case
+
+
+4/24/26:
+I was thinking that i might be able to store it as a "histogram" so like each value is the height from the bottom
+Merging accidentally deleted all my images so whatever ig
+i went over the rectangle logic with my hb astro_void
+and we decided that we're going to store a edge map
+and then find the closest and see if it intersects, you'll see and i'll hopefully explain better on the site
+
+right now im stopping the tall rectangle from bleeding into the next row, but i'm not sure if that's necessary
+
+4/25/26:
+potentially implement a manhattan circle type geometry so i can do basically a rotated rectangle
+I genuniley can't determine if I need to store concave angles
+
+We determined that a corner can't be concave for 2 shapes at the same time (idk how to prove this)
+but thus we dont need to store them as long as the decoder reades everything and then starts to like fill in colors
+
+I'm not going to lie, rn it uses a metric ton of space like it's O(N) in space but the coefficient has got to be like 5 *which for like millions of pixels* is not good
+so after I get the rectangle and corner stuff coded, ill try to make it more efficient
+
+and then ill code the writer and then the decoder
+
+for the hole finder im going to check the area against its owners basically so its an O(N) search over the shape data
+it'd be most optimal to store data as O(N^2) for cpu fast lookups in a int[flatsize][flatsize] but a 1 trillion size array doesnt exactly seem optimal to say
+so I think im going to flatten a hashmap key into a long so its (first 32 bits)(int of the "victim" shape) (second 32 bits)(int of the "holder" shape)
+and then ill iterate over the keys and split it apart again so i get the victim and the holder and how much perimiter, if the holder doesnt take up 100% of the perimiter, its not a hole
+
+New idea:
+instead of that i do a thing so its an IntArrayList and the int is the victim and then i just add the shapeID each time so i dont actually have to do any of that
+and then i just count how many times it aoccurs
+
+bad news: that has a lot of GC overhead so no
+
+Final Idea?
+a bitset that marks if it has multiple and if so then it just ignores it
+otherwise it just sets the first one to the surrounder
+
+current issue, do i just mark it as a hole if the whole image is one color?
+as in all of it would be surrounded by a single shape (the edge)
+*holy literal edge case*
+im so funny...
+
+
+i made the rectangle and square calculations but haven't tested or like set them up
+and i made the corner stuff but the same thing
+so i have like 500+ lines of code that just isnt tested
+so
+...
+
+
+4/30/26:
+
+im thinking of having a kind of rolling dictionary in the encoder and decoder, i think v1 will just be an entire dict and v2 can have a sliding windo for like 100 pixels
+
+so for v1 heres how itll work:
+
+there will be a default lookup table where the key = value
+and there will be a bitset for if that value has been set (will reset every 1000 pixels or smth in sliding window)
+
+if the value has been set, it does not check for a key swap bit (1)
+if the value has not been set, it does check for a key swap bit (1)
+
+the bit can be 2 things; 0 or 1 (shocker)
+
+if its a 0, it means dont swap this key with anything, its useless as this only occurs once
+
+Or
+
+1: swap this key with another to provide a shortened key for a larger bit sequence
+
+
+example:
+
+
+lets say i have 3 pixels: pixel a (value 200, occurs twice), pixel b (value 10, occurs once), and pixel c (value 0, occurs twice)
+
+*im trying to cover edge cases so this might be weird explanation*
+
+the decoder will read pixel a (200) and then check the bitset for if it has been updated (it hasnt as its the first pixel)
+the decoder will then check the next bit since it hasnt been updated.
+In this example we will get a 1 (update the key for 200)
+the following data will tell it what key to update to
+
+it'll probably be in the chunk kind of setup so like this
+(000) *1 bit* 1 *swap the keys 1 and 255*
+
+The encode will decide which key goes where based on inital size and data frequency
+
+then the decode will swap the data in the LUT
+
+then it will read pixel B and do the same thing
+10 *has it been assigned? No* 0 *should i update the key? No*
+(I could also make 10 a key for something else if it occurs first, i.e keys 0-9 are filled and 255 is the next most frequent so swap it with the key 10)
+
+then it will read pixel C; (since Pixel C occurs the same frequency as pixel A, it should also have a small key)
+it will read the 0 see that it has not been assigned
+and then check for the next data to see if it should switch
+
+Here: we dont want to label everytime that we dont want to switch the key
+so we say Yes, we should change the key (1)
+and then set the new key value to 0 (the same as before)
+
+this will update the bitset and say hey, this has been updated, dont look to change it
+and so we dont have to store that extra info
+
+
+I could also do this with the indexes actually
+
+Ok, one of my main issues now is the idea for corruption of a file
+one potential solution is a block-sync header
+so the decoder would read the first block length and then jump to the next part to check for that same header, if its there, that block is not corrupted in size
+then itll run through the block to grab the data
+
+and then i could also have a multi-chunk save point kind of so every 5-20 chunks (will be set so its deterministic) theres a parity bit that says hey (1: this should sum to an odd, 0: this should be even)
+and if that is wrong then we know that sub-block is wrong
+
+since an index could also be an error maybe add a starting index in the header for a new byte-block
+thats a lot of overhead though so probably not
+
+
+I realized that if i have an error, it could misset the lazy rebuilt LUT so it'd probably better to just cut out the image after that point
+additionally, since my data is built on corners, if i have missing corner information it could poison a corner block
+so i'd have to delete any of those when its missing data
+
+
+*the sliding window would also be good for corruption prevention*
+
+
+
+5/1/26:
+
+NOTE: when the rectangle divisions split into a large chunk and sub-chunks, i could reprocess the subchunks to check if a corner save would be better
+it would take slightly longer so maybe it could be a stronger compression mode type thing
+
+still figuring out how to deal with the sub-chunks
+what im thinking right now is
+
+1) take the corner points and add them to a queue
+2) find the largest rectangle possible from the 3 candidates
+3) cut out that rectangle
+4) update the corner points queue and edge map (should be fine since each shape is locally isolated already)
+
+i guess ill code it and then finally be able to test it all
+
+
+
+NOTE: the efficiency calculation "float squareEfficiency = (float) squareCalculation.area() / squareCalculation.storageCost();" might be inefficient as shape gets larger
+i.e 128x128 will be lower than a 127x127 but it could result in at least 2 more rectangles
+area should probably be weighted more
+
+
+5/2/26:
+additionally, rectangle calculation does take forever so it could also be another setting for higher compression
+
+ok, i finished coding everything...
+time to test these 800+ new lines and 8+ new classes
+im going to do my best to test them in isolation but...
+we'll see how that goes
+
+im coding unit tests first becaus im scared...
+
+
+I do need to add in the bitset boundaries so im not even done yet...
+
+
+Ok, there actually was an issue in the NeighborScan that would have sorted everything wrong!
+It's all thanks to the test! (i really hate coding tests)
+but basically i found that it always prioritizes higher isolated indexes in the shape-union rather than lower ones
+
+next found issue in the neighborScan:
+the cardinal maps have duplicates
+so ill probably change it to an arraylist that already sized and then put sets in it
+I could also use my new best friend the bitset with the same width and only flip bits that i need to
+
+ok i fixed it, basically the issue was thati had multiple and i only wanted one
+so i just did my array of bitsets idea *since it'd probably be faster than an array of sets*

@@ -1,7 +1,7 @@
-package com.maxgamertyper1.datatypes;
+package com.maxgamertyper1.datatypes.records;
 
-import java.util.ArrayList;
+import com.maxgamertyper1.datatypes.PixelChunk;
+
 import java.util.BitSet;
-import java.util.HashSet;
 
 public record FindChunkReturn(PixelChunk PixelChunk, BitSet visited) { }

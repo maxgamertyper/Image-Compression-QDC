@@ -1,16 +1,16 @@
 package com.maxgamertyper1.datatypes;
 
+import com.maxgamertyper1.datatypes.records.CornerPoint;
+
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 
 public class PixelChunk {
     private final ChannelColorTypes colorType;
     private final int colorValue;
+    private int totalArea;
     public int StartingIndex;
     public ArrayList<CornerPoint> cornerPoints;
-    private boolean isIsolated;
-    private int IsolatedIndex;
+    public int convexCorners;
 
     public PixelChunk(ChannelColorTypes colorType, int colorValue) {
         this.colorType = colorType;
@@ -19,25 +19,21 @@ public class PixelChunk {
         cornerPoints = new ArrayList<>();
     }
 
+    public void setTotalArea(int totalArea) {
+        this.totalArea = totalArea;
+    }
+
+    public int getColorValue() {
+        return colorValue;
+    }
+
+
     public ChannelColorTypes getColorType() {
         return colorType;
     }
 
-    public void setIsolated() {
-        isIsolated = true;
-    }
-
-    public boolean getIsolated() {
-        return isIsolated;
-    }
-
-    public int getIsolatedIndex() {
-        return IsolatedIndex;
-    }
-
-    public void setIsolatedIndex(int index) {
-        setIsolated();
-        IsolatedIndex = index;
+    public int getTotalArea() {
+        return totalArea;
     }
 
     @Override

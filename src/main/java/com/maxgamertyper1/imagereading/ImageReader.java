@@ -1,16 +1,12 @@
 package com.maxgamertyper1.imagereading;
 import com.maxgamertyper1.datatypes.ChannelColorTypes;
-import com.maxgamertyper1.datatypes.ColorChannel;
-import com.maxgamertyper1.datatypes.DataSimplifyingReturn;
+import com.maxgamertyper1.datatypes.records.DataSimplifyingReturn;
 import com.maxgamertyper1.datatypes.ImageRepresentative;
 
 import javax.imageio.ImageIO;
-import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.stream.IntStream;
 
 import static com.maxgamertyper1.imagereading.PixelHelper.IndexCalculator;
 
