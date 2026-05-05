@@ -834,3 +834,32 @@ I could also use my new best friend the bitset with the same width and only flip
 
 ok i fixed it, basically the issue was thati had multiple and i only wanted one
 so i just did my array of bitsets idea *since it'd probably be faster than an array of sets*
+
+
+5/3/26:
+pushed the old stuff, +1300 btw
+
+currently adding more unit tests for my stuff
+so Far, I've found that my convex corner count is incorrect
+
+
+5/4/26:
+I can definitley compress the tests into a smaller size using other functions but thats not my main priority right now
+Ideally i could compress the assertAll's into different functions but idk how that'd work
+
+
+I just realized I lwk forgot to finish the hole function so it finds everything but doesnt actually set it because im a lil stupid
+"shapeHolesBasedOnStart" is just initialized and never updated
+
+Ok, while i was coding it i kind of ran into some issues where basically i wasnt sure how to do it
+so i just made the count total also store an array of all roots
+where i then just iterate over that to see if a root is surrounded
+if so index its parent to the left (since the corner is always the up-left most pixel)
+
+and it cant be zero since i have it where if its touching the edge then its automatically not a hole
+
+Man is it annoying to check if i made a mistake or the computer did
+*most of the time its me*
+that must mean im great at coding... right...
+
+I'm going to push this since i have all the tests for Image -> ChunkedImage done

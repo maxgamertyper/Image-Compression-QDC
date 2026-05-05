@@ -137,7 +137,7 @@ public class QuadralizedDataCompressor {
                     CR.getChannelType(),
                     PCs.length,
                     isoIndexes.length,
-                    SGR.shapeOrganizer(),
+                    NSR.Shapes(),
                     NSR.CardinalMap(),
                     NSR.Flags());
 
@@ -258,7 +258,7 @@ public class QuadralizedDataCompressor {
         return new NeighborScanReturn(shapeOrganizer,pixelFlags,new EdgeMapHolder(finalXBasedMap,finalYBasedMap));
     }
 
-    private ShapeGrouperReturn ConvertToPixelChunks(ShapeUnionFind shapeOrganizer, ColorChannel CR, int[] computedFlags) {
+    public ShapeGrouperReturn ConvertToPixelChunks(ShapeUnionFind shapeOrganizer, ColorChannel CR, int[] computedFlags) {
         int[] shapeHolder = shapeOrganizer.getRawData();
         int[] rawPixels = CR.getChannelData();
 
@@ -301,7 +301,13 @@ public class QuadralizedDataCompressor {
                 // third bit is down
                 // fourth bit is up
                 if (flag!=8 && flag!=12 && flag>4) {
-                    returnHolder[dataKey].cornerPoints.add(new CornerPoint(pixelIndex,flag));
+                    PixelChunk thisPC = returnHolder[dataKey];
+                    thisPC.cornerPoints.add(new CornerPoint(pixelIndex,flag));
+                    if (Integer.bitCount(flag)==3) {
+                        thisPC.convexCorners+=2;
+                    } else {
+                        thisPC.convexCorners++;
+                    }
                 }
             }
         }
@@ -319,7 +325,7 @@ public class QuadralizedDataCompressor {
             }
         }
 
-        return new ShapeGrouperReturn(noNullChunks,IsolatedPixels, shapeOrganizer);
+        return new ShapeGrouperReturn(noNullChunks,IsolatedPixels);
     }
 
     public CompressedImageRepresentative QuadralizedDataCompressed(ChunkedImageRepresentative CIR) {
@@ -724,150 +730,4 @@ public class QuadralizedDataCompressor {
             }
         }
     }
-
-    /*
-    /*public GetChunksReturn GetChunks(ImageRepresentative IR, float estimatedChunkPercent, boolean grayscale, boolean uniformMaxAlpha) {
-        int size = (grayscale ? 2 : 4) - (uniformMaxAlpha ? 1 : 0);
-        ArrayList<PixelChunk>[] chunks = new ArrayList[size];
-        IntArrayList[] isolatedIndexes = new IntArrayList[size];
-
-        double noiseFactor = 1-estimatedChunkPercent;
-        int floor = Math.max(128, (int) Math.sqrt(ImageDataHolder.flatsize));
-        int ceiling = (int) Math.sqrt(ImageDataHolder.flatsize)*50;
-        int defaultSize = Math.toIntExact((long) Math.ceil(ImageDataHolder.flatsize * noiseFactor * 0.5));
-
-        int finalSize = Math.max(floor,Math.min(ceiling,defaultSize));
-        System.out.println("base BFS arraylist size: "+finalSize);
-
-        for (int i = 0; i < size; i++) {
-            chunks[i] = new ArrayList<>(finalSize);
-            isolatedIndexes[i] = new IntArrayList(finalSize);
-        }
-
-        Queue<Integer> BFSQueue = new ArrayDeque<>();
-
-        for (ColorChannel channel : IR.getColorChannels()) {
-            ColorRepresentative[] IndependentColors = IsolateSeperateColors(channel.getChannelType());
-
-            for (ColorRepresentative CR : IndependentColors) {
-                BitSet remainingData = CR.getPixelIndexes();
-                BitSet visited = new BitSet(ImageDataHolder.flatsize);
-
-                int index=remainingData.nextSetBit(0);
-                while (index!=-1) {
-                    BFSQueue.add(index);
-                    visited.set(index);
-                    FindChunkReturn chunkReturn = FindChunk(CR,visited,BFSQueue);
-
-                    PixelChunk PC = chunkReturn.PixelChunk();
-                    int channelIndex = ImageRepresentative.staticGetChannelIndex(CR.getColorType(),grayscale,uniformMaxAlpha);
-                    if (PC.getIsolated()) {
-                        isolatedIndexes[channelIndex].Add(PC.getIsolatedIndex());
-                    } else {
-                        chunks[channelIndex].add(PC);
-                    }
-
-                    remainingData.andNot(chunkReturn.visited());
-                    index = remainingData.nextSetBit(index);
-                }
-            }
-        }
-        return new GetChunksReturn(isolatedIndexes, chunks);
-    }
-
-    private FindChunkReturn FindChunk(ColorRepresentative CR, BitSet visited, Queue<Integer> BFSQueue) {
-        BitSet CRData = CR.getPixelIndexes();
-        PixelChunk dataBlock = new PixelChunk(CR.getColorType(),CR.getColorValue());
-        int smallestIndex = ImageDataHolder.flatsize;
-
-        while (!BFSQueue.isEmpty()) {
-            int currentIndex = BFSQueue.poll();
-            smallestIndex = Math.min(currentIndex,smallestIndex);
-
-            // left, right, down, up
-            int[] toSearch = new int[]{currentIndex - 1, currentIndex + 1, currentIndex + ImageDataHolder.width, currentIndex - ImageDataHolder.width};
-            int flagmask = 0;
-            // {go left one, go right one, go down one, go up one} *wraps*
-
-            // maybe unwrap this loop; it migh be faster that way (less GC cleanup)
-            for (int directionalIndex = 0; directionalIndex < toSearch.length; directionalIndex++) {
-                int directionalColor = toSearch[directionalIndex];
-
-                boolean outOfBounds  = !IndexInImage(directionalColor);
-                boolean inSameRow = IndexsInSameRow(directionalColor,currentIndex);
-
-                if (outOfBounds || (!inSameRow && directionalIndex<2)) {
-                    flagmask |= 1 << directionalIndex;
-                    continue;
-                }
-
-                if (CRData.get(directionalColor)) { // if its there add to queue and move on
-                    if (!visited.get(directionalColor)) {
-                        visited.flip(directionalColor);
-                        BFSQueue.add(directionalColor);
-                    }
-                } else {
-                    flagmask |= 1 << directionalIndex;
-                }
-            }
-
-            if (flagmask==15) {
-                dataBlock.setIsolatedIndex(currentIndex);
-                break;
-            } else if (flagmask!=8 && flagmask!=12 && flagmask>4) {
-                dataBlock.cornerPoints.add(new CornerPoint(currentIndex,flagmask));
-            }
-
-            dataBlock.StartingIndex = smallestIndex;
-        }
-        return new FindChunkReturn(dataBlock, visited);
-    }
-
-    private ColorRepresentative[] IsolateSeperateColors(ChannelColorTypes colorType) {
-        int[] pixels = DeltaEncodedImage.getOneColorChannel(colorType).getChannelData();
-
-        HashMap<Integer,BitSet> splitColors = new HashMap<>();
-        for (int colorIndex=0; colorIndex<pixels.length; colorIndex++) {
-            int colorValue = pixels[colorIndex];
-
-            if (!splitColors.containsKey(colorValue)) splitColors.put(colorValue,new BitSet(ImageDataHolder.flatsize));
-
-            splitColors.get(colorValue).flip(colorIndex);
-        }
-
-        ColorRepresentative[] result = new ColorRepresentative[splitColors.size()];
-
-        int i=0;
-        for (Map.Entry<Integer,BitSet> map : splitColors.entrySet()) {
-            int colorValue = map.getKey();
-            BitSet colorLocations = map.getValue();
-
-            ColorRepresentative rep = new ColorRepresentative(colorType,colorValue);
-
-            rep.firstIndex = colorLocations.nextSetBit(0);
-            rep.setPixelIndexes(colorLocations);
-            result[i++] = rep;
-        }
-
-        return result;
-    }
-    public ChunkedImageRepresentative FlattenChunks(GetChunksReturn data, boolean grayscale, boolean uniformMaxAlpha, boolean usesPaeth) {
-        int size = (grayscale ? 2 : 4) - (uniformMaxAlpha ? 1 : 0);
-        ChunkedColorChannel[] returnData = new ChunkedColorChannel[size];
-
-        for (int i=0; i<size;i++) {
-            IntArrayList IC = data.IsolatedIndexes()[i];
-            PixelChunk[] PC = data.pixelChunks()[i].toArray(new PixelChunk[0]);
-
-            returnData[i] = new ChunkedColorChannel(PC[0].getColorType(),PC.length,IC.size());
-            returnData[i].setChannelChunks(PC);
-            returnData[i].setIsolatedIndexes(IC.toIntArray());
-        }
-
-        ChunkedImageRepresentative CIR = new ChunkedImageRepresentative(grayscale,uniformMaxAlpha, usesPaeth);
-        CIR.setChunkedChannels(returnData);
-        CIR.SetImageCompressionInformation();
-
-        return CIR;
-    }*/
 }

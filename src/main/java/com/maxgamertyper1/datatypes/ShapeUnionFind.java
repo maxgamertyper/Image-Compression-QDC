@@ -14,14 +14,19 @@ public class ShapeUnionFind {
     private int[] shapeHolesBasedOnStart;
     private int[] shapeContinuityBasedOnStart;
     private int[] shapePerimiterBasedOnStart;
+    private int[] rootIndexes;
 
-    public ShapeUnionFind(int n) {
-        parentPixels = new int[n];
+    public ShapeUnionFind(int size) {
+        parentPixels = new int[size];
 
         // at the start every pixel is its own shape
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < size; i++) {
             parentPixels[i] = i;
         }
+    }
+
+    public ShapeUnionFind(int[] parentPixels) {
+        this.parentPixels = parentPixels;
     }
 
     public void Union(int pixelIndex1, int pixelIndex2) {
@@ -53,7 +58,7 @@ public class ShapeUnionFind {
         }
     }
 
-    public int getTotalShapeCount() {
+    public void calculateShapeRoots() {
         IntArrayList uniqueBosses = new IntArrayList(16);
 
         for (int i = 0; i < parentPixels.length; i++) {
@@ -61,7 +66,11 @@ public class ShapeUnionFind {
                 uniqueBosses.Add(i);
             }
         }
-        return uniqueBosses.size();
+        rootIndexes = uniqueBosses.toIntArray();
+    }
+
+    public int getTotalShapeCount() {
+        return rootIndexes.length;
     }
 
     public int[] getRawData() {
@@ -89,13 +98,9 @@ public class ShapeUnionFind {
             int root = Find(i);
 
             int topIndex = i-ImageDataHolder.width;
-            int topLeftIndex = i-ImageDataHolder.width-1;
             int LeftIndex = i-1;
 
             if (IndexInImage(topIndex) && Find(topIndex)==root) {
-                shapeContinuityBasedOnStart[root]++;
-            }
-            if (IndexInImage(topLeftIndex) && Find(topLeftIndex)==root) {
                 shapeContinuityBasedOnStart[root]++;
             }
             if (IndexInImage(LeftIndex) && IndexsInSameRow(LeftIndex,i) && Find(LeftIndex)==root) {
@@ -115,9 +120,6 @@ public class ShapeUnionFind {
     public void calculatePerimiterAndHoles(int[] relativeFlags) {
         shapeHolesBasedOnStart = new int[ImageDataHolder.flatsize];
         shapePerimiterBasedOnStart = new int[ImageDataHolder.flatsize];
-
-        Arrays.fill(shapeHolesBasedOnStart,0);
-        Arrays.fill(shapeHolesBasedOnStart,0);
 
         BitSet hasMultipleSurroundies = new BitSet(ImageDataHolder.flatsize);
         int[] originalSurrounderBasedOnStart = new int[ImageDataHolder.flatsize];
@@ -153,8 +155,15 @@ public class ShapeUnionFind {
                 HandleSide(root,leftIndex,hasMultipleSurroundies,originalSurrounderBasedOnStart);
             }
         }
-
-
+        if (rootIndexes==null) {
+            this.calculateShapeRoots();
+        }
+        for (int root : rootIndexes) {
+            if (!hasMultipleSurroundies.get(root)) {
+                // never 0 as that touches an edge and will be marked false; so that doesnt need to be checked as its always false
+                shapeHolesBasedOnStart[Find(root-1)]++;
+            }
+        }
     }
 
     private void HandleSide(int root, int newIndex, BitSet hasMultipleSurroundies, int[] originalSurrounderBasedOnStart) {

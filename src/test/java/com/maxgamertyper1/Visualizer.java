@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 
-public class NeighborScanTest {
+public class Visualizer {
 
     private void generateEdgeColoredBlockChannels(ChunkedImageRepresentative chunkedImageRepresentative, int width, int height, String outputFileName) throws IOException {
         Random rand = new Random(42);
