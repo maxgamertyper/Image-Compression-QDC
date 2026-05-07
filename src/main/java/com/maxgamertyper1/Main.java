@@ -50,6 +50,8 @@ public class Main {
             chunkedImage = QDC.chunkImage(QDC.DeltaEncodedImage);
         }
 
+        chunkedImage.SequentiallyOrder();
+
         end = System.currentTimeMillis();
         System.out.println("Flag Processing and Shaping (concurrent) took: " + (end - start) + "ms");
         start = System.currentTimeMillis();
@@ -59,11 +61,6 @@ public class Main {
         end = System.currentTimeMillis();
         System.out.println("Calculating Rectangles and Corners took: " + (end - start) + "ms");
         start = System.currentTimeMillis();
-
-        chunkedImage.SequentiallyOrder();
-
-        end = System.currentTimeMillis();
-        System.out.println("Sorting took: " + (end - start) + "ms");
 
         System.out.println("Colored Chunking? "+useColoredBFSPrediction+";\nChunked:\n\t Actual Chunks: "+chunkedImage.getChunkCount()+"; Isolated Indexes: "+chunkedImage.getIndexCount());
 

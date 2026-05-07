@@ -19,7 +19,7 @@ import static com.maxgamertyper1.TestHelper.*;
 import static com.maxgamertyper1.TestHelper.getUniformColorChannel;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class QDCTester {
+public class ChunkTest {
     @Test
     @Order(1)
     @DisplayName("Should successfully make a uniform image all 0 in paeth")
@@ -27,9 +27,7 @@ public class QDCTester {
         // Testing Setup
         ImageDataHolder.UniformMaxAlpha = true;
         ImageDataHolder.isGrayscale = true;
-        ImageDataHolder.flatsize = 100;
-        ImageDataHolder.width = 10;
-        ImageDataHolder.height = 10;
+        TestHelper.DataholderSetter(10,10);
         int val = ThreadLocalRandom.current().nextInt(0, 255);
 
         ImageRepresentative TestingImage = new ImageRepresentative(true,true,false,100);
@@ -55,9 +53,7 @@ public class QDCTester {
     public void ImageContinuityTest() {
         ImageDataHolder.UniformMaxAlpha = true;
         ImageDataHolder.isGrayscale = true;
-        ImageDataHolder.flatsize = 100;
-        ImageDataHolder.width = 10;
-        ImageDataHolder.height = 10;
+        TestHelper.DataholderSetter(10,10);
         int val = ThreadLocalRandom.current().nextInt(0, 255);
 
         ImageRepresentative TestingImage = new ImageRepresentative(true,true,false,100);
@@ -80,12 +76,10 @@ public class QDCTester {
     @Test
     @Order(5)
     @DisplayName("Neighbor Scan Test with U and Box")
-    public void NeighborScanTest() {
+    public void NeighborScanBlockTest() {
         ImageDataHolder.UniformMaxAlpha = true;
         ImageDataHolder.isGrayscale = true;
-        ImageDataHolder.flatsize = 100;
-        ImageDataHolder.width = 10;
-        ImageDataHolder.height = 10;
+        TestHelper.DataholderSetter(10,10);
         int val = ThreadLocalRandom.current().nextInt(0, 255);
         int UVA = ThreadLocalRandom.current().nextInt(0, 255);
         int BVA = ThreadLocalRandom.current().nextInt(0, 255);
@@ -106,12 +100,36 @@ public class QDCTester {
     }
 
     @Test
+    @Order(6)
+    @DisplayName("Neighbor Scan Test Static")
+    public void NeighborScanStaticTest() {
+        ImageDataHolder.UniformMaxAlpha = true;
+        ImageDataHolder.isGrayscale = true;
+        TestHelper.DataholderSetter(10,10);
+        int val = ThreadLocalRandom.current().nextInt(0, 255);
+        int SVA = ThreadLocalRandom.current().nextInt(0, 255);
+        int BVA = ThreadLocalRandom.current().nextInt(0, 255);
+
+        ImageRepresentative TestingImage = new ImageRepresentative(true,true,false,100);
+
+        ColorChannel GrayTestingColorChannel = getStaticTestingChannel(ChannelColorTypes.Gray, val, SVA, BVA);
+
+        QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
+        NeighborScanReturn NSR = QDC.NeighborScan(GrayTestingColorChannel);
+
+        assertAll("Shape Organization Properties",
+                () -> assertArrayEquals(ExpectedDataHolder.ExpectedStaticFlags, NSR.Flags(), "Incorrect Flag Calculation"),
+                () -> assertArrayEquals(ExpectedDataHolder.StaticBasedShapeIDs, NSR.Shapes().getRawData(), "Incorrect Shape Grouping"),
+                () -> assertArrayEquals(ExpectedDataHolder.StaticBasedEdgeMaps.xBasedMap(),NSR.CardinalMap().xBasedMap(), "Incorrect X-Based Cardinal Map"),
+                () -> assertArrayEquals(ExpectedDataHolder.StaticBasedEdgeMaps.yBasedMap(),NSR.CardinalMap().yBasedMap(), "Incorrect Y-Based Cardinal Map")
+        );
+    }
+
+    @Test
     @Order(3)
     @DisplayName("ShapeUnionFind correct perimiter, area, holes, and continuity calculations (non-Static)")
     public void shapeUnionFindTestBlock() {
-        ImageDataHolder.flatsize = 100;
-        ImageDataHolder.height = 10;
-        ImageDataHolder.width = 10;
+        TestHelper.DataholderSetter(10,10);
 
 
         ShapeUnionFind testingDataShapes = new ShapeUnionFind(ExpectedDataHolder.BlockBasedShapeIDS);
@@ -149,14 +167,12 @@ public class QDCTester {
 
 
     @Test
-    @Order(6)
+    @Order(7)
     @DisplayName("Convert Shapes to Pixel Chunks (non-Static)")
     public void PixelChunkConversionTestBlock() {
         ImageDataHolder.UniformMaxAlpha = true;
         ImageDataHolder.isGrayscale = true;
-        ImageDataHolder.flatsize = 100;
-        ImageDataHolder.width = 10;
-        ImageDataHolder.height = 10;
+        TestHelper.DataholderSetter(10,10);
         int val = ThreadLocalRandom.current().nextInt(0, 255);
         int UVA = ThreadLocalRandom.current().nextInt(0, 255);
         int BVA = ThreadLocalRandom.current().nextInt(0, 255);
@@ -216,9 +232,7 @@ public class QDCTester {
     @Order(4)
     @DisplayName("ShapeUnionFind correct perimiter, area, holes, and continuity calculations (Static)")
     public void shapeUnionFindTestStatic() {
-        ImageDataHolder.flatsize = 100;
-        ImageDataHolder.height = 10;
-        ImageDataHolder.width = 10;
+        TestHelper.DataholderSetter(10,10);
 
 
         ShapeUnionFind testingDataShapes = new ShapeUnionFind(ExpectedDataHolder.StaticBasedShapeIDs);
@@ -253,14 +267,12 @@ public class QDCTester {
     }
 
     @Test
-    @Order(7)
+    @Order(8)
     @DisplayName("Convert Shapes to Pixel Chunks (Static)")
     public void PixelChunkConversionTestStatic() {
         ImageDataHolder.UniformMaxAlpha = true;
         ImageDataHolder.isGrayscale = true;
-        ImageDataHolder.flatsize = 100;
-        ImageDataHolder.width = 10;
-        ImageDataHolder.height = 10;
+        TestHelper.DataholderSetter(10,10);
         int val = ThreadLocalRandom.current().nextInt(0, 255);
         int SVA = ThreadLocalRandom.current().nextInt(0, 255);
         int BVA = ThreadLocalRandom.current().nextInt(0, 255);
@@ -314,12 +326,10 @@ public class QDCTester {
 
 
     @Test
-    @Order(8)
+    @Order(9)
     @DisplayName("Entire ChunkImage Test")
     public void ChunkImageTest() { // the previous tests are just the parts, this is the whole thing so its assertAll is super long
-        ImageDataHolder.width = 10;
-        ImageDataHolder.height = 10;
-        ImageDataHolder.flatsize = 100;
+        TestHelper.DataholderSetter(10,10);
 
         ImageRepresentative testingImage = new ImageRepresentative(false,true,false,100);
         ColorChannel[] testingData = testingImage.getColorChannels();

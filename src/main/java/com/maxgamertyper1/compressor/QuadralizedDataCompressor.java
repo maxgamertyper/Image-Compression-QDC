@@ -167,10 +167,10 @@ public class QuadralizedDataCompressor {
         BitSet[] xBasedMap = new BitSet[ImageDataHolder.width];
 
         for (int i=0; i<ImageDataHolder.height;i++) {
-            yBasedMap[i] = new BitSet(ImageDataHolder.width);
+            yBasedMap[i] = new BitSet(ImageDataHolder.width); // only bottom edges now
         }
         for (int i=0; i<ImageDataHolder.width;i++) {
-            xBasedMap[i] = new BitSet(ImageDataHolder.height);
+            xBasedMap[i] = new BitSet(ImageDataHolder.height); // only right edges now
         }
 
         for (int yValue=0; yValue<ImageDataHolder.height;yValue++) {
@@ -195,22 +195,18 @@ public class QuadralizedDataCompressor {
                         shapeOrganizer.Union(currentFlatCoordinate, topCoordinate); // if the same color, add to the shape
                     } else  {
                         flagBitMask |= 1<<3; // if not the same color, mark as an edge
-                        xBasedMap[coordinates[0]].set(coordinates[1]);
                     }
                 } else {
                     flagBitMask |= 1<<3;
-                    xBasedMap[coordinates[0]].set(coordinates[1]);
                 }
                 if (IndexInImage(leftCoordinate) && IndexsInSameRow(currentFlatCoordinate,leftCoordinate)) {
                     if (pixelData[leftCoordinate]==currentColor) {
                         shapeOrganizer.Union(currentFlatCoordinate, leftCoordinate);
                     } else  {
                         flagBitMask |= 1;
-                        yBasedMap[coordinates[1]].set(coordinates[0]);
                     }
                 } else {
                     flagBitMask |= 1;
-                    yBasedMap[coordinates[1]].set(coordinates[0]);
                 }
                 if (!IndexInImage(bottomCoordinate) || pixelData[bottomCoordinate]!=currentColor) {
                     flagBitMask |= 1<<2;
@@ -237,9 +233,10 @@ public class QuadralizedDataCompressor {
         for (int i=0; i<yBasedMap.length;i++) {
             BitSet dataHolder = yBasedMap[i];
             int count = dataHolder.cardinality();
-            finalYBasedMap[i] = new int[count];
+            finalYBasedMap[i] = new int[count+1];
+            finalYBasedMap[i][0]=-1; // the image wall
 
-            int j =0;
+            int j =1;
             for (int bit = dataHolder.nextSetBit(0); bit >= 0; bit = dataHolder.nextSetBit(bit + 1)) {
                 finalYBasedMap[i][j++] = bit;
             }
@@ -247,9 +244,10 @@ public class QuadralizedDataCompressor {
         for (int i=0; i<xBasedMap.length;i++) {
             BitSet dataHolder = xBasedMap[i];
             int count = dataHolder.cardinality();
-            finalXBasedMap[i] = new int[count];
+            finalXBasedMap[i] = new int[count+1];
+            finalXBasedMap[i][0]=-1; // the image wall
 
-            int j =0;
+            int j = 1;
             for (int bit = dataHolder.nextSetBit(0); bit >= 0; bit = dataHolder.nextSetBit(bit + 1)) {
                 finalXBasedMap[i][j++] = bit;
             }
@@ -333,7 +331,6 @@ public class QuadralizedDataCompressor {
 
         CompressedColorChannel[] compressedColorChannels = new CompressedColorChannel[chunkedColorChannels.length];
 
-
         for (int i=0; i<chunkedColorChannels.length;i++) {
             ChunkedColorChannel CCC = chunkedColorChannels[i];
 
@@ -412,17 +409,19 @@ public class QuadralizedDataCompressor {
         return new CompressedImageRepresentative(CIR.isGrayScale(),CIR.isUniformMaxAlpha(),compressedColorChannels);
     }
 
-    private CornerDataRepresentative CalculateCornerData(PixelChunk pixelChunk, int[] flagHolder) {
+    public CornerDataRepresentative CalculateCornerData(PixelChunk pixelChunk, int[] flagHolder) {
         int dataSize = pixelChunk.cornerPoints.size();
-        int[] flagMask = new int[dataSize]; //idk if this data is actually sorted. I think it is though
-        int[] indexDelta = new int[dataSize];
+        int[] flagMask = new int[dataSize];
+        int[] indexDelta = new int[dataSize-1];
 
-        int prevIndex = 0;
-        for (int i=0; i<dataSize; i++) {
+        flagMask[0] = pixelChunk.cornerPoints.getFirst().flagmask(); // always 9?
+
+        int prevIndex = pixelChunk.cornerPoints.getFirst().index();
+        for (int i=1; i<dataSize; i++) {
             CornerPoint CP = pixelChunk.cornerPoints.get(i);
             int currentIndex = CP.index();
 
-            indexDelta[i] = currentIndex-prevIndex;
+            indexDelta[i-1] = currentIndex-prevIndex;
             flagMask[i] = CP.flagmask();
 
             prevIndex = currentIndex;
@@ -431,8 +430,8 @@ public class QuadralizedDataCompressor {
         return new CornerDataRepresentative(indexDelta,pixelChunk.StartingIndex,flagMask, pixelChunk.getColorValue());
     }
 
-    private boolean PixelChunkUseRectangles(int convexCorners, int continuity, int holes) {
-        return  (long) continuity/((long) convexCorners *convexCorners)*holes <= 1; // prediction for rectangle efficiency basically
+    public boolean PixelChunkUseRectangles(int convexCorners, int continuity, int holes) {
+        return (continuity/((double) convexCorners * convexCorners))*holes <= 1; // prediction for rectangle efficiency basically
     }
 
     private ArrayList<RectangleRepresentative> RectangleCreator(PixelChunk pixelChunk, int[] flagHolder, ShapeUnionFind shapeOrganizer, EdgeMapHolder EMH) { // greedy algorith
@@ -452,7 +451,6 @@ public class QuadralizedDataCompressor {
         }
 
         while (area>0) {
-
             // find the optimal rectangle
             RectangleRepresentative currentGlobalBest = new RectangleRepresentative(0,0,1,0);
 
@@ -675,7 +673,7 @@ public class QuadralizedDataCompressor {
         return new RectangleRepresentative(size,size,startingIndex,PC.getColorValue());
     }
 
-    private int[] CalculateLimits(int calculationDirections, int flatAnchorIndex, EdgeMapHolder EMH) {
+    public int[] CalculateLimits(int calculationDirections, int flatAnchorIndex, EdgeMapHolder EMH) {
         // first bit is left
         // second bit is right
         // third bit is down
@@ -686,22 +684,18 @@ public class QuadralizedDataCompressor {
         int nearestLocation;
 
         if ((calculationDirections & 1) != 0) { // left edge open
-            nearestLocation = nearestCardinalEdge(EMH,true, false, anchorCoordinates[0], anchorCoordinates[1]);
-            limitX = anchorCoordinates[0]-nearestLocation;
-            if (nearestLocation == -1) limitX = anchorCoordinates[0];
+            nearestLocation = nearestCardinalEdge(EMH,false, false, anchorCoordinates[1], anchorCoordinates[0]); // right edge + searching left = dont include
+            limitX = anchorCoordinates[0]-nearestLocation-1;
         } else if ((calculationDirections & 2) != 0) { // right edge open
-            nearestLocation = nearestCardinalEdge(EMH,true, true, anchorCoordinates[0], anchorCoordinates[1]);
+            nearestLocation = nearestCardinalEdge(EMH,false, true, anchorCoordinates[1], anchorCoordinates[0]); // right edge + searching right = include\
             limitX = nearestLocation-anchorCoordinates[0];
-            if (nearestLocation == -1) limitX = ImageDataHolder.width-anchorCoordinates[0];
         }
         if ((calculationDirections & 4) != 0) { // down open
-            nearestLocation = nearestCardinalEdge(EMH,false, true, anchorCoordinates[1], anchorCoordinates[0]);
+            nearestLocation = nearestCardinalEdge(EMH,true, true, anchorCoordinates[0], anchorCoordinates[1]); // down edge + searching down = include
             limitY = nearestLocation-anchorCoordinates[1];
-            if (nearestLocation == -1) limitY = ImageDataHolder.height-anchorCoordinates[1];
         } else if ((calculationDirections & 8) != 0) { // up open
-            nearestLocation = nearestCardinalEdge(EMH,false, false, anchorCoordinates[1], anchorCoordinates[0]);
-            limitY = anchorCoordinates[1]-nearestLocation;
-            if (nearestLocation == -1) limitY = anchorCoordinates[1];
+            nearestLocation = nearestCardinalEdge(EMH,true, false, anchorCoordinates[0], anchorCoordinates[1]); // down edge + searching up = dont include
+            limitY = anchorCoordinates[1]-nearestLocation-1;
         }
 
         return new int[]{limitX,limitY};
@@ -716,17 +710,17 @@ public class QuadralizedDataCompressor {
 
         if (positiveDirection) {
             if (index>=0) { // if the current point is an edge
-                return (index < dataset.length - 1) ? dataset[index + 1] : -1; // return the next value if there is one, otherwise -1
+                return dataset[index];
             } else {
                 int insertionPoint = -(index + 1); // undo java's stupid return
-                return (insertionPoint < dataset.length) ? dataset[insertionPoint] : -1;
+                return (insertionPoint < dataset.length) ? dataset[insertionPoint] : dataset[dataset.length-1];
             }
         } else {
             if (index>=0) { // if found
-                return (index > 0) ? dataset[index - 1] : -1; // if its bigger than zero, do the previous one; otherwise -1
+                return (index > 0) ? dataset[index - 1] : dataset[0];
             } else {
                 int insertionPoint = -(index + 1);
-                return (insertionPoint > 0) ? dataset[insertionPoint - 1] : -1;
+                return (insertionPoint > 0) ? dataset[insertionPoint - 1] : dataset[0];
             }
         }
     }

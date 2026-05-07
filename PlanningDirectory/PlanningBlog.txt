@@ -863,3 +863,32 @@ Man is it annoying to check if i made a mistake or the computer did
 that must mean im great at coding... right...
 
 I'm going to push this since i have all the tests for Image -> ChunkedImage done
+
+
+5/5/26:
+NOTE: it might be better logically speaking to do a color channel all the way through and then make it into an image since i wouldnt have to wast stuff on making a chunkedImageRep
+
+time to work on chunked image -> compressed image
+:C
+
+Silly me miswrote the PixelChunk testing initialization so the convexcorners were set to the startingIndex
+my code for the rectangle vs corner heuresitc had (long) instead of (double) so it almost always resulted in 0; giving wrong answers
+
+5/7/26:
+ok issue found!
+basically the edgeMap holds when there is any edge
+but it could be left or right; or up or down
+so i'd have to check that
+i could probably make it so that it only stores
+right and down
+and then the math wouldnt need another if statement
+
+So i will have to modify my default data and other tests :C but it should be more space and time efficient so
+
+I also realized I didnt even have a test for the Static Chunk so...
+
+
+It was super weird figuring out what was rong
+basically the -1 error return was bugging out so i had to do a new calculation for it
+and the inverse of the java return ahd to be changed for positive vs negative direction
+but wasnt too bad all things considered

@@ -14,18 +14,18 @@ public class ExpectedDataHolder {
     public static final int[] StaticBasedIsolatedIndexes = new int[]{46,57,76,87};
 
     public static final EdgeMapHolder BlockBasedEdgeMaps = new EdgeMapHolder(
-            new int[][]{{0,9}, {0,1,6,7,9}, {0,1,4,5,6,7,8,9}, {0,1,4,5,6,7,8,9}, {0,1,4,5,6,7,8,9}, {0,1,4,5,6,7,8,9}, {0,1,6,7,9}, {0,9}, {0,9}, {0,9}},
-            new int[][]{{0,9}, {0,1,2,5,6,7,9}, {0,1,2,5,6,7,9}, {0,1,2,5,6,7,9}, {0,1,2,5,6,7,9}, {0,1,2,5,6,7,9}, {0,1,2,3,4,5,6,7,9}, {0,1,2,5,6,9}, {0,9}, {0,9}}
+            new int[][]{{-1,9}, {-1,0,6,9}, {-1,0,4,5,7,9}, {-1,0,4,6,7,9}, {-1,0,4,6,7,9}, {-1,0,4,5,7,9}, {-1,0,6,9}, {-1,9}, {-1,9}, {-1,9}},
+            new int[][]{{-1,9}, {-1,0,1,5,6,9}, {-1,0,1,5,6,9}, {-1,0,1,5,6,9}, {-1,0,1,5,6,9}, {-1,0,1,5,6,9}, {-1,0,2,4,6,9}, {-1,1,5,9}, {-1,9}, {-1,9}}
     );
 
     public static final EdgeMapHolder UniformBasedEdgeMaps = new EdgeMapHolder(
-            new int[][]{{0,9}, {0,9}, {0,9}, {0,9}, {0,9}, {0,9}, {0,9}, {0,9}, {0,9}, {0,9}},
-            new int[][]{{0,9}, {0,9}, {0,9}, {0,9}, {0,9}, {0,9}, {0,9}, {0,9}, {0,9}, {0,9}}
+            new int[][]{{-1,9}, {-1,9}, {-1,9}, {-1,9}, {-1,9}, {-1,9}, {-1,9}, {-1,9}, {-1,9}, {-1,9}},
+            new int[][]{{-1,9}, {-1,9}, {-1,9}, {-1,9}, {-1,9}, {-1,9}, {-1,9}, {-1,9}, {-1,9}, {-1,9}}
     );
 
     public static final EdgeMapHolder StaticBasedEdgeMaps = new EdgeMapHolder(
-            new int[][]{{0,1,2,3,4,9}, {0,1,2,3,4,9}, {0,2,3,5,6,7,8,9}, {0,2,3,9}, {0,1,2,9}, {0,1,2,9}, {0,3,4,5,6,7,8,9}, {0,4,5,6,7,8,9}, {0,9}, {0,9}},
-            new int[][]{{0,5,6,9}, {0,5,6,9}, {0,1,2,3,4,9}, {0,9}, {0,1,2,5,6,7,9}, {0,1,2,6,7,8,9}, {0,2,3,9}, {0,2,3,5,6,7,9}, {0,1,2,6,7,8,9}, {0,1,2,9}}
+            new int[][]{{-1,1,3,9}, {-1,1,3,9}, {-1,2,5,7,9}, {-1,2,9}, {-1,1,9}, {-1,1,9}, {-1,3,4,6,7,9}, {-1,4,5,7,8,9}, {-1,9}, {-1,9}},
+            new int[][]{{-1,5,9}, {-1,5,9}, {-1,1,3,9}, {-1,9}, {-1,1,5,6,9}, {-1,1,6,7,9}, {-1,2,9}, {-1,2,5,6,9}, {-1,1,6,7,9}, {-1,1,9}}
     );
 
     public static final int[] BlockBasedShapeIDS = new int[]{
@@ -121,4 +121,60 @@ public class ExpectedDataHolder {
         int flatsize = width*height;
         return new int[flatsize];
     }
+
+    // Compression Data
+
+    public static final PixelChunk fullSquare = TestHelper.buildPixelChunk(ChannelColorTypes.Alpha,10,0,4,
+            new int[][]{{0,9},{9,10},{90,5},{99,6}}
+    ); // a 10x10 square (this represents all 0 hole rectangles)
+
+    public static final PixelChunk holeSquare = TestHelper.buildPixelChunk(ChannelColorTypes.Alpha,10,0,4,
+            new int[][]{{0,9},{9,10},{90,5},{99,6}}
+    ); // a 10x10 square with a hole in the middle (change is in the shapeOrganizer)
+
+    public static final PixelChunk swissCheese = TestHelper.buildPixelChunk(ChannelColorTypes.Alpha,10,0,7,
+            new int[][]{{0,9},{4,10},{7,7},{16,10},{20,6},{24,6}}
+    );
+
+    public static final int[] holeSquareParentIDs = new int[] {
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 22, 22, 0, 0, 0, 0, 0, 0,
+            0, 0, 22, 22, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
+
+    public static final int[] swissCheeseParentIDs = new int[] {
+            0, 0, 0, 0, 0,
+            0, 6, 6, 0, 0,
+            0, 0, 0, 13, 0,
+            0, 16, 0, 0, 0,
+            0, 0, 0, 0, 0
+    };
+
+    public static final int[] expectedHoleSquareFlags = new int[] {
+            9, 8, 8, 8, 8, 8, 8, 8, 8, 10,
+            1, 0, 4, 4, 0, 0, 0, 0, 0, 2,
+            1, 2, 9, 10, 1, 0, 0, 0, 0, 2,
+            1, 2, 5, 6, 1, 0, 0, 0, 0, 2,
+            1, 0, 8, 8, 0, 0, 0, 0, 0, 2,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 2,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 2,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 2,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 2,
+            5, 4, 4, 4, 4, 4, 4, 4, 4, 6,
+    };
+
+    public static final int[] expectedSwissCheeseFlags= new int[] {
+            9, 12, 12, 8, 10,
+            3, 13, 14, 5, 2,
+            1, 12, 10, 15, 3,
+            3, 15, 1, 8, 2,
+            5, 12, 4, 4, 6
+    };
 }

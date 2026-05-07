@@ -4,6 +4,7 @@ import com.maxgamertyper1.datatypes.ChannelColorTypes;
 import com.maxgamertyper1.datatypes.ColorChannel;
 import com.maxgamertyper1.datatypes.PixelChunk;
 import com.maxgamertyper1.datatypes.records.CornerPoint;
+import com.maxgamertyper1.imagereading.ImageDataHolder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,7 +62,7 @@ public class TestHelper {
     public static PixelChunk buildPixelChunk(ChannelColorTypes colorType, int val, int startingIndex, int convexCorners, int[][] CornerPairs) {
         PixelChunk PC = new PixelChunk(colorType,val);
         PC.StartingIndex = startingIndex;
-        PC.convexCorners = startingIndex;
+        PC.convexCorners = convexCorners;
 
         ArrayList<CornerPoint> Corners = new ArrayList<CornerPoint>();
         for (int[] cornerPair : CornerPairs) {
@@ -70,5 +71,12 @@ public class TestHelper {
 
         PC.cornerPoints = Corners;
         return PC;
+    }
+
+
+    public static void DataholderSetter(int width, int height) {
+        ImageDataHolder.height = height;
+        ImageDataHolder.width = width;
+        ImageDataHolder.flatsize = width*height;
     }
 }
