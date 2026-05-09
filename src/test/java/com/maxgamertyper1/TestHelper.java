@@ -59,10 +59,11 @@ public class TestHelper {
 
 
 
-    public static PixelChunk buildPixelChunk(ChannelColorTypes colorType, int val, int startingIndex, int convexCorners, int[][] CornerPairs) {
+    public static PixelChunk buildPixelChunk(ChannelColorTypes colorType, int val, int startingIndex, int convexCorners, int[][] CornerPairs,int totalArea) {
         PixelChunk PC = new PixelChunk(colorType,val);
         PC.StartingIndex = startingIndex;
         PC.convexCorners = convexCorners;
+        PC.setTotalArea(totalArea);
 
         ArrayList<CornerPoint> Corners = new ArrayList<CornerPoint>();
         for (int[] cornerPair : CornerPairs) {

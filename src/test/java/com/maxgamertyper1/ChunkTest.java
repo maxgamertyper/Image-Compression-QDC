@@ -342,10 +342,6 @@ public class ChunkTest {
 
         ChunkedColorChannel[] outputChannels = outputImage.getChunkedChannels();
 
-        System.out.println(Arrays.toString(ExpectedDataHolder.getExpectedStaticChunkData(ChannelColorTypes.Blue, 10, 255)));
-        System.out.println("2nd array");
-        System.out.println(Arrays.toString(outputChannels[2].getChannelChunks()));
-
         assertAll("Overall Image Data",
                 // overall data
                 () -> assertEquals(8,outputImage.getChunkCount(), "Incorrect Chunk Counting"),

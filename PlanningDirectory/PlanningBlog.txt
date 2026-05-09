@@ -892,3 +892,16 @@ It was super weird figuring out what was rong
 basically the -1 error return was bugging out so i had to do a new calculation for it
 and the inverse of the java return ahd to be changed for positive vs negative direction
 but wasnt too bad all things considered
+
+5/7/26:
+i have the APES test next friday so no or very little weekend coding :C
+
+5/8/26:
+Tested the uniform image and their rectangle representatices, had do change a few calculations around and removed a dumb index calculation when i could just do PC.startingIndex
+
+Silly me had the rectangle calculations had != but i needed < in case it expanded further than it
+Cool, all the base Rectangle and Square calculations work
+
+the scary part is the stacked where it starts cutting things out
+because its obviously not good to make a new int[][] each time
+so i was thinking have a preprocessed bitset where it checks that for when a blockage is within the range of the found rectangle

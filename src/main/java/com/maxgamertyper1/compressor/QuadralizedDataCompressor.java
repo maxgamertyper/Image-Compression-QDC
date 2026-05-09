@@ -584,7 +584,7 @@ public class QuadralizedDataCompressor {
         return new CornerPoint(flatIndex,flagmask);
     }
 
-    private RectangleRepresentative[] CalculateLongRectangles(EdgeMapHolder EMH ,int flatAnchorIndex, int flag, PixelChunk PC) {
+    public RectangleRepresentative[] CalculateLongRectangles(EdgeMapHolder EMH ,int flatAnchorIndex, int flag, PixelChunk PC) {
         int directionData = ~flag; // not-ing the flag gives us expansion directions
         int[] expansionLimits = CalculateLimits(directionData, flatAnchorIndex, EMH);
         int longRectangleWidth = 1;
@@ -594,52 +594,50 @@ public class QuadralizedDataCompressor {
 
         int testingIndex = flatAnchorIndex;
         int change = (((directionData & 1) != 0) ? -1 : 1); // -1 if im checking left, 1 if im checking right
-        while (true) { // the tall rectangle, expands horizontally
+
+        for (int xChange=0;xChange<expansionLimits[0];xChange++) { // the tall rectangle
             testingIndex+=change;
 
             if (!IndexsInSameRow(testingIndex,flatAnchorIndex) || !IndexInImage(testingIndex)) break; // DOES IT MATTER IF IT BLEEDS INTO THE NEXT ROW?
 
             int[] testingExpansionLimits = CalculateLimits(directionData, testingIndex, EMH);
 
-            if (testingExpansionLimits[1]!=expansionLimits[1]) {
+            if (testingExpansionLimits[1]<expansionLimits[1]) { // see next one for change
                 break;
-            } else {
-                longRectangleWidth++;
             }
+            longRectangleWidth++;
         }
-
-        RectangleRepresentative longRect = new RectangleRepresentative(expansionLimits[1],longRectangleWidth,PC.StartingIndex, PC.getColorValue());
+        RectangleRepresentative longRect = new RectangleRepresentative(expansionLimits[1]+1,longRectangleWidth,PC.StartingIndex, PC.getColorValue());
 
         if (longRect.area()==PC.getTotalArea()) {
             return new RectangleRepresentative[]{longRect}; // return the perfect fit
         }
-        returnHolder[0] = longRect; // otherwise keep it there
+        returnHolder[1] = longRect; // otherwise keep it there
 
 
         testingIndex = flatAnchorIndex;
         change = ImageDataHolder.width*(((directionData & 8) != 0) ? -1 : 1); // -height if im checking up, and height if im checking down
-        while (true) { // the wide rectnagle, expands verically
+        for (int yChange=0;yChange<expansionLimits[1];yChange++) { // the wide rectnagle, expands verically
             testingIndex+=change;
 
             if (!IndexInImage(testingIndex)) break;
 
             int[] testingExpansionLimits = CalculateLimits(directionData, testingIndex, EMH);
 
-            if (testingExpansionLimits[0]!=expansionLimits[0]) {
+            if (testingExpansionLimits[0]<expansionLimits[0]) { // changed so if a new spot's info has longer it's still added
                 break;
-            } else {
-                wideRectangleHeight++;
             }
+            wideRectangleHeight++;
         }
 
-        RectangleRepresentative wideRect = new RectangleRepresentative(wideRectangleHeight,expansionLimits[0],PC.StartingIndex, PC.getColorValue());
+        RectangleRepresentative wideRect = new RectangleRepresentative(wideRectangleHeight,expansionLimits[0]+1,PC.StartingIndex, PC.getColorValue());
         //no check for wide to see if it fully fits because the long already should have
-        returnHolder[1] = wideRect; // otherwise keep it there
+        returnHolder[0] = wideRect; // otherwise keep it there
 
         return returnHolder;
     }
 
-    private RectangleRepresentative CalculateSquare(EdgeMapHolder EMH, int flatAnchorIndex, int flag, PixelChunk PC) {
+    public RectangleRepresentative CalculateSquare(EdgeMapHolder EMH, int flatAnchorIndex, int flag, PixelChunk PC) {
         int directionData = ~flag;
 
         if (Integer.bitCount(directionData)<2) return new RectangleRepresentative(1,1,flatAnchorIndex,PC.getColorValue());
@@ -662,15 +660,7 @@ public class QuadralizedDataCompressor {
             }
         }
 
-        int startingIndex = flatAnchorIndex;
-        if (dx<0) {
-            startingIndex-=size;
-        }
-        if (dy<0) {
-            startingIndex-=size*ImageDataHolder.width;
-        }
-
-        return new RectangleRepresentative(size,size,startingIndex,PC.getColorValue());
+        return new RectangleRepresentative(size,size,PC.StartingIndex,PC.getColorValue());
     }
 
     public int[] CalculateLimits(int calculationDirections, int flatAnchorIndex, EdgeMapHolder EMH) {

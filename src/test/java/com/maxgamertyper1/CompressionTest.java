@@ -1,9 +1,12 @@
 package com.maxgamertyper1;
 
 import com.maxgamertyper1.compressor.QuadralizedDataCompressor;
+import com.maxgamertyper1.datatypes.ChannelColorTypes;
+import com.maxgamertyper1.datatypes.PixelChunk;
 import com.maxgamertyper1.datatypes.ShapeUnionFind;
 import com.maxgamertyper1.datatypes.records.CornerDataRepresentative;
 import com.maxgamertyper1.datatypes.records.EdgeMapHolder;
+import com.maxgamertyper1.datatypes.records.RectangleRepresentative;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -222,5 +225,230 @@ public class CompressionTest {
         );
     }
 
-    //Next up is the actual rectangle calculation *gulp*
+    @Test
+    @Order(6)
+    @DisplayName("Uniform Rectangle Rep Test")
+    public void rectangleRectangleRepTest() {
+        QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
+        TestHelper.DataholderSetter(10,10);
+
+        PixelChunk[] chunks = ExpectedDataHolder.getExpectedUniformChunkData(ChannelColorTypes.Gray,10,10,10);
+
+        assertAll(
+                () -> assertArrayEquals(
+                        new RectangleRepresentative[]{new RectangleRepresentative(10,10,0,10)}, // as its a perfect fit, only one is made
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.UniformBasedEdgeMaps, 0, 9, chunks[0]), // right and down check
+                        "Incorrect Right and Down Rectangle"
+                        ),
+                () -> assertArrayEquals(
+                        new RectangleRepresentative[]{new RectangleRepresentative(10,10,0,10)}, // right and up check
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.UniformBasedEdgeMaps, 90, 5, chunks[0]),
+                        "Incorrect Right and Up Rectangle"
+                ),
+                () -> assertArrayEquals(
+                        new RectangleRepresentative[]{new RectangleRepresentative(10,10,0,10)},
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.UniformBasedEdgeMaps, 9, 10, chunks[0]),// left and down check
+                        "Incorrect Left and Down Rectangle"
+                ),
+                () -> assertArrayEquals(
+                        new RectangleRepresentative[]{new RectangleRepresentative(10,10,0,10)},
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.UniformBasedEdgeMaps, 99, 6, chunks[0]), // left and up check
+                        "Incorrect Left and Up Rectangle"
+                ),
+
+                //Squares
+                () -> assertEquals(
+                        new RectangleRepresentative(10,10,0,10), // as its a perfect fit, only one is made
+                        QDC.CalculateSquare(ExpectedDataHolder.UniformBasedEdgeMaps, 0, 9, chunks[0]), // right and down check
+                        "Incorrect Right and Down Square"
+                ),
+                () -> assertEquals(
+                        new RectangleRepresentative(10,10,0,10), // right and up check
+                        QDC.CalculateSquare(ExpectedDataHolder.UniformBasedEdgeMaps, 90, 5, chunks[0]),
+                        "Incorrect Right and Up Square"
+                ),
+                () -> assertEquals(
+                        new RectangleRepresentative(10,10,0,10),
+                        QDC.CalculateSquare(ExpectedDataHolder.UniformBasedEdgeMaps, 9, 10, chunks[0]),// left and down check
+                        "Incorrect Left and Down Square"
+                ),
+                () -> assertEquals(
+                        new RectangleRepresentative(10,10,0,10),
+                        QDC.CalculateSquare(ExpectedDataHolder.UniformBasedEdgeMaps, 99, 6, chunks[0]), // left and up check
+                        "Incorrect Left and Up Square"
+                )
+        );
+    }
+
+    @Test
+    @Order(7)
+    @DisplayName("Block Rectangle Rep Test")
+    public void blockRectangleRepTest() {
+        QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
+        TestHelper.DataholderSetter(10,10);
+
+        PixelChunk[] chunks = ExpectedDataHolder.getExpectedBlockChunkData(ChannelColorTypes.Gray,10,100,255);
+
+        assertAll(
+                //Rectangles
+                // 0's
+                () -> assertArrayEquals( // the 0 from the top-left
+                        new RectangleRepresentative[]{
+                                new RectangleRepresentative(1, 10, 0, 10),
+                                new RectangleRepresentative(10, 1, 0, 10)
+                        },
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.BlockBasedEdgeMaps,0,9,chunks[0])
+                ),
+                () -> assertArrayEquals( // the 0 from the bottom-right
+                        new RectangleRepresentative[]{
+                                new RectangleRepresentative(2, 10, 0, 10),
+                                new RectangleRepresentative(10, 3, 0, 10)
+                        },
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.BlockBasedEdgeMaps,99,6,chunks[0])
+                ),
+
+                // 11's
+                () -> assertArrayEquals( // the 11 at the top left part
+                        new RectangleRepresentative[]{
+                                new RectangleRepresentative(6, 1, 11, 100),
+                                new RectangleRepresentative(6, 1, 11, 100)
+                        },
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.BlockBasedEdgeMaps,11,11,chunks[1])
+                ),
+                () -> assertArrayEquals( // the 11 at the bottom corner connection of the U
+                        new RectangleRepresentative[]{
+                                new RectangleRepresentative(1, 4, 11, 100),
+                                new RectangleRepresentative(2, 1, 11, 100)
+                        },
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.BlockBasedEdgeMaps,72,5,chunks[1])
+                ),
+
+                // 12's [this is just a square so only 1 test]
+                () -> assertArrayEquals( // the 12 in the top-left
+                        new RectangleRepresentative[]{
+                                new RectangleRepresentative(4, 4, 12, 255)
+                        },
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.BlockBasedEdgeMaps,12,9,chunks[2])
+                ),
+
+                // 52's
+                () -> assertArrayEquals( // the 52 in the top-left
+                        new RectangleRepresentative[]{
+                                new RectangleRepresentative(1, 4, 52, 10),
+                                new RectangleRepresentative(1, 4, 52, 10),
+                        },
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.BlockBasedEdgeMaps,52,13,chunks[3])
+                ),
+                () -> assertArrayEquals( // the 52 in the under part at the left
+                        new RectangleRepresentative[]{
+                                new RectangleRepresentative(2, 2, 52, 10),
+                                new RectangleRepresentative(2, 2, 52, 10),
+                        },
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.BlockBasedEdgeMaps,63,5,chunks[3])
+                ),
+
+                // basic squares test
+                //0
+                () -> assertEquals( // the 0 from the bottom-right
+                        new RectangleRepresentative(3, 3, 0, 10),
+                        QDC.CalculateSquare(ExpectedDataHolder.BlockBasedEdgeMaps,99,6,chunks[0])
+                ),
+
+                // 11's
+                () -> assertEquals( // the 11 at the U corner grab on the left
+                        new RectangleRepresentative(1, 1, 11, 100),
+                        QDC.CalculateSquare(ExpectedDataHolder.BlockBasedEdgeMaps,62,10,chunks[1])
+                ),
+
+                // 12's
+                () -> assertEquals( // the 12 at the bottom left
+                        new RectangleRepresentative(4, 4, 12, 255),
+                        QDC.CalculateSquare(ExpectedDataHolder.BlockBasedEdgeMaps,42,5,chunks[2])
+                ),
+
+                //52's
+                () -> assertEquals( // the 52 at the bottom right
+                        new RectangleRepresentative(2, 2, 52, 10),
+                        QDC.CalculateSquare(ExpectedDataHolder.BlockBasedEdgeMaps,64,6,chunks[3])
+                )
+        );
+    }
+
+    @Test
+    @Order(8)
+    @DisplayName("Static Rectangle Rep Test")
+    public void staticRectangleRepTest() {
+        QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
+        TestHelper.DataholderSetter(10,10);
+
+        PixelChunk[] chunks = ExpectedDataHolder.getExpectedStaticChunkData(ChannelColorTypes.Gray,10,100);
+
+        assertAll(
+                // Rectangles
+                // 0's
+                () -> assertArrayEquals( // the 0 from the top-left
+                        new RectangleRepresentative[]{
+                                new RectangleRepresentative(2, 6, 0, 100),
+                                new RectangleRepresentative(2, 6, 0, 100)
+                        },
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.StaticBasedEdgeMaps,0,9,chunks[0])
+                ),
+                () -> assertArrayEquals( // the 0 from the bottom in the left
+                        new RectangleRepresentative[]{
+                                new RectangleRepresentative(3, 2, 0, 100),
+                                new RectangleRepresentative(3, 2, 0, 100)
+                        },
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.StaticBasedEdgeMaps,22,5,chunks[0])
+                ),
+
+                // 40's
+                () -> assertArrayEquals( // the 40 at the top left
+                        new RectangleRepresentative[]{
+                                new RectangleRepresentative(6, 2, 40, 100),
+                                new RectangleRepresentative(6, 2, 40, 100)
+                        },
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.StaticBasedEdgeMaps,40,9,chunks[2])
+                ),
+                () -> assertArrayEquals( // the 40 at the left-most area at the top
+                        new RectangleRepresentative[]{
+                                new RectangleRepresentative(2, 3, 40, 100),
+                                new RectangleRepresentative(2, 3, 40, 100)
+                        },
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.StaticBasedEdgeMaps,62,10,chunks[2])
+                ),
+
+                // 6's
+                () -> assertArrayEquals( // the 6 at the top-left most point
+                        new RectangleRepresentative[]{
+                                new RectangleRepresentative(4, 4, 6, 10),
+                                new RectangleRepresentative(4, 4, 6, 10)
+                        },
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.StaticBasedEdgeMaps,6,9,chunks[1])
+                ),
+                () -> assertArrayEquals( // the 6 at the top-left most point
+                        new RectangleRepresentative[]{
+                                new RectangleRepresentative(2, 6, 6, 10),
+                                new RectangleRepresentative(8, 2, 6, 10)
+                        },
+                        QDC.CalculateLongRectangles(ExpectedDataHolder.StaticBasedEdgeMaps,24,9,chunks[1])
+                ),
+
+                // Squares
+                // 0's
+                () -> assertEquals( // the 0 at the bottom-right most point in the outdent
+                        new RectangleRepresentative(2,2,0,100),
+                        QDC.CalculateSquare(ExpectedDataHolder.StaticBasedEdgeMaps,23,6,chunks[0])
+                ),
+                // 6's
+                () -> assertEquals( // the 6 before the 57
+                        new RectangleRepresentative(2,2,6,10),
+                        QDC.CalculateSquare(ExpectedDataHolder.StaticBasedEdgeMaps,56,10,chunks[1])
+                ),
+                // 40's
+                () -> assertEquals( // the 40 at the bottom-right most point in the outdent
+                        new RectangleRepresentative(2,2,40,100),
+                        QDC.CalculateSquare(ExpectedDataHolder.StaticBasedEdgeMaps,72,6,chunks[2])
+                )
+        );
+    }
 }

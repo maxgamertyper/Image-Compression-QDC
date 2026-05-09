@@ -95,25 +95,25 @@ public class ExpectedDataHolder {
 
     public static PixelChunk[] getExpectedStaticChunkData(ChannelColorTypes colorType, int val, int BVA) {
         return new PixelChunk[]{
-                buildPixelChunk(colorType,BVA,0,6, new int[][]{{0,9}, {5,10}, {10,5}, {15,6}, {22,5}, {23,6}}), // box 1
+                buildPixelChunk(colorType,BVA,0,6, new int[][]{{0,9}, {5,10}, {10,5}, {15,6}, {22,5}, {23,6}},14), // box 1
                 buildPixelChunk(colorType,val,6,14, new int[][]{
                         {6,9}, {9,10}, {20,9}, {21,10}, {24,9}, {30,5}, {47,5}, {52,5}, {56,10}, {77,5}, {82,9}, {86,10}, {92,5}, {99,6}
-                }), // background
-                buildPixelChunk(colorType,BVA,40,6, new int[][]{{40,9}, {41,10}, {62,10}, {72,6}, {90,5}, {91,6}}), // box 2
+                }, 68), // background
+                buildPixelChunk(colorType,BVA,40,6, new int[][]{{40,9}, {41,10}, {62,10}, {72,6}, {90,5}, {91,6}},14), // box 2
         }; // isolated indexes are not included in pixel chunks
     }
     public static PixelChunk[] getExpectedBlockChunkData(ChannelColorTypes colorType, int val, int UVA, int BVA) {
         return new PixelChunk[]{
-                buildPixelChunk(colorType,val,0,6, new int[][]{{0,9}, {9,10}, {71,10}, {76,9}, {90,5}, {99,6}}),
-                buildPixelChunk(colorType,UVA,11,10, new int[][]{{11,11}, {16,11}, {61,5}, {62,10}, {65,9}, {66,6}, {72,5}, {75,6}}),
-                buildPixelChunk(colorType,BVA,12,4, new int[][]{{12,9}, {15,10}, {42,5}, {45,6}}),
-                buildPixelChunk(colorType,val,52,6, new int[][]{{52,13}, {55,14}, {63,5}, {64,6}})
+                buildPixelChunk(colorType,val,0,6, new int[][]{{0,9}, {9,10}, {71,10}, {76,9}, {90,5}, {99,6}},60),
+                buildPixelChunk(colorType,UVA,11,10, new int[][]{{11,11}, {16,11}, {61,5}, {62,10}, {65,9}, {66,6}, {72,5}, {75,6}},18),
+                buildPixelChunk(colorType,BVA,12,4, new int[][]{{12,9}, {15,10}, {42,5}, {45,6}},16),
+                buildPixelChunk(colorType,val,52,6, new int[][]{{52,13}, {55,14}, {63,5}, {64,6}},6)
         };
     }
 
     public static PixelChunk[] getExpectedUniformChunkData(ChannelColorTypes colorType, int val, int width, int height) {
         return new PixelChunk[]{
-                buildPixelChunk(colorType,val,0,6, new int[][]{{0,9}, {width-1,10}, {height*(width-1),5}, {height*width-1,6}}),
+                buildPixelChunk(colorType,val,0,6, new int[][]{{0,9}, {width-1,10}, {height*(width-1),5}, {height*width-1,6}},width*height),
         };
     }
 
@@ -125,15 +125,15 @@ public class ExpectedDataHolder {
     // Compression Data
 
     public static final PixelChunk fullSquare = TestHelper.buildPixelChunk(ChannelColorTypes.Alpha,10,0,4,
-            new int[][]{{0,9},{9,10},{90,5},{99,6}}
+            new int[][]{{0,9},{9,10},{90,5},{99,6}},100
     ); // a 10x10 square (this represents all 0 hole rectangles)
 
     public static final PixelChunk holeSquare = TestHelper.buildPixelChunk(ChannelColorTypes.Alpha,10,0,4,
-            new int[][]{{0,9},{9,10},{90,5},{99,6}}
+            new int[][]{{0,9},{9,10},{90,5},{99,6}},96
     ); // a 10x10 square with a hole in the middle (change is in the shapeOrganizer)
 
     public static final PixelChunk swissCheese = TestHelper.buildPixelChunk(ChannelColorTypes.Alpha,10,0,7,
-            new int[][]{{0,9},{4,10},{7,7},{16,10},{20,6},{24,6}}
+            new int[][]{{0,9},{4,10},{7,7},{16,10},{20,6},{24,6}},21
     );
 
     public static final int[] holeSquareParentIDs = new int[] {
