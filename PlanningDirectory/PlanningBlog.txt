@@ -905,3 +905,31 @@ Cool, all the base Rectangle and Square calculations work
 the scary part is the stacked where it starts cutting things out
 because its obviously not good to make a new int[][] each time
 so i was thinking have a preprocessed bitset where it checks that for when a blockage is within the range of the found rectangle
+
+
+I've changed my mind recently, i don't think i'll make a website (unless one of my hbs does it)
+instead i'll just make it a CLI that you drag an image onto a bat file and it'll encode and decode it
+maybe i'll include the chaos monkey and image subtraction python files
+Or i could just code those in java and add them to the CLI
+
+5/16:
+yipppeeee!
+took my apes test, it was brain dead easy
+so if i dont get a 5 im lwk gonna be mad
+got a 1470 on my SAT sadly so i gotta retake it
+but i dint really study math so ill do that this time
+730RW/740M split
+
+now time to make that bitset thing
+cool i coded it with a few issues determining some weird stuff like
+an off by one issue (why are there so many of these, like geez)
+and then just figuring out the logic itself was kinda weird
+
+Thinking about it, i can't just set the starting index to the location of the pixel chunk because it could be cut out so i'll have to calculate it
+
+Now, based on all the test
+IN THEORY!!!
+it works
+
+but lets be so fr rn
+ts is NOT gonna work first try

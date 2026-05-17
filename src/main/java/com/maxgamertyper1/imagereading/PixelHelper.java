@@ -8,7 +8,7 @@ public class PixelHelper {
         return new int[]{index % width,Math.floorDiv(index, width)};
     }
     public static boolean IndexIsOnLeftColomn(int width, int index) {
-        return index%width==0; // however, here the 0-index helps us, but idk how to wxplain it (i.e. width=5; 0,1,2,3,4 (first row), 5,6,7,8,9; so its modulo 5 for it)
+        return index%width==0; // however, here the 0-index helps us, but idk how to wxplain it (i.e. length=5; 0,1,2,3,4 (first row), 5,6,7,8,9; so its modulo 5 for it)
     }
     public static boolean IndexIsOnRightColomn(int width, int index) {
         return index%width==width-1;

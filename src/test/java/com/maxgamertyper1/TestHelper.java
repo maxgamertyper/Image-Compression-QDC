@@ -8,6 +8,7 @@ import com.maxgamertyper1.imagereading.ImageDataHolder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 
 public class TestHelper {
     public static ColorChannel getUniformColorChannel(ChannelColorTypes color, int value, int width, int height) {
@@ -80,4 +81,6 @@ public class TestHelper {
         ImageDataHolder.width = width;
         ImageDataHolder.flatsize = width*height;
     }
+
+    public static final BitSet emptyBitSet =  new BitSet(100);
 }

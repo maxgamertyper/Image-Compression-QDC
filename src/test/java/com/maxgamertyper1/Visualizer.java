@@ -18,6 +18,8 @@ import java.util.Random;
 
 public class Visualizer {
 
+    // I know this is really bad right now, i'll make it better after i do all of my tests!
+    
     private void generateEdgeColoredBlockChannels(ChunkedImageRepresentative chunkedImageRepresentative, int width, int height, String outputFileName) throws IOException {
         Random rand = new Random(42);
 

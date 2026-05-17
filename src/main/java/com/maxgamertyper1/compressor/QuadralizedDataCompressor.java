@@ -434,108 +434,107 @@ public class QuadralizedDataCompressor {
         return (continuity/((double) convexCorners * convexCorners))*holes <= 1; // prediction for rectangle efficiency basically
     }
 
-    private ArrayList<RectangleRepresentative> RectangleCreator(PixelChunk pixelChunk, int[] flagHolder, ShapeUnionFind shapeOrganizer, EdgeMapHolder EMH) { // greedy algorith
-        int area = pixelChunk.getTotalArea();
+    public ArrayList<RectangleRepresentative> RectangleCreator(PixelChunk pixelChunk, int[] flagHolder, ShapeUnionFind shapeOrganizer, EdgeMapHolder EMH) { // greedy algorith
+            int area = pixelChunk.getTotalArea();
 
-        ArrayList<CornerPoint> processingList = new ArrayList<>(pixelChunk.cornerPoints);
-        ArrayList<RectangleRepresentative> returnHolder = new ArrayList<RectangleRepresentative>();
+            ArrayList<CornerPoint> processingList = new ArrayList<>(pixelChunk.cornerPoints);
+            ArrayList<RectangleRepresentative> returnHolder = new ArrayList<RectangleRepresentative>();
 
-        BitSet unproccessedPixels = new BitSet(ImageDataHolder.flatsize);
-        int[] raw = shapeOrganizer.getRawData();
+            BitSet proccessedPixels = new BitSet(ImageDataHolder.flatsize);
+            int[] raw = shapeOrganizer.getRawData();
 
-        for (int currentPixelIndex=0; currentPixelIndex<raw.length; currentPixelIndex++) {
-            int shapeID = raw[currentPixelIndex];
-            if (shapeID==pixelChunk.StartingIndex) {
-                unproccessedPixels.set(currentPixelIndex);
-            }
-        }
-
-        while (area>0) {
-            // find the optimal rectangle
-            RectangleRepresentative currentGlobalBest = new RectangleRepresentative(0,0,1,0);
-
-            for (CornerPoint processingCorner : processingList) {
-                int flatAnchorIndex = processingCorner.index();
-
-                int flag = processingCorner.flagmask();
-
-                RectangleRepresentative[] longRectangles = CalculateLongRectangles(EMH, flatAnchorIndex, flag, pixelChunk);
-
-                if (longRectangles.length==1) {
-                    currentGlobalBest = longRectangles[0];
-                    break;
-                }
-
-                RectangleRepresentative localKingRect = longRectangles[1]; // the initial wide rectangle (wide gets priority)
-
-                RectangleRepresentative longRectangle = longRectangles[0];
-
-                // wide or long?
-                if ((long)longRectangle.area() * localKingRect.storageCost()>(long) localKingRect.area() * longRectangle.storageCost()) {
-                    // this is the same thing as area/storage ? area/storage
-                    // its just more efficient because division sucks in terms of CPU cycles
-                    //however this heuristic itself mighe be bad and probably needs to be changed
-
-                    localKingRect = longRectangle;
-                }
-
-                RectangleRepresentative squareCalculation = CalculateSquare(EMH, flatAnchorIndex, flag, pixelChunk);
-
-                // is square better?
-                if ((long)squareCalculation.area() * localKingRect.storageCost()>(long) localKingRect.area() * squareCalculation.storageCost()) {
-                    localKingRect = squareCalculation;
-                }
-
-                // is this local king better than the other ones?
-                if ((long)localKingRect.area() * currentGlobalBest.storageCost() > (long)currentGlobalBest.area() * localKingRect.storageCost()) {
-                    currentGlobalBest = localKingRect;
+            for (int currentPixelIndex=0; currentPixelIndex<raw.length; currentPixelIndex++) {
+                int shapeID = raw[currentPixelIndex];
+                if (shapeID==pixelChunk.StartingIndex) {
+                    proccessedPixels.set(currentPixelIndex);
                 }
             }
+            proccessedPixels.flip(0,ImageDataHolder.flatsize);
 
-            // process the rectangle
+            while (area>0) {
+                // find the optimal rectangle
+                RectangleRepresentative currentGlobalBest = new RectangleRepresentative(0,0,1,0);
 
-            area-=currentGlobalBest.area();
-            processBestRectangle(currentGlobalBest, processingList, unproccessedPixels);
-            returnHolder.add(currentGlobalBest);
-        }
+                for (CornerPoint processingCorner : processingList) {
+                    int flatAnchorIndex = processingCorner.index();
 
-        return returnHolder;
+                    int flag = processingCorner.flagmask();
+
+                    RectangleRepresentative[] longRectangles = CalculateLongRectangles(EMH, flatAnchorIndex, flag, pixelChunk, proccessedPixels);
+
+                    if (longRectangles.length==1) {
+                        currentGlobalBest = longRectangles[0];
+                        break;
+                    }
+
+                    RectangleRepresentative localKingRect = longRectangles[1]; // the initial wide rectangle (wide gets priority)
+
+                    RectangleRepresentative longRectangle = longRectangles[0];
+
+                    // wide or long?
+                    if ((long)longRectangle.area() * localKingRect.storageCost()>(long) localKingRect.area() * longRectangle.storageCost()) {
+                        // this is the same thing as area/storage ? area/storage
+                        // its just more efficient because division sucks in terms of CPU cycles
+                        //however this heuristic itself mighe be bad and probably needs to be changed
+
+                        localKingRect = longRectangle;
+                    }
+
+                    RectangleRepresentative squareCalculation = CalculateSquare(EMH, flatAnchorIndex, flag, pixelChunk, proccessedPixels);
+
+                    // is square better?
+                    if ((long)squareCalculation.area() * localKingRect.storageCost()>(long) localKingRect.area() * squareCalculation.storageCost()) {
+                        localKingRect = squareCalculation;
+                    }
+
+                    // is this local king better than the other ones?
+                    if ((long)localKingRect.area() * currentGlobalBest.storageCost() > (long)currentGlobalBest.area() * localKingRect.storageCost()) {
+                        currentGlobalBest = localKingRect;
+                    }
+                }
+
+                // process the rectangle
+                area-=currentGlobalBest.area();
+                processBestRectangle(currentGlobalBest, processingList, proccessedPixels);
+                returnHolder.add(currentGlobalBest);
+            }
+
+            return returnHolder;
     }
 
-    private void processBestRectangle(RectangleRepresentative currentGlobalBest, ArrayList<CornerPoint> processingList, BitSet unproccessedPixels) {
+    public void processBestRectangle(RectangleRepresentative currentGlobalBest, ArrayList<CornerPoint> processingList, BitSet proccessedPixels) {
         int w = ImageDataHolder.width;
 
         // 1) update bitset
         for (int y = 0; y < currentGlobalBest.height(); y++) {
             int rowStart = currentGlobalBest.startingIndex() + (y * w);
-            unproccessedPixels.clear(rowStart, rowStart + currentGlobalBest.width());
+            proccessedPixels.set(rowStart, rowStart + currentGlobalBest.length());
         }
         // 2) remove swallowed corners
-        processingList.removeIf(cp -> !unproccessedPixels.get(cp.index()));
+        processingList.removeIf(cp -> proccessedPixels.get(cp.index()));
 
         int[] startingCoordinates = ReverseIndexCalculator(w, currentGlobalBest.startingIndex());
 
         // 3) add new corners
-        int right = startingCoordinates[0] + currentGlobalBest.width();
+        int right = startingCoordinates[0] + currentGlobalBest.length();
         int left = startingCoordinates[0] - 1;
         int top = startingCoordinates[1] - 1;
         int bottom = startingCoordinates[1] + currentGlobalBest.height();
 
-        // width and height are inclusive so
+        // length and height are inclusive so
         //top and bottom boundary check
-        for (int x=left; x<right; x++) {
+        for (int x=left; x<=right; x++) {
             int topTestingIndex = IndexCalculator(w,x,top);
             int bottomTestingIndex = IndexCalculator(w,x,bottom);
 
-
-            if (unproccessedPixels.get(topTestingIndex)) {
-                CornerPoint newCP = translateToCornerPoint(unproccessedPixels,topTestingIndex);
+            if (IndexInImage(topTestingIndex) && !proccessedPixels.get(topTestingIndex)) {
+                CornerPoint newCP = translateToCornerPoint(proccessedPixels,topTestingIndex);
                 if (newCP.trueCorner()) {
                     processingList.add(newCP);
                 }
             }
-            if (unproccessedPixels.get(bottomTestingIndex)) {
-                CornerPoint newCP = translateToCornerPoint(unproccessedPixels,bottomTestingIndex);
+            if (IndexInImage(bottomTestingIndex) && !proccessedPixels.get(bottomTestingIndex)) {
+                CornerPoint newCP = translateToCornerPoint(proccessedPixels,bottomTestingIndex);
                 if (newCP.trueCorner()) {
                     processingList.add(newCP);
                 }
@@ -543,28 +542,31 @@ public class QuadralizedDataCompressor {
         }
 
         // left and right boundary check
-        for (int y=top; y<bottom; y++) {
+        for (int y=top; y<=bottom; y++) {
             int leftTestingIndex = IndexCalculator(w,left,y);
             int rightTestingIndex = IndexCalculator(w,right,y);
 
-
-            if (unproccessedPixels.get(leftTestingIndex)) {
-                CornerPoint newCP = translateToCornerPoint(unproccessedPixels,leftTestingIndex);
-                if (newCP.trueCorner()) {
-                    processingList.add(newCP);
+            if (left >= 0) {
+                if (IndexInImage(leftTestingIndex) && !proccessedPixels.get(leftTestingIndex)) {
+                    CornerPoint newCP = translateToCornerPoint(proccessedPixels,leftTestingIndex);
+                    if (newCP.trueCorner()) {
+                        processingList.add(newCP);
+                    }
                 }
             }
-            if (unproccessedPixels.get(rightTestingIndex)) {
-                CornerPoint newCP = translateToCornerPoint(unproccessedPixels,rightTestingIndex);
-                if (newCP.trueCorner()) {
-                    processingList.add(newCP);
+            if (right < ImageDataHolder.width) {
+                if (IndexInImage(rightTestingIndex) && !proccessedPixels.get(rightTestingIndex)) {
+                    CornerPoint newCP = translateToCornerPoint(proccessedPixels,rightTestingIndex);
+                    if (newCP.trueCorner()) {
+                        processingList.add(newCP);
+                    }
                 }
             }
         }
 
     }
 
-    private CornerPoint translateToCornerPoint(BitSet unproccessedPixels, int flatIndex) {
+    private CornerPoint translateToCornerPoint(BitSet proccessedPixels, int flatIndex) {
         int w = ImageDataHolder.width;
         int flagmask = 0;
         // first bit is left
@@ -576,17 +578,18 @@ public class QuadralizedDataCompressor {
         int above  = flatIndex - w;
         int below  = flatIndex + w;
 
-        if (flatIndex % w == 0 || !unproccessedPixels.get(left)) flagmask |= 1;
-        if ((flatIndex + 1) % w == 0 || !unproccessedPixels.get(right)) flagmask |= 2;
-        if (below >= ImageDataHolder.flatsize || !unproccessedPixels.get(below)) flagmask |= 4;
-        if (above < 0 || !unproccessedPixels.get(above)) flagmask |= 8;
+        if (flatIndex % w == 0 || proccessedPixels.get(left)) flagmask |= 1;
+        if ((flatIndex + 1) % w == 0 || proccessedPixels.get(right)) flagmask |= 2;
+        if (below >= ImageDataHolder.flatsize || proccessedPixels.get(below)) flagmask |= 4;
+        if (above < 0 || proccessedPixels.get(above)) flagmask |= 8;
 
         return new CornerPoint(flatIndex,flagmask);
     }
 
-    public RectangleRepresentative[] CalculateLongRectangles(EdgeMapHolder EMH ,int flatAnchorIndex, int flag, PixelChunk PC) {
+    public RectangleRepresentative[] CalculateLongRectangles(EdgeMapHolder EMH ,int flatAnchorIndex, int flag, PixelChunk PC, BitSet proccessedPixels) {
         int directionData = ~flag; // not-ing the flag gives us expansion directions
         int[] expansionLimits = CalculateLimits(directionData, flatAnchorIndex, EMH);
+        int[] realLimits = ProcessedDataInclusion(proccessedPixels,expansionLimits,directionData,flatAnchorIndex);
         int longRectangleWidth = 1;
         int wideRectangleHeight = 1;
 
@@ -595,19 +598,26 @@ public class QuadralizedDataCompressor {
         int testingIndex = flatAnchorIndex;
         int change = (((directionData & 1) != 0) ? -1 : 1); // -1 if im checking left, 1 if im checking right
 
-        for (int xChange=0;xChange<expansionLimits[0];xChange++) { // the tall rectangle
+        for (int xChange=0;xChange<realLimits[0];xChange++) { // the tall rectangle
             testingIndex+=change;
 
             if (!IndexsInSameRow(testingIndex,flatAnchorIndex) || !IndexInImage(testingIndex)) break; // DOES IT MATTER IF IT BLEEDS INTO THE NEXT ROW?
 
             int[] testingExpansionLimits = CalculateLimits(directionData, testingIndex, EMH);
+            int[] realTestingExpansionLimits = ProcessedDataInclusion(proccessedPixels,testingExpansionLimits,directionData,flatAnchorIndex);
 
-            if (testingExpansionLimits[1]<expansionLimits[1]) { // see next one for change
+
+            if (realTestingExpansionLimits[1]<realLimits[1]) { // see next one for change
                 break;
             }
             longRectangleWidth++;
         }
-        RectangleRepresentative longRect = new RectangleRepresentative(expansionLimits[1]+1,longRectangleWidth,PC.StartingIndex, PC.getColorValue());
+        RectangleRepresentative longRect = new RectangleRepresentative(
+                realLimits[1]+1,
+                longRectangleWidth,
+                RectangleStartingIndexCalculator(flatAnchorIndex,realLimits[1]+1,longRectangleWidth,directionData),
+                PC.getColorValue()
+        );
 
         if (longRect.area()==PC.getTotalArea()) {
             return new RectangleRepresentative[]{longRect}; // return the perfect fit
@@ -617,50 +627,87 @@ public class QuadralizedDataCompressor {
 
         testingIndex = flatAnchorIndex;
         change = ImageDataHolder.width*(((directionData & 8) != 0) ? -1 : 1); // -height if im checking up, and height if im checking down
-        for (int yChange=0;yChange<expansionLimits[1];yChange++) { // the wide rectnagle, expands verically
+        for (int yChange=0;yChange<realLimits[1];yChange++) { // the wide rectnagle, expands verically
             testingIndex+=change;
 
             if (!IndexInImage(testingIndex)) break;
 
             int[] testingExpansionLimits = CalculateLimits(directionData, testingIndex, EMH);
+            int[] realTestingExpansionLimits = ProcessedDataInclusion(proccessedPixels,testingExpansionLimits,directionData,flatAnchorIndex);
 
-            if (testingExpansionLimits[0]<expansionLimits[0]) { // changed so if a new spot's info has longer it's still added
+            if (realTestingExpansionLimits[0]<realLimits[0]) { // changed so if a new spot's info has longer it's still added
                 break;
             }
             wideRectangleHeight++;
         }
 
-        RectangleRepresentative wideRect = new RectangleRepresentative(wideRectangleHeight,expansionLimits[0]+1,PC.StartingIndex, PC.getColorValue());
+        RectangleRepresentative wideRect = new RectangleRepresentative(
+                wideRectangleHeight,
+                realLimits[0]+1,
+                RectangleStartingIndexCalculator(flatAnchorIndex,wideRectangleHeight,realLimits[0]+1,directionData),
+                PC.getColorValue()
+        );
         //no check for wide to see if it fully fits because the long already should have
         returnHolder[0] = wideRect; // otherwise keep it there
 
         return returnHolder;
     }
 
-    public RectangleRepresentative CalculateSquare(EdgeMapHolder EMH, int flatAnchorIndex, int flag, PixelChunk PC) {
+    private int RectangleStartingIndexCalculator(int flatAnchorIndex, int height, int width, int directionFlag) {
+        flatAnchorIndex -= (width-1) * (((directionFlag & 1) != 0) ? 1 : 0); // 0 is used because if im moving right, its already as far left as it can be so i dont care
+        flatAnchorIndex -= (height-1) * ImageDataHolder.width * (((directionFlag & 8) != 0) ? 1 : 0); // same as above but for going down
+        return flatAnchorIndex;
+    }
+
+    public RectangleRepresentative CalculateSquare(EdgeMapHolder EMH, int flatAnchorIndex, int flag, PixelChunk PC, BitSet proccessedPixels) {
         int directionData = ~flag;
 
         if (Integer.bitCount(directionData)<2) return new RectangleRepresentative(1,1,flatAnchorIndex,PC.getColorValue());
 
         int[] expansionLimits = CalculateLimits(directionData, flatAnchorIndex, EMH);
-        int[] flatCoordinates = ReverseIndexCalculator(ImageDataHolder.width,flatAnchorIndex);
+        int[] trueLimits = ProcessedDataInclusion(proccessedPixels,expansionLimits,directionData,flatAnchorIndex);
 
         int relativeIndex = flatAnchorIndex;
         int dx = (((directionData & 1) != 0) ? -1 : 1);
         int dy = ImageDataHolder.width*(((directionData & 8) != 0) ? -1 : 1);
 
         int size=1;
-        for (; size<=Math.min(expansionLimits[0],expansionLimits[1]); size++) {
+        for (; size<=Math.min(trueLimits[0],trueLimits[1]); size++) {
             relativeIndex+=dx+dy;
 
             int[] relativeExpansionLimits = CalculateLimits(flag, relativeIndex, EMH); // we actually want to calculate in the direction of the flag to check if theres any intersection
+            int[] relativeTrueLimits = ProcessedDataInclusion(proccessedPixels,relativeExpansionLimits,directionData,flatAnchorIndex);
 
-            if (!(relativeExpansionLimits[0] >= size) || !(relativeExpansionLimits[1] >= size)) {
+            if (relativeTrueLimits[0] < size || relativeTrueLimits[1] < size) {
                 break;
             }
         }
 
-        return new RectangleRepresentative(size,size,PC.StartingIndex,PC.getColorValue());
+        return new RectangleRepresentative(size,size,RectangleStartingIndexCalculator(flatAnchorIndex,size,size,directionData),PC.getColorValue());
+    }
+
+    private int[] ProcessedDataInclusion(BitSet processedPixels, int[] calculateLimitReturn, int calculationDirections, int flatAnchorIndex) {
+        int limitX = calculateLimitReturn[0];
+        int limitY = calculateLimitReturn[1];
+
+        int trueLimitX = 1; // otherwise the first test is just the index
+        int trueLimitY = 1;
+
+        int dx = (((calculationDirections & 1) != 0) ? -1 : 1);
+        for (;trueLimitX<=limitX;trueLimitX++) {
+            int testingLocation = flatAnchorIndex+(trueLimitX*dx);
+
+            if (!IndexInImage(testingLocation) || processedPixels.get(testingLocation)) break;
+        }
+
+        int dy = ImageDataHolder.width*(((calculationDirections & 8) != 0) ? -1 : 1);
+        for (;trueLimitY<=limitY;trueLimitY++) {
+            int testingLocation = flatAnchorIndex+(trueLimitY*dy);
+
+            if (!IndexInImage(testingLocation) || processedPixels.get(testingLocation)) break;
+        }
+
+        return new int[]{trueLimitX-1,trueLimitY-1};
     }
 
     public int[] CalculateLimits(int calculationDirections, int flatAnchorIndex, EdgeMapHolder EMH) {

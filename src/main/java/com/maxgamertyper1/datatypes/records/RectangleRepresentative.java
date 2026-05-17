@@ -1,12 +1,12 @@
 package com.maxgamertyper1.datatypes.records;
 
-public record RectangleRepresentative(int height, int width, int startingIndex, int value) {
+public record RectangleRepresentative(int height, int length, int startingIndex, int value) {
     public int area() {
-        return width * height;
+        return length * height;
     }
 
     public int storageCost() {
-        return dataBitLength(height)+dataBitLength(width)+dataBitLength(value);
+        return dataBitLength(height)+dataBitLength(length)+dataBitLength(value);
     }
 
     private int dataBitLength(int data) {
