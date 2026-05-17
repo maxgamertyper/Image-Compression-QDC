@@ -11,6 +11,7 @@ public class ChunkedImageRepresentative {
     private int ChunkCount;
     private int IndexCount;
     private final boolean IsPaeth;
+    private int[] initialPaethValues;
 
     public ChunkedImageRepresentative(boolean isGrayscale, boolean uniformMaxAlpha, boolean IsPaeth) {
         this.grayScale = isGrayscale;
@@ -82,5 +83,13 @@ public class ChunkedImageRepresentative {
 
     public boolean isUniformMaxAlpha() {
         return uniformMaxAlpha;
+    }
+
+    public void setInitialPaethValues(int[] values) {
+        this.initialPaethValues = values;
+    }
+
+    public int[] getInitialPaethValues() {
+        return initialPaethValues;
     }
 }

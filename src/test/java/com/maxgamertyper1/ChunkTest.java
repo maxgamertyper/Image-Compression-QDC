@@ -203,7 +203,7 @@ public class ChunkTest {
         // no need to test the shape organizer as its just passed in to read data and is not modified
 
         assertAll(
-                () -> assertEquals(0,SGR.IsolatedIndexes().size(),"Incorrect Isolated Index Calculation"),
+                () -> assertEquals(0,SGR.IsolatedIndexes().Size(),"Incorrect Isolated Index Calculation"),
                 () -> assertEquals(4,chunks.length,"Incorrect Chunk Count"),
 
                 // first Pixel Chunk (shape ID: 0); background
@@ -304,7 +304,7 @@ public class ChunkTest {
         // no need to test the shape organizer as its just passed in to read data and is not modified
 
         assertAll(
-                () -> assertEquals(4,SGR.IsolatedIndexes().size(),"Incorrect Isolated Index Calculation"),
+                () -> assertEquals(4,SGR.IsolatedIndexes().Size(),"Incorrect Isolated Index Calculation"),
                 () -> assertEquals(3,chunks.length,"Incorrect Chunk Count"),
 
                 // first Pixel Chunk (shape ID: 0); background

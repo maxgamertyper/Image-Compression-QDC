@@ -16,7 +16,7 @@ public class Main {
         long start = System.currentTimeMillis();
         long end;
 
-        ImageReader.ReadAllImageContent("TestingImages/blankimage2.png");
+        ImageReader.ReadAllImageContent("CompressionTesting/all_colors_noise.png");
         System.out.println("Image Data: \n" +"Name: "+ ImageDataHolder.metaImageName +"\nWidth: "+ImageDataHolder.width + "\nHeight: " + ImageDataHolder.height +"\nExtension: "+ImageDataHolder.fileType +"\nGrayscale:"+ImageDataHolder.isGrayscale + "\nUniform Maximum Alpha:" + ImageDataHolder.UniformMaxAlpha + "\nUsing Version: "+ FinalizedCompressorData.compressionVersionMajor+"."+FinalizedCompressorData.compressionVersionMinor);
 
         end = System.currentTimeMillis();
@@ -30,13 +30,12 @@ public class Main {
         System.out.println("Paeth encoding took: " + (end - start) + "ms");
         start = System.currentTimeMillis();
 
-
         ChannelConcurrencyPercents dataPercents = QDC.getChannelConncurrencyPercents(); // IMPORTANT FOR LATER
 
         System.out.println("Delta noise percent: "+(1-dataPercents.deltaChunkRate())*100);
         System.out.println("Color noise percent: "+(1-dataPercents.colorChunkRate())*100);
 
-        boolean useColoredBFSPrediction = dataPercents.colorChunkRate() >= dataPercents.deltaChunkRate();
+        boolean useColoredBFSPrediction = dataPercents.colorChunkRate() >= dataPercents.deltaChunkRate();;
         FinalizedCompressorData.usesColorCompression = useColoredBFSPrediction;
 
         end = System.currentTimeMillis();
@@ -56,21 +55,32 @@ public class Main {
         System.out.println("Flag Processing and Shaping (concurrent) took: " + (end - start) + "ms");
         start = System.currentTimeMillis();
 
-        QDC.QuadralizedDataCompressed(chunkedImage);
+        CompressedImageRepresentative FinalCompression = QDC.QuadralizedDataCompressed(chunkedImage, useColoredBFSPrediction);
 
         end = System.currentTimeMillis();
         System.out.println("Calculating Rectangles and Corners took: " + (end - start) + "ms");
         start = System.currentTimeMillis();
 
-        System.out.println("Colored Chunking? "+useColoredBFSPrediction+";\nChunked:\n\t Actual Chunks: "+chunkedImage.getChunkCount()+"; Isolated Indexes: "+chunkedImage.getIndexCount());
+        for (CompressedColorChannel channel : FinalCompression.getCompressedChannels()) {
+            System.out.println("\n\nChannel (Color: " + channel.getChannelColorType() + ", Paeth? " + !FinalCompression.isPaethEncoded() + ") Breakdown:");
+            System.out.println("\t Rectangles: "+ channel.getRectangleCount() + " Corners: "+channel.getCornerCount()+" Isolated Indexes: "+channel.getIsolatedCount());
 
-        for (ChunkedColorChannel channel : chunkedImage.getChunkedChannels()) {
-            System.out.println("Color type: "+channel.getChannelType());
-            System.out.println("-------------------------------Chunks: ");
-            System.out.println(Arrays.toString(channel.getChannelChunks()));
+            System.out.println("----------- Detailed Breakdown: ");
+            System.out.println("Channel Starting Index: "+channel.getInitialPixel());
 
-            System.out.println("----------------------------------Isolated Indexes: ");
-            System.out.println(Arrays.toString(channel.getChannelIsolatedIndexes()));
+            System.out.println("------------------------------------");
+            System.out.println("\t Isolated Indexes: ");
+            System.out.println(Arrays.toString(channel.getIsolatedIndexes()));
+            System.out.println("\t Corresponding Values: ");
+            System.out.println(Arrays.toString(channel.getCorrespondingIsolatedValues()));
+
+            System.out.println("------------------------------------");
+            System.out.println("\t Rectangles: ");
+            System.out.println(Arrays.toString(channel.getBuiltRectangles()));
+
+            System.out.println("------------------------------------");
+            System.out.println("\t Corners: ");
+            System.out.println(Arrays.toString(channel.getBuiltCorners()));
         }
     }
 }

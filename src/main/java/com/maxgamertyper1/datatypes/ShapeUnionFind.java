@@ -8,6 +8,8 @@ import java.util.BitSet;
 import static com.maxgamertyper1.imagereading.PixelHelper.IndexInImage;
 import static com.maxgamertyper1.imagereading.PixelHelper.IndexsInSameRow;
 
+ // this stuff wastes a ton of space so i might try to figure out a primitive hash map or smth
+
 public class ShapeUnionFind {
     private final int[] parentPixels;
     private int[] shapeAreasBasedOnStart;
@@ -118,63 +120,73 @@ public class ShapeUnionFind {
     }
 
     public void calculatePerimiterAndHoles(int[] relativeFlags) {
+        if (rootIndexes==null) {
+            this.calculateShapeRoots();
+        }
         shapeHolesBasedOnStart = new int[ImageDataHolder.flatsize];
-        shapePerimiterBasedOnStart = new int[ImageDataHolder.flatsize];
 
-        BitSet hasMultipleSurroundies = new BitSet(ImageDataHolder.flatsize);
-        int[] originalSurrounderBasedOnStart = new int[ImageDataHolder.flatsize];
+        IntArrayList[] perimiterHolders = new IntArrayList[rootIndexes.length];
+        int[] addressTable = new int[ImageDataHolder.flatsize];
+        Arrays.fill(addressTable,-1);
 
-        Arrays.fill(originalSurrounderBasedOnStart,-1);
+        for (int i=0; i<rootIndexes.length; i++) {
+            int location = rootIndexes[i];
+            addressTable[location] = i;
+            perimiterHolders[i] = new IntArrayList(16);
+        }
 
         for (int currentIndex=0; currentIndex<relativeFlags.length; currentIndex++) {
             int flag = relativeFlags[currentIndex];
             int root = Find(currentIndex);
 
-            shapePerimiterBasedOnStart[root]+=Integer.bitCount(flag);
-
-            if (hasMultipleSurroundies.get(root)) continue;
-
             if ((flag&8)!=0) { // if theres a top boundary
                 int aboveIndex = currentIndex-ImageDataHolder.width;
-
-                HandleSide(root,aboveIndex,hasMultipleSurroundies,originalSurrounderBasedOnStart);
+                HandleSideTheSequel(root, aboveIndex, perimiterHolders, addressTable);
             }
             if ((flag&4)!=0) { // if theres a bottom boundary
                 int belowIndex = currentIndex+ImageDataHolder.width;
-
-                HandleSide(root,belowIndex,hasMultipleSurroundies,originalSurrounderBasedOnStart);
+                HandleSideTheSequel(root, belowIndex, perimiterHolders, addressTable);
             }
             if ((flag&2)!=0) { // if theres a right boundary
                 int rightIndex = currentIndex+1;
-
-                HandleSide(root,rightIndex,hasMultipleSurroundies,originalSurrounderBasedOnStart);
+                HandleSideTheSequel(root, rightIndex, perimiterHolders, addressTable);
             }
             if ((flag&1)!=0) { // if theres a left boundary
                 int leftIndex = currentIndex-1;
-
-                HandleSide(root,leftIndex,hasMultipleSurroundies,originalSurrounderBasedOnStart);
+                HandleSideTheSequel(root, leftIndex, perimiterHolders, addressTable);
             }
         }
-        if (rootIndexes==null) {
-            this.calculateShapeRoots();
+
+        // NOTE: may be better to make a primitve set for this
+        for (IntArrayList IAL : perimiterHolders) {
+            IAL.removeDuplicatesUnsorted();
         }
-        for (int root : rootIndexes) {
-            if (!hasMultipleSurroundies.get(root)) {
-                // never 0 as that touches an edge and will be marked false; so that doesnt need to be checked as its always false
-                shapeHolesBasedOnStart[Find(root-1)]++;
+
+        // NOTE: might be better to make this a queue that only processes the new updated shapes
+        int holesFound = 1;
+        while (holesFound!=0) {
+            holesFound=0;
+
+            for (int i=0; i<perimiterHolders.length; i++) {
+                IntArrayList currentPerimiterTouchers = perimiterHolders[i];
+
+                if (currentPerimiterTouchers.Size()==1) {
+                    int parentShape = currentPerimiterTouchers.atIndex(0);
+                    perimiterHolders[addressTable[parentShape]].Remove(rootIndexes[i]);
+                    holesFound++;
+                    shapeHolesBasedOnStart[currentPerimiterTouchers.atIndex(0)]++;
+                    currentPerimiterTouchers.Clear();
+                }
             }
         }
     }
 
-    private void HandleSide(int root, int newIndex, BitSet hasMultipleSurroundies, int[] originalSurrounderBasedOnStart) {
+    private void HandleSideTheSequel(int root, int newIndex, IntArrayList[] perimiterHolders, int[] addressTable) {
+        int address = addressTable[root];
         if (IndexInImage(newIndex)) {
-            if (originalSurrounderBasedOnStart[root]==-1) {
-                originalSurrounderBasedOnStart[root] = Find(newIndex);
-            } else if (originalSurrounderBasedOnStart[root]!=Find(newIndex)) {
-                hasMultipleSurroundies.set(root);
-            }
+            perimiterHolders[address].Add(parentPixels[newIndex]);
         } else {
-            hasMultipleSurroundies.set(root); // if its on the bounds of the image, its not a hole bro; it either has to touch the bounds again (which then it'd be the whole image), or it touches anouther shape
+            perimiterHolders[address].Add(-1); // represents the image edge
         }
     }
 

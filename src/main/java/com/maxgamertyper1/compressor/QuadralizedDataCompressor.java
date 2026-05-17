@@ -11,7 +11,6 @@ import static com.maxgamertyper1.imagereading.PixelHelper.*;
 public class QuadralizedDataCompressor {
     public ImageRepresentative DeltaEncodedImage;
     public ImageRepresentative QuadralizedCompressedImage;
-    private ImageRepresentative UsedImage;
 
     public QuadralizedDataCompressor() {}
 
@@ -20,7 +19,6 @@ public class QuadralizedDataCompressor {
 
         for (ColorChannel channel : ImageDataHolder.channeledColors.getColorChannels()) {
             int[] rawPixelData = channel.getChannelData();
-            int channelConcurrency = 0;
 
             for (int pixelIndex=0; pixelIndex<rawPixelData.length-1; pixelIndex++) {
                 int pixelColor = rawPixelData[pixelIndex];
@@ -123,7 +121,7 @@ public class QuadralizedDataCompressor {
     public ChunkedImageRepresentative chunkImage(ImageRepresentative IR) {
         ColorChannel[] currentChannels = IR.getColorChannels();
         ChunkedColorChannel[] returnData = new ChunkedColorChannel[currentChannels.length];
-        UsedImage = IR;
+
 
         for (int i=0;i<currentChannels.length;i++) {
             ColorChannel CR = currentChannels[i];
@@ -139,7 +137,8 @@ public class QuadralizedDataCompressor {
                     isoIndexes.length,
                     NSR.Shapes(),
                     NSR.CardinalMap(),
-                    NSR.Flags());
+                    NSR.Flags()
+            );
 
 
             int[] correspondingIsolatedColors = new int[isoIndexes.length];
@@ -153,6 +152,7 @@ public class QuadralizedDataCompressor {
         ChunkedImageRepresentative CIR = new ChunkedImageRepresentative(ImageDataHolder.isGrayscale,ImageDataHolder.UniformMaxAlpha, IR.isDeltaEncoded());
         CIR.setChunkedChannels(returnData);
         CIR.SetImageCompressionInformation();
+        CIR.setInitialPaethValues(IR.getInitialPixels());
 
         return CIR;
     }
@@ -326,7 +326,7 @@ public class QuadralizedDataCompressor {
         return new ShapeGrouperReturn(noNullChunks,IsolatedPixels);
     }
 
-    public CompressedImageRepresentative QuadralizedDataCompressed(ChunkedImageRepresentative CIR) {
+    public CompressedImageRepresentative QuadralizedDataCompressed(ChunkedImageRepresentative CIR, boolean useColoredBFSPrediction) {
         ChunkedColorChannel[] chunkedColorChannels = CIR.getChunkedChannels();
 
         CompressedColorChannel[] compressedColorChannels = new CompressedColorChannel[chunkedColorChannels.length];
@@ -361,7 +361,7 @@ public class QuadralizedDataCompressor {
                     ArrayList<RectangleRepresentative> brokenChunk = RectangleCreator(pixelChunk, flagHolder, shapeOrganizer, cardinalMaps);
 
                     for (RectangleRepresentative rect : brokenChunk) {
-                        if (rect.area() == 1) { // if size 1, its isolated
+                        if (rect.area() == 1) { // if Size 1, its isolated
                             finalIsolatedIndexes.Add(rect.startingIndex());
                             IsolatedIndexesValues.Add(rect.value());
                         } else {
@@ -391,9 +391,10 @@ public class QuadralizedDataCompressor {
             int[] sortedKeys = new int[isolatedIndexes.length];
             int[] sortedValues = new int[indexValues.length];
 
-            for (Integer arrayIndex : arrayIndices) {
-                sortedKeys[i] = isolatedIndexes[arrayIndex];
-                sortedValues[i] = indexValues[arrayIndex];
+            for (int j=0; j<arrayIndices.length; j++) {
+                int arrayIndex = arrayIndices[j];
+                sortedKeys[j] = isolatedIndexes[arrayIndex];
+                sortedValues[j] = indexValues[arrayIndex];
             }
             // done
 
@@ -401,12 +402,12 @@ public class QuadralizedDataCompressor {
             RectangleRepresentative[] sortedRectangles = finalRectangleHolder.toArray(new RectangleRepresentative[0]);
             CornerDataRepresentative[] sortedCorners = finalCornerHolder.toArray(new CornerDataRepresentative[0]);
 
-            CompressedColorChannel compressedColorChannel = new CompressedColorChannel(CCC.getChannelType(),sortedRectangles,sortedCorners);
+            CompressedColorChannel compressedColorChannel = new CompressedColorChannel(CCC.getChannelType(),sortedRectangles,sortedCorners, useColoredBFSPrediction ? -1 : CIR.getInitialPaethValues()[i]);
             compressedColorChannel.setIsolatedIndexes(sortedKeys,sortedValues);
             compressedColorChannels[i] = compressedColorChannel;
         }
 
-        return new CompressedImageRepresentative(CIR.isGrayScale(),CIR.isUniformMaxAlpha(),compressedColorChannels);
+        return new CompressedImageRepresentative(CIR.isGrayScale(),CIR.isUniformMaxAlpha(),compressedColorChannels,useColoredBFSPrediction);
     }
 
     public CornerDataRepresentative CalculateCornerData(PixelChunk pixelChunk, int[] flagHolder) {
