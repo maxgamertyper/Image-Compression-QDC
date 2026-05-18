@@ -7,16 +7,20 @@ import com.maxgamertyper1.datatypes.records.ChannelConcurrencyPercents;
 import com.maxgamertyper1.imagereading.ImageDataHolder;
 import com.maxgamertyper1.imagereading.ImageReader;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
+        System.out.println("PRESS ENTER TO START PROFILING...");
+        System.in.read();
+
         long start = System.currentTimeMillis();
         long end;
 
-        ImageReader.ReadAllImageContent("CompressionTesting/all_colors_noise.png");
+        ImageReader.ReadAllImageContent("TestingImages/Lenna.png");
         System.out.println("Image Data: \n" +"Name: "+ ImageDataHolder.metaImageName +"\nWidth: "+ImageDataHolder.width + "\nHeight: " + ImageDataHolder.height +"\nExtension: "+ImageDataHolder.fileType +"\nGrayscale:"+ImageDataHolder.isGrayscale + "\nUniform Maximum Alpha:" + ImageDataHolder.UniformMaxAlpha + "\nUsing Version: "+ FinalizedCompressorData.compressionVersionMajor+"."+FinalizedCompressorData.compressionVersionMinor);
 
         end = System.currentTimeMillis();
@@ -65,7 +69,7 @@ public class Main {
             System.out.println("\n\nChannel (Color: " + channel.getChannelColorType() + ", Paeth? " + !FinalCompression.isPaethEncoded() + ") Breakdown:");
             System.out.println("\t Rectangles: "+ channel.getRectangleCount() + " Corners: "+channel.getCornerCount()+" Isolated Indexes: "+channel.getIsolatedCount());
 
-            System.out.println("----------- Detailed Breakdown: ");
+            /*System.out.println("----------- Detailed Breakdown: ");
             System.out.println("Channel Starting Index: "+channel.getInitialPixel());
 
             System.out.println("------------------------------------");
@@ -80,7 +84,7 @@ public class Main {
 
             System.out.println("------------------------------------");
             System.out.println("\t Corners: ");
-            System.out.println(Arrays.toString(channel.getBuiltCorners()));
+            System.out.println(Arrays.toString(channel.getBuiltCorners()));*/
         }
     }
 }

@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.BitSet;
 
 import static com.maxgamertyper1.TestHelper.emptyBitSet;
@@ -29,13 +28,16 @@ public class CompressionTest {
         ShapeUnionFind swissCheeseSUF = new ShapeUnionFind(ExpectedDataHolder.swissCheeseParentIDs);
 
         TestHelper.DataholderSetter(10,10);
+        squareSUF.calculateShapeRoots();
         squareSUF.calculateShapeContinuity();
         squareSUF.calculatePerimiterAndHoles(ExpectedDataHolder.ExpectedUniformFlags);
 
+        holeSquareSUF.calculateShapeRoots();
         holeSquareSUF.calculateShapeContinuity();
         holeSquareSUF.calculatePerimiterAndHoles(ExpectedDataHolder.expectedHoleSquareFlags);
 
         TestHelper.DataholderSetter(5,5);
+        swissCheeseSUF.calculateShapeRoots();
         swissCheeseSUF.calculateShapeContinuity();
         swissCheeseSUF.calculatePerimiterAndHoles(ExpectedDataHolder.expectedSwissCheeseFlags);
 

@@ -981,3 +981,48 @@ it's all good now!
 Next issue, the corresponding values are all 0's and its in a different spot so ill have to check the chunkImage method
 I lied, it was actually fine im just not the brightest and was using the wrong image for testing
 I'm going to push this as a save and then work on the visualizer for everything
+
+looks like that same 8k image is taking like 2+ minutes again which is very sad
+So we'll have to find some cool optimizations ig
+
+the good thing is it looks like my ram usage isnt passing 3GB (which is a lot yeah but it's way better than earlier)
+idek what could be using most of the ram
+maybe i have a ton of useless objects somewhere
+
+the Lenna image took ~11s which is not great
+it is a complex image
+but its only a 512x512 which isnt the best
+ideally its <1 second but itdk if that can happen with all of this
+so im shooting for 2-3s and less optimally 5s
+but most definitley sub 10
+
+the flag processing and shaping seems to have increased in time
+I assume this is probably from the java autoBoxxing with my parallel sort but idk
+
+and then obviously the actual calculations take a while, but probably too long tbh
+
+I'm looking at visualVM and the CPU is at like 10-15% which is interesting ebcause that should be the main bottleneck
+but im getting like 12000 long[] objects
+so my guess is im making new bitsets in a loop somewhere and thats no bueno
+i should just clear them and do that
+that would also screw with the GC so thats probably the main issue
+it also looks like there are a lot of flip and set calls
+which does make sense as thats one of the main things
+
+Based on VisualVM my RAM usage was closer to 300MB
+so i must have some other Java process running or Idea is doing some bs
+I lowered it to 120MB of RAM by changing the BitSet allocation area
+so clearly that was a pretty big issue; 180MB of long[]
+
+what im seeing now as the issue is the CPU majority of the time is waiting
+so i assume thats because of cache misses or something
+
+
+In the RectangleCreator i do have to still update the bitset to the current shape...
+which iterates over the whole image
+so thats probably the main bottleneck lwk
+
+i should probably make like buckets that hold the location of each shape so i can just iterate over that instead
+do that during area calculation and then do .length or .size instead
+
+Ok im going to push and save this before I try to mess with the BitSet stuff because that might be a little weird

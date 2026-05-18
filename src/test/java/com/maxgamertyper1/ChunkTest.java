@@ -133,6 +133,7 @@ public class ChunkTest {
 
 
         ShapeUnionFind testingDataShapes = new ShapeUnionFind(ExpectedDataHolder.BlockBasedShapeIDS);
+        testingDataShapes.calculateShapeRoots();
         testingDataShapes.calculateShapeAreas();
         testingDataShapes.calculateShapeContinuity();
         testingDataShapes.calculatePerimiterAndHoles(ExpectedDataHolder.ExpectedBlockFlags);
@@ -179,6 +180,7 @@ public class ChunkTest {
 
 
         ShapeUnionFind testingDataShapes = new ShapeUnionFind(ExpectedDataHolder.BlockBasedShapeIDS);
+        testingDataShapes.calculateShapeRoots();
         testingDataShapes.calculateShapeAreas();
         testingDataShapes.calculateShapeContinuity();
         testingDataShapes.calculatePerimiterAndHoles(ExpectedDataHolder.ExpectedBlockFlags);

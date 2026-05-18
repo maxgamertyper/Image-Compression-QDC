@@ -330,6 +330,7 @@ public class QuadralizedDataCompressor {
         ChunkedColorChannel[] chunkedColorChannels = CIR.getChunkedChannels();
 
         CompressedColorChannel[] compressedColorChannels = new CompressedColorChannel[chunkedColorChannels.length];
+        BitSet proccessedPixels = new BitSet(ImageDataHolder.flatsize); // remove the overhead of calling it thousands of times in rectangle creator
 
         for (int i=0; i<chunkedColorChannels.length;i++) {
             ChunkedColorChannel CCC = chunkedColorChannels[i];
@@ -358,7 +359,8 @@ public class QuadralizedDataCompressor {
                 boolean useRectangles = PixelChunkUseRectangles(pixelChunk.convexCorners,shapeOrganizer.getContinuity(startingIndex),shapeOrganizer.getHoles(startingIndex));
 
                 if (useRectangles) {
-                    ArrayList<RectangleRepresentative> brokenChunk = RectangleCreator(pixelChunk, flagHolder, shapeOrganizer, cardinalMaps);
+                    proccessedPixels.clear();
+                    ArrayList<RectangleRepresentative> brokenChunk = RectangleCreator(pixelChunk, flagHolder, shapeOrganizer, cardinalMaps,proccessedPixels);
 
                     for (RectangleRepresentative rect : brokenChunk) {
                         if (rect.area() == 1) { // if Size 1, its isolated
@@ -435,72 +437,71 @@ public class QuadralizedDataCompressor {
         return (continuity/((double) convexCorners * convexCorners))*holes <= 1; // prediction for rectangle efficiency basically
     }
 
-    public ArrayList<RectangleRepresentative> RectangleCreator(PixelChunk pixelChunk, int[] flagHolder, ShapeUnionFind shapeOrganizer, EdgeMapHolder EMH) { // greedy algorith
-            int area = pixelChunk.getTotalArea();
+    public ArrayList<RectangleRepresentative> RectangleCreator(PixelChunk pixelChunk, int[] flagHolder, ShapeUnionFind shapeOrganizer, EdgeMapHolder EMH, BitSet processedPixels) { // greedy algorith
+        int area = pixelChunk.getTotalArea();
 
-            ArrayList<CornerPoint> processingList = new ArrayList<>(pixelChunk.cornerPoints);
-            ArrayList<RectangleRepresentative> returnHolder = new ArrayList<RectangleRepresentative>();
+        ArrayList<CornerPoint> processingList = new ArrayList<>(pixelChunk.cornerPoints);
+        ArrayList<RectangleRepresentative> returnHolder = new ArrayList<RectangleRepresentative>();
 
-            BitSet proccessedPixels = new BitSet(ImageDataHolder.flatsize);
-            int[] raw = shapeOrganizer.getRawData();
+        int[] raw = shapeOrganizer.getRawData();
 
-            for (int currentPixelIndex=0; currentPixelIndex<raw.length; currentPixelIndex++) {
-                int shapeID = raw[currentPixelIndex];
-                if (shapeID==pixelChunk.StartingIndex) {
-                    proccessedPixels.set(currentPixelIndex);
-                }
+        for (int currentPixelIndex=0; currentPixelIndex<raw.length; currentPixelIndex++) {
+            int shapeID = raw[currentPixelIndex];
+            if (shapeID==pixelChunk.StartingIndex) {
+                processedPixels.set(currentPixelIndex);
             }
-            proccessedPixels.flip(0,ImageDataHolder.flatsize);
+        }
+        processedPixels.flip(0,ImageDataHolder.flatsize);
 
-            while (area>0) {
-                // find the optimal rectangle
-                RectangleRepresentative currentGlobalBest = new RectangleRepresentative(0,0,1,0);
+        while (area>0) {
+            // find the optimal rectangle
+            RectangleRepresentative currentGlobalBest = new RectangleRepresentative(0,0,1,0);
 
-                for (CornerPoint processingCorner : processingList) {
-                    int flatAnchorIndex = processingCorner.index();
+            for (CornerPoint processingCorner : processingList) {
+                int flatAnchorIndex = processingCorner.index();
 
-                    int flag = processingCorner.flagmask();
+                int flag = processingCorner.flagmask();
 
-                    RectangleRepresentative[] longRectangles = CalculateLongRectangles(EMH, flatAnchorIndex, flag, pixelChunk, proccessedPixels);
+                RectangleRepresentative[] longRectangles = CalculateLongRectangles(EMH, flatAnchorIndex, flag, pixelChunk, processedPixels);
 
-                    if (longRectangles.length==1) {
-                        currentGlobalBest = longRectangles[0];
-                        break;
-                    }
-
-                    RectangleRepresentative localKingRect = longRectangles[1]; // the initial wide rectangle (wide gets priority)
-
-                    RectangleRepresentative longRectangle = longRectangles[0];
-
-                    // wide or long?
-                    if ((long)longRectangle.area() * localKingRect.storageCost()>(long) localKingRect.area() * longRectangle.storageCost()) {
-                        // this is the same thing as area/storage ? area/storage
-                        // its just more efficient because division sucks in terms of CPU cycles
-                        //however this heuristic itself mighe be bad and probably needs to be changed
-
-                        localKingRect = longRectangle;
-                    }
-
-                    RectangleRepresentative squareCalculation = CalculateSquare(EMH, flatAnchorIndex, flag, pixelChunk, proccessedPixels);
-
-                    // is square better?
-                    if ((long)squareCalculation.area() * localKingRect.storageCost()>(long) localKingRect.area() * squareCalculation.storageCost()) {
-                        localKingRect = squareCalculation;
-                    }
-
-                    // is this local king better than the other ones?
-                    if ((long)localKingRect.area() * currentGlobalBest.storageCost() > (long)currentGlobalBest.area() * localKingRect.storageCost()) {
-                        currentGlobalBest = localKingRect;
-                    }
+                if (longRectangles.length==1) {
+                    currentGlobalBest = longRectangles[0];
+                    break;
                 }
 
-                // process the rectangle
-                area-=currentGlobalBest.area();
-                processBestRectangle(currentGlobalBest, processingList, proccessedPixels);
-                returnHolder.add(currentGlobalBest);
+                RectangleRepresentative localKingRect = longRectangles[1]; // the initial wide rectangle (wide gets priority)
+
+                RectangleRepresentative longRectangle = longRectangles[0];
+
+                // wide or long?
+                if ((long)longRectangle.area() * localKingRect.storageCost()>(long) localKingRect.area() * longRectangle.storageCost()) {
+                    // this is the same thing as area/storage ? area/storage
+                    // its just more efficient because division sucks in terms of CPU cycles
+                    //however this heuristic itself mighe be bad and probably needs to be changed
+
+                    localKingRect = longRectangle;
+                }
+
+                RectangleRepresentative squareCalculation = CalculateSquare(EMH, flatAnchorIndex, flag, pixelChunk, processedPixels);
+
+                // is square better?
+                if ((long)squareCalculation.area() * localKingRect.storageCost()>(long) localKingRect.area() * squareCalculation.storageCost()) {
+                    localKingRect = squareCalculation;
+                }
+
+                // is this local king better than the other ones?
+                if ((long)localKingRect.area() * currentGlobalBest.storageCost() > (long)currentGlobalBest.area() * localKingRect.storageCost()) {
+                    currentGlobalBest = localKingRect;
+                }
             }
 
-            return returnHolder;
+            // process the rectangle
+            area-=currentGlobalBest.area();
+            processBestRectangle(currentGlobalBest, processingList, processedPixels);
+            returnHolder.add(currentGlobalBest);
+        }
+
+        return returnHolder;
     }
 
     public void processBestRectangle(RectangleRepresentative currentGlobalBest, ArrayList<CornerPoint> processingList, BitSet proccessedPixels) {
