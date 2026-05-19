@@ -1026,3 +1026,78 @@ i should probably make like buckets that hold the location of each shape so i ca
 do that during area calculation and then do .length or .size instead
 
 Ok im going to push and save this before I try to mess with the BitSet stuff because that might be a little weird
+
+5/18:
+it looks like the perimiter holes and continuity are also pretty slow so im going to try and fix that
+looks like i was forgetting to use the parentpixles[index] and was doing find() instead which is way less efficient
+that shaved off about half a second actually which is amazing
+the cpu usage is up though so thats good
+
+wait i think for the hole and perimiter calculator, i could just do the left and top
+and then add it to both shapes
+which would be half the if statements
+half the function calls
+etc
+it has a lot of edge cases and i might just put it into finalize anyway so it shouldn't matter
+i did fix some of the excess calls on arrays so it should be faster
+looks like its ~100ms faster which is good i presume
+it does seem like the neighborScan is taking way too long ~2s
+but idk how to lower that tbh
+
+removed a lot of the excess calls to IndexCalc and Reverse
+so a lot of multiplication and division should be skipped
+which should make it a good bit faster
+that cut off 300ms which is good
+
+Index in image has 3 million calls so i might want to remove that... it only took 180ms (still too much) but that does mean its pretty good
+now there are no calls to it so that removes a ton of overhead and get the NeighborScan <2s for the Lenna Image
+
+to my incredible suprise
+the creator's longest thing is self-time
+which is absolutley crazy
+i figured it'd have to be the calculating or smth
+
+holy moly
+it's literally from that bitset initialization
+thats killing everything
+holy crap
+so that's genuinley my main issue
+
+these 6 damn lines bro
+```
+for (int currentPixelIndex=0; currentPixelIndex<raw.length; currentPixelIndex++) {
+            int shapeID = raw[currentPixelIndex];
+            if (shapeID==pixelChunk.StartingIndex) {
+                processedPixels.set(currentPixelIndex);
+            }
+        }
+        processedPixels.flip(0,ImageDataHolder.flatsize);
+```
+
+
+5/19/26:
+ok i made it so I have each index of the shape so i can just loop over that and set it
+it doesnt stop the main issue of having to set everything so i do still need to fix that
+but it should be way faster still
+
+ok it ran the Lenna image in 6 seconds total *according to the profiler* 700ms according to my print statements without the profiler
+WAYYYYYYYY better
+however it got different results
+so im going to revert it section by section to test any issues
+
+the issue was i did a silly and stored the index of the location instead of the actual location, easy fix so its all good
+I changed the .flip() to just the .set the whole thing which should be more optimal and then just cleared the stuff
+
+i genuinley have no idea what i just did
+it worked perfectly before i changed the .flip to .set and i got a out of memory error...
+im so dumb :C
+i forgot to change it to clear instead of set :C
+
+At least i realized there was a "memory leak" though beforehand
+the 8k drawing still takes over 2 minutes to compress which is really weird
+i must have an O(N^2) function somewhere or a really large N coefficient
+
+When i flip the BitSet so that a 0 means unprocessed and a 1 means unprocessed
+I dont actually need to label anything since the shapes themselves already have the bounds in the edgemap
+so its perfect
+all i have to do is clear it and im good

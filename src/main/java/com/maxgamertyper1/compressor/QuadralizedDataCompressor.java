@@ -160,6 +160,7 @@ public class QuadralizedDataCompressor {
     public NeighborScanReturn NeighborScan(ColorChannel CR) {
         int[] pixelData = CR.getChannelData();
         int width = ImageDataHolder.width;
+        int height = ImageDataHolder.height;
         int[] pixelFlags = new int[ImageDataHolder.flatsize];
         ShapeUnionFind shapeOrganizer = new ShapeUnionFind(ImageDataHolder.flatsize);
 
@@ -173,11 +174,10 @@ public class QuadralizedDataCompressor {
             xBasedMap[i] = new BitSet(ImageDataHolder.height); // only right edges now
         }
 
+        int currentFlatCoordinate = 0;
         for (int yValue=0; yValue<ImageDataHolder.height;yValue++) {
             for (int xValue=0; xValue<width;xValue++) {
-                int currentFlatCoordinate = PixelHelper.IndexCalculator(width,xValue,yValue);
                 int currentColor = pixelData[currentFlatCoordinate];
-                int[] coordinates = ReverseIndexCalculator(ImageDataHolder.width,currentFlatCoordinate);
 
                 int flagBitMask = 0;
                 // first bit is left
@@ -190,7 +190,7 @@ public class QuadralizedDataCompressor {
                 int bottomCoordinate = currentFlatCoordinate + width;
                 int rightCoordinate = currentFlatCoordinate + 1;
 
-                if (IndexInImage(topCoordinate)) {
+                if (yValue>0) { // for the top coordinate it just has to be greater than 1
                     if (pixelData[topCoordinate]==currentColor) {
                         shapeOrganizer.Union(currentFlatCoordinate, topCoordinate); // if the same color, add to the shape
                     } else  {
@@ -199,7 +199,7 @@ public class QuadralizedDataCompressor {
                 } else {
                     flagBitMask |= 1<<3;
                 }
-                if (IndexInImage(leftCoordinate) && IndexsInSameRow(currentFlatCoordinate,leftCoordinate)) {
+                if (xValue>0) { // itll always be in if its not on the left
                     if (pixelData[leftCoordinate]==currentColor) {
                         shapeOrganizer.Union(currentFlatCoordinate, leftCoordinate);
                     } else  {
@@ -208,17 +208,18 @@ public class QuadralizedDataCompressor {
                 } else {
                     flagBitMask |= 1;
                 }
-                if (!IndexInImage(bottomCoordinate) || pixelData[bottomCoordinate]!=currentColor) {
+                if (yValue == height - 1 || pixelData[bottomCoordinate]!=currentColor) { // the bottom will be in as long as the yvalue isnt the bottom
                     flagBitMask |= 1<<2;
-                    xBasedMap[coordinates[0]].set(coordinates[1]);
+                    xBasedMap[xValue].set(yValue);
                 }
-                if (!IndexInImage(rightCoordinate) || !IndexsInSameRow(currentFlatCoordinate,rightCoordinate) || pixelData[rightCoordinate]!=currentColor) {
+                if (xValue==width-1 || pixelData[rightCoordinate]!=currentColor) { // only time the right coordinate is out is if its on the last pixel (that also means its in the same row)
                     flagBitMask |= 1<<1;
-                    yBasedMap[coordinates[1]].set(coordinates[0]);
+                    yBasedMap[yValue].set(xValue);
                 }
 
 
                 pixelFlags[currentFlatCoordinate]=flagBitMask;
+                currentFlatCoordinate++;
             }
         }
 
@@ -226,6 +227,7 @@ public class QuadralizedDataCompressor {
         shapeOrganizer.calculateShapeAreas();
         shapeOrganizer.calculateShapeContinuity();
         shapeOrganizer.calculatePerimiterAndHoles(pixelFlags);
+        shapeOrganizer.calculateIndexGroupings();
 
         int[][] finalXBasedMap = new int[ImageDataHolder.width][];
         int[][] finalYBasedMap = new int[ImageDataHolder.height][];
@@ -359,7 +361,7 @@ public class QuadralizedDataCompressor {
                 boolean useRectangles = PixelChunkUseRectangles(pixelChunk.convexCorners,shapeOrganizer.getContinuity(startingIndex),shapeOrganizer.getHoles(startingIndex));
 
                 if (useRectangles) {
-                    proccessedPixels.clear();
+                    proccessedPixels.set(0,ImageDataHolder.flatsize); // NOTE: should probably not do this to make speed better tbh
                     ArrayList<RectangleRepresentative> brokenChunk = RectangleCreator(pixelChunk, flagHolder, shapeOrganizer, cardinalMaps,proccessedPixels);
 
                     for (RectangleRepresentative rect : brokenChunk) {
@@ -445,13 +447,9 @@ public class QuadralizedDataCompressor {
 
         int[] raw = shapeOrganizer.getRawData();
 
-        for (int currentPixelIndex=0; currentPixelIndex<raw.length; currentPixelIndex++) {
-            int shapeID = raw[currentPixelIndex];
-            if (shapeID==pixelChunk.StartingIndex) {
-                processedPixels.set(currentPixelIndex);
-            }
+        for (int index : shapeOrganizer.getIndexGrouping(pixelChunk.StartingIndex)) {
+            processedPixels.clear(index);
         }
-        processedPixels.flip(0,ImageDataHolder.flatsize);
 
         while (area>0) {
             // find the optimal rectangle

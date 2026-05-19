@@ -17,6 +17,7 @@ public class ShapeUnionFind {
     private int[] shapeContinuityBasedOnStart;
     private int[] rootIndexes;
     private int[] shapeIndexAddressTable;
+    private int[][] shapeIndexGroupings;
 
     public ShapeUnionFind(int size) {
         parentPixels = new int[size];
@@ -87,25 +88,43 @@ public class ShapeUnionFind {
         shapeAreasBasedOnStart = new int[getTotalShapeCount()];
 
         for (int i = 0; i < ImageDataHolder.flatsize; i++) {
-            int root = Find(i); // find the root of a pixel
+            int root = parentPixels[i]; // find the root of a pixel
 
             shapeAreasBasedOnStart[shapeIndexAddressTable[root]]++;
         }
+    }
+
+    public void calculateIndexGroupings() {
+        shapeIndexGroupings = new int[getTotalShapeCount()][];
+
+        for (int i=0; i<shapeIndexGroupings.length; i++) {
+            shapeIndexGroupings[i] = new int[getShapeArea(rootIndexes[i])];
+        }
+        int[] shapePointers = new int[getTotalShapeCount()];
+
+        for (int index = 0; index<ImageDataHolder.flatsize; index++) {
+            int address = shapeIndexAddressTable[parentPixels[index]];
+            shapeIndexGroupings[address][shapePointers[address]++] = index;
+        }
+    }
+
+    public int[] getIndexGrouping(int shapeID) {
+        return shapeIndexGroupings[shapeIndexAddressTable[shapeID]];
     }
 
     public void calculateShapeContinuity() {
         shapeContinuityBasedOnStart = new int[getTotalShapeCount()];
 
         for (int i = 0; i < ImageDataHolder.flatsize; i++) {
-            int root = Find(i);
+            int root = parentPixels[i];
 
             int topIndex = i-ImageDataHolder.width;
             int LeftIndex = i-1;
 
-            if (IndexInImage(topIndex) && Find(topIndex)==root) {
+            if (IndexInImage(topIndex) && parentPixels[topIndex]==root) {
                 shapeContinuityBasedOnStart[shapeIndexAddressTable[root]]++;
             }
-            if (IndexInImage(LeftIndex) && IndexsInSameRow(LeftIndex,i) && Find(LeftIndex)==root) {
+            if (IndexInImage(LeftIndex) && IndexsInSameRow(LeftIndex,i) && parentPixels[LeftIndex]==root) {
                 shapeContinuityBasedOnStart[shapeIndexAddressTable[root]]++;
             }
         }
@@ -130,25 +149,26 @@ public class ShapeUnionFind {
             perimiterHolders[i] = new IntArrayList(16);
         }
 
+        // NOTE: this might be better if its moved into finalize with a Width size array that tracks the left and above pixels aligned with the x-value
         for (int currentIndex=0; currentIndex<relativeFlags.length; currentIndex++) {
             int flag = relativeFlags[currentIndex];
-            int root = Find(currentIndex);
+
+            if (flag == 0) continue; // skip interior so i dont need all the other checks
+
+            int address = shapeIndexAddressTable[parentPixels[currentIndex]];
+            IntArrayList currentHolder = perimiterHolders[address];
 
             if ((flag&8)!=0) { // if theres a top boundary
-                int aboveIndex = currentIndex-ImageDataHolder.width;
-                HandleSideTheSequel(root, aboveIndex, perimiterHolders);
+                HandleSideTheSequel(currentIndex-ImageDataHolder.width, currentHolder);
             }
             if ((flag&4)!=0) { // if theres a bottom boundary
-                int belowIndex = currentIndex+ImageDataHolder.width;
-                HandleSideTheSequel(root, belowIndex, perimiterHolders);
+                HandleSideTheSequel(currentIndex+ImageDataHolder.width, currentHolder);
             }
             if ((flag&2)!=0) { // if theres a right boundary
-                int rightIndex = currentIndex+1;
-                HandleSideTheSequel(root, rightIndex, perimiterHolders);
+                HandleSideTheSequel(currentIndex+1, currentHolder);
             }
             if ((flag&1)!=0) { // if theres a left boundary
-                int leftIndex = currentIndex-1;
-                HandleSideTheSequel(root, leftIndex, perimiterHolders);
+                HandleSideTheSequel(currentIndex-1, currentHolder);
             }
         }
 
@@ -176,12 +196,11 @@ public class ShapeUnionFind {
         }
     }
 
-    private void HandleSideTheSequel(int root, int newIndex, IntArrayList[] perimiterHolders) {
-        int address = shapeIndexAddressTable[root];
+    private void HandleSideTheSequel(int newIndex, IntArrayList currentHolder) {
         if (IndexInImage(newIndex)) {
-            perimiterHolders[address].Add(parentPixels[newIndex]);
+            currentHolder.Add(parentPixels[newIndex]);
         } else {
-            perimiterHolders[address].Add(-1); // represents the image edge
+            currentHolder.Add(-1); // represents the image edge
         }
     }
 

@@ -127,7 +127,7 @@ public class ChunkTest {
 
     @Test
     @Order(3)
-    @DisplayName("ShapeUnionFind correct perimiter, area, holes, and continuity calculations (non-Static)")
+    @DisplayName("ShapeUnionFind correct perimiter, area, holes, continuity, and grouping calculations (non-Static)")
     public void shapeUnionFindTestBlock() {
         TestHelper.DataholderSetter(10,10);
 
@@ -137,6 +137,7 @@ public class ChunkTest {
         testingDataShapes.calculateShapeAreas();
         testingDataShapes.calculateShapeContinuity();
         testingDataShapes.calculatePerimiterAndHoles(ExpectedDataHolder.ExpectedBlockFlags);
+        testingDataShapes.calculateIndexGroupings();
 
 
         int[] AreaCombined = new int[]{
@@ -162,7 +163,13 @@ public class ChunkTest {
                 () -> assertEquals(4, testingDataShapes.getTotalShapeCount(),"Incorrect Total Shape Number"),
                 () -> assertArrayEquals(new int[]{60,18,16,6},AreaCombined,"Incorrect Area Calculations"),
                 () -> assertArrayEquals(new int[]{0,0,0,0},HoleCombined,"Calculated Holes when there are none"),
-                () -> assertArrayEquals(new int[]{87,17,24,6},ContinuityCombined,"Incorrect Continuity Calculation")
+                () -> assertArrayEquals(new int[]{87,17,24,6},ContinuityCombined,"Incorrect Continuity Calculation"),
+                () -> assertArrayEquals(new int[]{52,53,54,55,63,64},testingDataShapes.getIndexGrouping(52),"Incorrect shape index grouping (52)"),
+                () -> assertArrayEquals(new int[]{12,13,14,15,22,23,24,25,32,33,34,35,42,43,44,45},testingDataShapes.getIndexGrouping(12),"Incorrect shape index grouping (12)"),
+                () -> assertArrayEquals(new int[]{11,16,21,26,31,36,41,46,51,56,61,62,65,66,72,73,74,75},testingDataShapes.getIndexGrouping(11),"Incorrect shape index grouping (11)"),
+                () -> assertArrayEquals(new int[]{
+                        0,1,2,3,4,5,6,7,8,9,10,17,18,19,20,27,28,29,30,37,38,39,40,47,48,49,50,57,58,59,60,67,68,69,70,71,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99
+                },testingDataShapes.getIndexGrouping(0),"Incorrect shape index grouping (0)")
         );
     }
 
@@ -232,7 +239,7 @@ public class ChunkTest {
 
     @Test
     @Order(4)
-    @DisplayName("ShapeUnionFind correct perimiter, area, holes, and continuity calculations (Static)")
+    @DisplayName("ShapeUnionFind correct perimiter, area, holes, continuity, and grouping calculations (Static)")
     public void shapeUnionFindTestStatic() {
         TestHelper.DataholderSetter(10,10);
 
@@ -242,6 +249,7 @@ public class ChunkTest {
         testingDataShapes.calculateShapeAreas();
         testingDataShapes.calculateShapeContinuity();
         testingDataShapes.calculatePerimiterAndHoles(ExpectedDataHolder.ExpectedStaticFlags);
+        testingDataShapes.calculateIndexGroupings();
 
 
         int[] AreaCombined = new int[]{
@@ -260,11 +268,23 @@ public class ChunkTest {
                 testingDataShapes.getHoles(40)
         };
 
+
+
         assertAll(
                 () -> assertEquals(7, testingDataShapes.getTotalShapeCount(),"Incorrect Total Shape Number (Including Holes)"),
                 () -> assertArrayEquals(new int[]{14,68,14},AreaCombined,"Incorrect Area Calculations"),
                 () -> assertArrayEquals(new int[]{0,4,0},HoleCombined,"Calculated Correct Hole Amount"),
-                () -> assertArrayEquals(new int[]{19,106,19},ContinuityCombined,"Incorrect Continuity Calculation")
+                () -> assertArrayEquals(new int[]{19,106,19},ContinuityCombined,"Incorrect Continuity Calculation"),
+                () -> assertArrayEquals(new int[]{46}, testingDataShapes.getIndexGrouping(46),"Incorrect Grouping Calculation (46)"),
+                () -> assertArrayEquals(new int[]{57}, testingDataShapes.getIndexGrouping(57),"Incorrect Grouping Calculation (57)"),
+                () -> assertArrayEquals(new int[]{76}, testingDataShapes.getIndexGrouping(76),"Incorrect Grouping Calculation (76)"),
+                () -> assertArrayEquals(new int[]{87}, testingDataShapes.getIndexGrouping(87),"Incorrect Grouping Calculation (87)"),
+                () -> assertArrayEquals(new int[]{0,1,2,3,4,5,10,11,12,13,14,15,22,23}, testingDataShapes.getIndexGrouping(0),"Incorrect Grouping Calculation (0)"),
+                () -> assertArrayEquals(new int[]{40,41,50,51,60,61,62,70,71,72,80,81,90,91}, testingDataShapes.getIndexGrouping(40),"Incorrect Grouping Calculation (40)"),
+                () -> assertArrayEquals(new int[]{
+                        6,7,8,9,16,17,18,19,20,21,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,42,43,44,45,47,48,49,
+                        52,53,54,55,56,58,59,63,64,65,66,67,68,69,73,74,75,77,78,79,82,83,84,85,86,88,89,92,93,94,95,96,97,98,99
+                }, testingDataShapes.getIndexGrouping(6),"Incorrect Grouping Calculation (6)")
         );
     }
 

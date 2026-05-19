@@ -18,6 +18,7 @@ public class Main {
         System.in.read();
 
         long start = System.currentTimeMillis();
+        long Truestart = System.currentTimeMillis();
         long end;
 
         ImageReader.ReadAllImageContent("TestingImages/Lenna.png");
@@ -86,5 +87,7 @@ public class Main {
             System.out.println("\t Corners: ");
             System.out.println(Arrays.toString(channel.getBuiltCorners()));*/
         }
+
+        System.out.println("Entire thing took: " + (System.currentTimeMillis() - Truestart) + "ms");
     }
 }

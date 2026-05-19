@@ -5,7 +5,7 @@ public class PixelHelper {
         return y * width + x;
     }
     public static int[] ReverseIndexCalculator(int width, int index) {
-        return new int[]{index % width,Math.floorDiv(index, width)};
+        return new int[]{index % width, index / width};
     }
     public static boolean IndexIsOnLeftColomn(int width, int index) {
         return index%width==0; // however, here the 0-index helps us, but idk how to wxplain it (i.e. length=5; 0,1,2,3,4 (first row), 5,6,7,8,9; so its modulo 5 for it)
@@ -17,9 +17,9 @@ public class PixelHelper {
         return index<=(width-1); // since the array is 0-indexed we need to -1 to check if its on the top
     }
     public static boolean IndexInImage(int index) {
-        return index<ImageDataHolder.flatsize && index>=0;
+        return index>=0 && index<ImageDataHolder.flatsize;
     }
     public static boolean IndexsInSameRow(int index1, int index2) {
-        return ReverseIndexCalculator(ImageDataHolder.width, index1)[1]==ReverseIndexCalculator(ImageDataHolder.width, index2)[1];
+        return index1 / ImageDataHolder.width == index2 / ImageDataHolder.width;
     }
 }
