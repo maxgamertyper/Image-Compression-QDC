@@ -8,8 +8,6 @@ import com.maxgamertyper1.imagereading.ImageDataHolder;
 import com.maxgamertyper1.imagereading.ImageReader;
 
 import java.io.IOException;
-import java.util.Arrays;
-
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
@@ -21,11 +19,12 @@ public class Main {
         long Truestart = System.currentTimeMillis();
         long end;
 
-        ImageReader.ReadAllImageContent("TestingImages/Lenna.png");
-        System.out.println("Image Data: \n" +"Name: "+ ImageDataHolder.metaImageName +"\nWidth: "+ImageDataHolder.width + "\nHeight: " + ImageDataHolder.height +"\nExtension: "+ImageDataHolder.fileType +"\nGrayscale:"+ImageDataHolder.isGrayscale + "\nUniform Maximum Alpha:" + ImageDataHolder.UniformMaxAlpha + "\nUsing Version: "+ FinalizedCompressorData.compressionVersionMajor+"."+FinalizedCompressorData.compressionVersionMinor);
+        ImageReader.ReadAllImageContent("CompressionTesting/all_colors_noise.png");
+        System.out.println("Image Data: \n" +"Name: "+ ImageDataHolder.metaImageName +"\nWidth: "+ImageDataHolder.width + "\nHeight: " + ImageDataHolder.height + "\n Flatsize: " + ImageDataHolder.flatsize + " (Megapixels: "+ (float)ImageDataHolder.flatsize/1000000 +")" + "\nExtension: "+ImageDataHolder.fileType +"\nGrayscale:"+ImageDataHolder.isGrayscale + "\nUniform Maximum Alpha:" + ImageDataHolder.UniformMaxAlpha + "\nUsing Version: "+ FinalizedCompressorData.compressionVersionMajor+"."+FinalizedCompressorData.compressionVersionMinor);
 
         end = System.currentTimeMillis();
-        System.out.println("IO processing took: " + (end - start) + "ms");
+        long IOprocessingTime = end - start;
+        System.out.println("IO processing took: " + (IOprocessingTime) + "ms");
         start = System.currentTimeMillis();
 
         QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
@@ -40,8 +39,8 @@ public class Main {
         System.out.println("Delta noise percent: "+(1-dataPercents.deltaChunkRate())*100);
         System.out.println("Color noise percent: "+(1-dataPercents.colorChunkRate())*100);
 
-        boolean useColoredBFSPrediction = dataPercents.colorChunkRate() >= dataPercents.deltaChunkRate();;
-        FinalizedCompressorData.usesColorCompression = useColoredBFSPrediction;
+        boolean useColoredBFSPrediction = dataPercents.colorChunkRate() >= dataPercents.deltaChunkRate(); //
+        FinalizedCompressorData.usesColorCompression = useColoredBFSPrediction; //
 
         end = System.currentTimeMillis();
         System.out.println("Prediction processing took: " + (end - start) + "ms");
@@ -88,6 +87,11 @@ public class Main {
             System.out.println(Arrays.toString(channel.getBuiltCorners()));*/
         }
 
-        System.out.println("Entire thing took: " + (System.currentTimeMillis() - Truestart) + "ms");
+        long entireTime = System.currentTimeMillis() - Truestart;
+
+        System.out.println("Entire thing took: " + (entireTime) + "ms");
+        System.out.println("IO Time: " + (IOprocessingTime) + "ms");
+        System.out.println("Computational Time: " + (entireTime - IOprocessingTime) + "ms");
+        System.out.println("MP thorughput: " + (((float)ImageDataHolder.flatsize/1000000)/((float)(entireTime - IOprocessingTime)/1000)) + "MP/s");
     }
 }

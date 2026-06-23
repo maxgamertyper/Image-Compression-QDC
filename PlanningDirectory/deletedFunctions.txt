@@ -64,3 +64,226 @@ public class ConcurrentPixelSet {
         return "Concurrent Set: "+"\n\t Initial Index: "+startPixel+"; Color/Delta: "+pixelValue+"; Width: "+width+" {"+rightEnd+"} Height: "+height+" {"+bottomEnd+"}";
     }
 }
+
+public void removeDuplicatesUnsorted2(BitSet reusableBitSet) {
+    if (size <= 1) return;
+
+    reusableBitSet.set(InternalArray[0]+1); // because of the -1 from OOB
+
+    for (int i = 1; i < size; i++) { // collapse it together
+        reusableBitSet.set(InternalArray[i]+1); // because of the -1 from OOB
+    }
+
+    int uniqueIndex = 0;
+    int bitSetValue = reusableBitSet.nextSetBit(0);
+    for (int i=bitSetValue; i>=0;) {
+        InternalArray[uniqueIndex]=i-1;
+        uniqueIndex++;
+
+        reusableBitSet.clear(i);
+        i = reusableBitSet.nextSetBit(i);
+    }
+
+    size = uniqueIndex; // change the size
+}
+
+public void calculateHoles(int[] relativeFlags) { //O(N)
+    int shapeCount = getTotalShapeCount();
+    shapeHolesBasedOnStart = new int[getTotalShapeCount()+1];
+
+    int baseline = shapeCount * 2;
+    IntArrayList perimiterOwners = new IntArrayList(baseline); // each shape is at leas 2 pixels which would maximally have 6 different shapes touching so its a third of that
+    IntArrayList perimiterNeighbors = new IntArrayList(baseline);
+
+    shapeIndexAddressTable[ImageDataHolder.flatsize] = getTotalShapeCount(); // scummy OOB lookup so i dont need to add a branch
+
+    NeighborSetup(perimiterOwners,perimiterNeighbors,relativeFlags); // ts has a lot of loops to optimize CPU cycles so i just isolated it
+
+    // bucket the data into an array
+    int[] rawOffsets = new int[getTotalShapeCount()+1]; // for the OOb
+    int[] bucketedNeighborPool = new int[perimiterNeighbors.Size()];
+    int[] neighborCount = new int[getTotalShapeCount()+1]; //for the OOB
+    BucketGrouping(perimiterOwners,perimiterNeighbors, rawOffsets, bucketedNeighborPool, neighborCount);
+
+    //then do a bitset to count uniques
+    UniqueifyBuckets(rawOffsets,bucketedNeighborPool,neighborCount); // in-place compaction of all arrays
+
+    //then actually iterate over it finally to do the topological deconstruction (Swap-and-Pop)
+    TopologicalDeconstruction(rawOffsets,neighborCount,bucketedNeighborPool);
+
+    shapeIndexAddressTable[ImageDataHolder.flatsize] = -1; // remake it throw an error
+}
+
+private void TopologicalDeconstruction(int[] rawOffsets, int[] neighborCount, int[] uniqueNeighborPool) {
+    // use swap and pop so its O(1)
+
+    IntArrayDeque neededShapeProcessing = new IntArrayDeque(getTotalShapeCount());
+    for (int shapeID : rootIndexes) {
+        if (neighborCount[shapeIndexAddressTable[shapeID]]==1) {
+            neededShapeProcessing.enqueue(shapeID);
+        }
+    }
+
+    while (neededShapeProcessing.getSize()!=0) {
+        // only added if the value is 1 so its lwk fine
+        int currentShape = neededShapeProcessing.dequeue();
+        int thisAddress = shapeIndexAddressTable[currentShape];
+        int uniqueNeighbor = shapeIndexAddressTable[uniqueNeighborPool[rawOffsets[thisAddress]]];
+        // sub 1 from each
+
+        neighborCount[thisAddress] = 0;
+
+        shapeHolesBasedOnStart[uniqueNeighbor]++;
+
+
+        int neighborOffset = rawOffsets[uniqueNeighbor];
+        int neighborTotalNeighbors = neighborCount[uniqueNeighbor];
+        int lastActiveIndex = neighborOffset + (neighborTotalNeighbors - 1);
+        // loop over all the neighbor's neighbors
+        for (int i = neighborOffset;i <= lastActiveIndex;i++) { // this is the swap and pop
+            if (uniqueNeighborPool[i]==currentShape) { // is it this shape?
+                uniqueNeighborPool[i] = uniqueNeighborPool[lastActiveIndex]; // move this shape to the end
+                break; // no need to go further since its unique data
+            }
+        }
+
+        neighborCount[uniqueNeighbor]--;
+
+        if (neighborCount[uniqueNeighbor] == 1) {
+            neededShapeProcessing.enqueue(uniqueNeighbor);
+        }
+    }
+}
+
+private void UniqueifyBuckets(int[] rawOffsets, int[] bucketedNeighborPool, int[] neighborCount) {
+    BitSet uniqueBitset = new BitSet(getTotalShapeCount() + 1); // the last index is the border of the image
+
+    int globalWritePointer = 0;
+    for (int shapeBucket = 0; shapeBucket<rawOffsets.length; shapeBucket++) {
+        int startRawIndex = rawOffsets[shapeBucket];
+        int endRawIdx = startRawIndex + neighborCount[shapeBucket];
+
+        for (int i = startRawIndex; i < endRawIdx; i++) {
+            uniqueBitset.set(bucketedNeighborPool[i]);
+        }
+
+        rawOffsets[shapeBucket] = globalWritePointer;
+        neighborCount[shapeBucket] = 0;
+        int uniqueAddr = uniqueBitset.nextSetBit(0);
+        while (uniqueAddr >= 0) {
+            bucketedNeighborPool[globalWritePointer++] = uniqueAddr;
+            neighborCount[shapeBucket]++;
+
+            uniqueBitset.clear(uniqueAddr);
+            uniqueAddr = uniqueBitset.nextSetBit(uniqueAddr+1);
+        }
+    } // this does leave trailing garbage data but it doesnt technically matter
+}
+
+private void BucketGrouping(IntArrayList perimiterOwners, IntArrayList perimiterNeighbors, int[]rawOffsets, int[] bucketedNeighborPool, int[] neighborCount) {
+    //Step 1: get total count
+    for (int i=0; i<perimiterOwners.Size(); i++) {
+        neighborCount[shapeIndexAddressTable[perimiterOwners.atIndex(i)]]++;
+    }
+    //Step 2: get the bucket offsets
+    int runner = 0;
+    for (int i=0; i<neighborCount.length;i++) {
+        rawOffsets[i]=runner;
+        runner+=neighborCount[i];
+    }
+
+    // Step 3: create the buckets
+    Arrays.fill(neighborCount,0); // reset it without using NEW, now used as an offset table
+
+    for (int i = 0; i<bucketedNeighborPool.length; i++) {
+        int owner = perimiterOwners.atIndex(i);
+        int neighbor = perimiterNeighbors.atIndex(i);
+        int ownerAddress = shapeIndexAddressTable[owner];
+
+        int targetWriteIndex = rawOffsets[ownerAddress] + neighborCount[ownerAddress];
+
+        bucketedNeighborPool[targetWriteIndex] = neighbor;
+        neighborCount[ownerAddress]++;
+    }
+}
+
+private void NeighborSetup(IntArrayList perimiterOwners, IntArrayList perimiterNeighbors, int[] relativeFlags) {
+    for (int currentIndex = 1; currentIndex < ImageDataHolder.width; currentIndex++) {
+        // no colomn mask because 0 isnt included anyway
+        if ((relativeFlags[currentIndex] & 1) != 0) { // if theres a left boundary *ignore right because the left should already be in the cpu cache since it was just analyzed itself*
+            int leftIndex = currentIndex - 1;
+
+            // procces shape A neighbor
+            perimiterNeighbors.Add(parentPixels[leftIndex]);
+            perimiterOwners.Add(parentPixels[currentIndex]);
+            // process shape B neighbor
+            perimiterNeighbors.Add(parentPixels[currentIndex]);
+            perimiterOwners.Add(parentPixels[leftIndex]);
+        }
+    }
+
+    // this is to make sure that image edges aren't processed as shapes that are together basically
+    /*
+     * i.e
+     * 3 3 3
+     * 3 3 0
+     * 3 3 3
+     * 0 isnt seen as a hole
+     */
+
+    int[] columnMask = new int[relativeFlags.length];
+    java.util.Arrays.fill(columnMask, 15); // all the bits on (1111)
+    for (int y = 1; y < ImageDataHolder.height; y++) {
+        int thisIndex = y * ImageDataHolder.width;
+        columnMask[thisIndex] = 14; // all the bits on except for the left bit on the 0 X-value (1110)
+    }
+
+
+    // this loop skips the first row because then i dont actually need to check for the in bounds check
+    for (int currentIndex = ImageDataHolder.width; currentIndex < relativeFlags.length; currentIndex++) {
+        int flag = relativeFlags[currentIndex] & columnMask[currentIndex];
+
+        if (flag == 0) continue; // skip interior so i dont need all the other checks
+
+        int shapeID = parentPixels[currentIndex];
+
+        if ((flag & 8) != 0) { // if theres a top boundary *ignore bottom because the top should already be in the cpu cache since it was just analyzed itself*
+            int upIndex = currentIndex - ImageDataHolder.width;
+
+            // procces shape A neighbor
+            perimiterNeighbors.Add(parentPixels[upIndex]);
+            perimiterOwners.Add(shapeID);
+            // process shape B neighbor
+            perimiterNeighbors.Add(shapeID);
+            perimiterOwners.Add(parentPixels[upIndex]);
+        }
+        if ((flag & 1) != 0) { // if theres a left boundary *ignore right because the left should already be in the cpu cache since it was just analyzed itself*
+            int leftIndex = currentIndex - 1;
+
+            // procces shape A neighbor
+            perimiterNeighbors.Add(parentPixels[leftIndex]);
+            perimiterOwners.Add(shapeID);
+            // process shape B neighbor
+            perimiterNeighbors.Add(shapeID);
+            perimiterOwners.Add(parentPixels[leftIndex]);
+        }
+    }
+
+    int bottomRowOffset = (ImageDataHolder.height - 1) * ImageDataHolder.width;
+    for (int x = 0; x < ImageDataHolder.width; x++) {
+        perimiterOwners.Add(parentPixels[x]);
+        perimiterNeighbors.Add(ImageDataHolder.flatsize);
+
+        perimiterOwners.Add(parentPixels[bottomRowOffset+x]);
+        perimiterNeighbors.Add(ImageDataHolder.flatsize);
+    }
+
+    for (int y = 1; y < ImageDataHolder.height-1; y++) {
+        int base = y*ImageDataHolder.width;
+        perimiterOwners.Add(parentPixels[base]);
+        perimiterNeighbors.Add(ImageDataHolder.flatsize);
+
+        perimiterOwners.Add(parentPixels[base+(ImageDataHolder.width-1)]);
+        perimiterNeighbors.Add(ImageDataHolder.flatsize);
+    }
+}

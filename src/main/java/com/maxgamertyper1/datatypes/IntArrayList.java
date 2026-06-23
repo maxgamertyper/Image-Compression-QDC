@@ -26,16 +26,13 @@ public class IntArrayList {
         size=0;
     }
 
-    public void Remove(int value) {
+    public void SwapRemove(int value) {
         for (int i = 0; i < size; i++) {
             if (InternalArray[i] == value) {
-
-                int numMoved = size - i - 1;
-                if (numMoved > 0) {
-                    System.arraycopy(InternalArray, i + 1, InternalArray, i, numMoved);
-                }
+                InternalArray[i] = InternalArray[size - 1];
 
                 size--;
+                return;
             }
         }
     }

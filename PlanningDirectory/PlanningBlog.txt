@@ -1101,3 +1101,144 @@ When i flip the BitSet so that a 0 means unprocessed and a 1 means unprocessed
 I dont actually need to label anything since the shapes themselves already have the bounds in the edgemap
 so its perfect
 all i have to do is clear it and im good
+
+I sampled a 5k? image (5k x 3720) of a landscape and the BitSet .set() function is genuinley so high its clearly the issue
+the other issue is the hole and perimiter which takes like 8 seconds
+but out of the 178 seconds it took to process, ~130 were the BitSet.set()
+so clearly that loop is not good bro
+
+Woah ok
+i changed it so instead of it setting everything everytime, it just iterates over the shape that it processed and resets those
+that saved a solid 140 seconds on the 5K image so clearly thats the issue here
+which 30 is still too long so i'll flip it but its a good temporary fix while i wait to verify the data
+
+I realized it doesnt even matter if the shape data isnt continuous since i want everything to be 1 anyway so i can just set form the start to the end
+now its about 26 seconds for the 5k image
+*still too long, but way better*
+
+
+The RAM is spiking so i lwk might need to figure that out again im guessing its pecause of all the stupid objects like CornerPoint and RectangleRepresentative
+*specifically for the 5K image so*
+it hits like 8GB of RAM so
+might still need to fix that
+lets check with our cool tool visualVM!
+
+looks like i have like 60 million int[] objects
+so
+it would seem that i need to do something similar to the BitSet and initiate it once then just reuse it
+I just figured the GC would clean it up once the function ends but i guess not
+
+Apparently theres something called like an array arena or smth and its perfect and looks relatively easy to code tbh
+
+5/20/26:
+The actual is the amount of IntArrayLists i make form the shape union find so ill have to slim that down
+
+5/22/26:
+OK, im recoding it by making it just 2 arraylists as the neighbor and the owner
+then ill group it with a multi stream pass
+It looks like I genuinley just forgot about it not being on the same row i guess
+Instead of doing that InSameRow check i could just do a mask and then add the flag i guess
+
+Originally i was accidentally going to skip any neighbors in the top row so good thing I saw that and added a preliminary loop
+
+5/23/26:
+dude what is going on
+this new code is like crashing out
+i have literally no idea whats wrong
+
+OK, I KNOW its something with the out of bounds but idk what specifically
+
+5/24/26:
+bruh i got it working but its just like 10x slower than the original
+im guesiing its something to do with hardware prefetching since the other one is very linear
+but idk
+
+OK, im going to try and stick with the old format but just make it better somehow
+switching the ArrayList remove to a swap and decrement the max value already improves it
+
+the O(N) functions are still being slower so idk whats going on bro
+
+OK i realized this perimiter stuff is lwk wrong
+like
+imagine i have this
+
+AAAA
+ABCA
+AAAA
+
+it'd say that A has no holes since B is touching C
+So instead im going to use a stack
+and due to my previously calculated rules its not like a cyclical graph so i can kinda cheese it and do a vertical and horizontal scan
+
+so for that id get
+Vert 1: AAA, no holes
+Vert 2: ABA, B is a hole in A
+Vert 3: ACA, C is a hole in A
+Vert 4: same as Vert 1
+
+Horiz 1: AAAA, no holes
+Horiz 2: ABCA, B is a hole of A and C is a hole of A
+Horiz 3: same as 1
+
+then I'd check for intersection between the 2 so
+
+Vertical says B is a hole in A and C is a hole in A
+Horizontal says the same
+
+Do B and C touch?
+Yes: 1 hole
+No: 2 holes
+
+yknow
+it'll be way faster since its just a raster scan
+and i dont need to track so much garbage data
+so i'll code that tomorrow or later
+I need to do some prep for other
+
+5/25/26:
+the only issue is im not actually sure how ill store that
+
+
+I added an if statement for processing shapes so that if the area is less than 5 then it doesnt actually try to compress it
+that cut down on a ton of time
+
+the main barrier is still the hole processing but i do think ive found a solution
+i need 3 arrays
+a jump map
+an enclosure map
+and a "first" seen map
+
+i guess a 4th for a global enclosure map
+
+and then i think itll actually be fast enough once i change the BitSet logic so itll be perfect for the encoding tests
+
+It should also count those ones like before
+the goal for file size is beat png for pixel art tbh
+i would like it to beat it on average but idk if thats gonna happen
+im just a little high schooler after all
+
+NOTE: make a new getTotalShapeCount() that returns the size of processed shapes
+
+5/26/26:
+that one won't work because its hard to implement for one and I think there was a structural flaw but i dont remember it
+
+So New idea, basically i make a bounding box of the shape, run a DSU on it.
+if a shape touches the edge, its killed and removed from the data
+if the shape doesnt and its not the original shape, its a hole
+that should be way faster and more ram efficient too
+for this new version, i only need to check shapes with an area >7
+since the smallest a shape could be with a hole is
+
+AAA
+ABA
+AAA
+which has 8 As so
+
+NOTE: there is a flaw in the RectangleCreator as it makes a ton of new objects, primitive flattening would be better since hte GC is so lazy
+
+6/23/26:
+Holy time skip am i right
+I'm going to stop working on optimization as it clearly is not being nice to me and i should actually finish it even if it takes a while
+I'll start working on the encoder and then the decoder after figuring out file structure!
+I have some other things to work on like classes, internship, scouts, and fbla nats
+But hopefully i can work on it when im back from those

@@ -333,6 +333,7 @@ public class QuadralizedDataCompressor {
 
         CompressedColorChannel[] compressedColorChannels = new CompressedColorChannel[chunkedColorChannels.length];
         BitSet proccessedPixels = new BitSet(ImageDataHolder.flatsize); // remove the overhead of calling it thousands of times in rectangle creator
+        proccessedPixels.set(0,ImageDataHolder.flatsize);
 
         for (int i=0; i<chunkedColorChannels.length;i++) {
             ChunkedColorChannel CCC = chunkedColorChannels[i];
@@ -359,24 +360,28 @@ public class QuadralizedDataCompressor {
             for (PixelChunk pixelChunk : CCC.getChannelChunks()) {
                 int startingIndex = pixelChunk.StartingIndex;
                 boolean useRectangles = PixelChunkUseRectangles(pixelChunk.convexCorners,shapeOrganizer.getContinuity(startingIndex),shapeOrganizer.getHoles(startingIndex));
+                int[] indexBucket = shapeOrganizer.getIndexGrouping(pixelChunk.StartingIndex);
+
+                if (indexBucket.length<5) { // label any shape <5 as an isolated pixel since its not efficient to store a rectangle for less than 5 pixels
+                    for (int index : indexBucket) {
+                        finalIsolatedIndexes.Add(index);
+                        IsolatedIndexesValues.Add(pixelChunk.getColorValue());
+                    }
+                    continue;
+                }
 
                 if (useRectangles) {
-                    proccessedPixels.set(0,ImageDataHolder.flatsize); // NOTE: should probably not do this to make speed better tbh
+                     // NOTE: should probably not do this to make speed better tbh
                     ArrayList<RectangleRepresentative> brokenChunk = RectangleCreator(pixelChunk, flagHolder, shapeOrganizer, cardinalMaps,proccessedPixels);
 
-                    for (RectangleRepresentative rect : brokenChunk) {
-                        if (rect.area() == 1) { // if Size 1, its isolated
-                            finalIsolatedIndexes.Add(rect.startingIndex());
-                            IsolatedIndexesValues.Add(rect.value());
-                        } else {
-                            finalRectangleHolder.add(rect);
-                        }
-                    }
+                    finalRectangleHolder.addAll(brokenChunk);
                 } else {
                     CornerDataRepresentative holder = CalculateCornerData(pixelChunk, CCC.getComputedFlags());
                     finalCornerHolder.add(holder);
                 }
 
+                int[] shapeData = shapeOrganizer.getIndexGrouping(pixelChunk.StartingIndex);
+                proccessedPixels.set(shapeData[0],shapeData[shapeData.length-1]);
             }
 
             // sequential sorting
@@ -409,6 +414,7 @@ public class QuadralizedDataCompressor {
             CompressedColorChannel compressedColorChannel = new CompressedColorChannel(CCC.getChannelType(),sortedRectangles,sortedCorners, useColoredBFSPrediction ? -1 : CIR.getInitialPaethValues()[i]);
             compressedColorChannel.setIsolatedIndexes(sortedKeys,sortedValues);
             compressedColorChannels[i] = compressedColorChannel;
+
         }
 
         return new CompressedImageRepresentative(CIR.isGrayScale(),CIR.isUniformMaxAlpha(),compressedColorChannels,useColoredBFSPrediction);
@@ -647,7 +653,10 @@ public class QuadralizedDataCompressor {
                 RectangleStartingIndexCalculator(flatAnchorIndex,wideRectangleHeight,realLimits[0]+1,directionData),
                 PC.getColorValue()
         );
-        //no check for wide to see if it fully fits because the long already should have
+
+        if (wideRect.area()==PC.getTotalArea()) {
+            return new RectangleRepresentative[]{wideRect}; // return the perfect fit
+        }
         returnHolder[0] = wideRect; // otherwise keep it there
 
         return returnHolder;

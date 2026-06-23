@@ -2,13 +2,13 @@ package com.maxgamertyper1.datatypes;
 
 import com.maxgamertyper1.imagereading.ImageDataHolder;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import static com.maxgamertyper1.imagereading.PixelHelper.IndexInImage;
-import static com.maxgamertyper1.imagereading.PixelHelper.IndexsInSameRow;
+import static com.maxgamertyper1.imagereading.PixelHelper.*;
 
- // this stuff wastes a ton of space so i might try to figure out a primitive hash map or smth
+// this stuff wastes a ton of space so i might try to figure out a primitive hash map or smth
 
 public class ShapeUnionFind {
     private final int[] parentPixels;
@@ -64,7 +64,7 @@ public class ShapeUnionFind {
 
     public void calculateShapeRoots() {
         IntArrayList uniqueBosses = new IntArrayList(16);
-        shapeIndexAddressTable = new int[ImageDataHolder.flatsize];
+        shapeIndexAddressTable = new int[ImageDataHolder.flatsize+1];
         Arrays.fill(shapeIndexAddressTable,-1);
 
         for (int i = 0; i < parentPixels.length; i++) {
@@ -138,7 +138,7 @@ public class ShapeUnionFind {
         return shapeContinuityBasedOnStart[shapeIndexAddressTable[startingIndex]]; // same as above
     }
 
-    public void calculatePerimiterAndHoles(int[] relativeFlags) {
+    public void calculatePerimiterAndHoles(int[] relativeFlags) { // O(NlogN)
         shapeHolesBasedOnStart = new int[getTotalShapeCount()];
 
         IntArrayList[] perimiterHolders = new IntArrayList[getTotalShapeCount()];
@@ -173,24 +173,82 @@ public class ShapeUnionFind {
         }
 
         // NOTE: may be better to make a primitve set for this
-        for (IntArrayList IAL : perimiterHolders) {
+
+        IntArrayDeque shapeQueue = new IntArrayDeque(getTotalShapeCount()); // make size is the amount of shapes
+        BitSet reusableBitset = new BitSet(getTotalShapeCount());
+
+        for (int i=0; i<perimiterHolders.length; i++) {
+            IntArrayList IAL = perimiterHolders[i];
             IAL.removeDuplicatesUnsorted();
+
+            if (IAL.Size()==1) {
+                shapeQueue.enqueue(i);
+            }
         }
 
-        // NOTE: might be better to make this a queue that only processes the new updated shapes
-        int holesFound = 1;
-        while (holesFound!=0) {
-            holesFound=0;
+        while (shapeQueue.getSize()!=0) {
+            int thisShape = shapeQueue.dequeue();
+            IntArrayList currentNeighbors = perimiterHolders[thisShape];
 
-            for (int i=0; i<perimiterHolders.length; i++) {
-                IntArrayList currentPerimiterTouchers = perimiterHolders[i];
+            int parentShape = currentNeighbors.atIndex(0);
+            int parentShapeAddress = shapeIndexAddressTable[parentShape];
 
-                if (currentPerimiterTouchers.Size()==1) {
-                    int parentShape = currentPerimiterTouchers.atIndex(0);
-                    perimiterHolders[shapeIndexAddressTable[parentShape]].Remove(rootIndexes[i]);
-                    holesFound++;
-                    shapeHolesBasedOnStart[shapeIndexAddressTable[currentPerimiterTouchers.atIndex(0)]]++;
-                    currentPerimiterTouchers.Clear();
+            IntArrayList parentNeighbors = perimiterHolders[parentShapeAddress];
+            parentNeighbors.SwapRemove(thisShape);
+            if (parentNeighbors.Size()==1) {
+                shapeQueue.enqueue(parentShape);
+            }
+
+            shapeHolesBasedOnStart[parentShapeAddress]++;
+        }
+    }
+
+    public void CalculateHolesVersion3(int[] relativeFlags) {
+        int w = ImageDataHolder.width;
+
+        int[] globalEnclosureMap = new int[getTotalShapeCount()];
+        int[] localEnclosureMap = new int[getTotalShapeCount()];
+        Arrays.fill(globalEnclosureMap,-1); // mark as unproccessed
+
+
+        int[] jumpMap = new int[w]; // does not need set as it will only check if an index is less than the jump
+        int[] firstSeenUngrouped = new int[getTotalShapeCount()];
+
+        for (int yValue = 0; yValue<ImageDataHolder.height; yValue++) {
+            Arrays.fill(localEnclosureMap,-1); // mark as unproccessed
+            Arrays.fill(firstSeenUngrouped,-1); // mark as unseen
+
+            for (int xValue=0; xValue<w; xValue++) {
+                int shapeID = shapeIndexAddressTable[parentPixels[IndexCalculator(w,xValue,yValue)]];
+
+                if (firstSeenUngrouped[shapeID]==-1 || firstSeenUngrouped[shapeID]==xValue-1) {
+                    firstSeenUngrouped[shapeID]=xValue;
+                } else {
+                    // process shapes in between
+                    int startWall = firstSeenUngrouped[shapeID];
+                    int endWall = xValue;
+                    int reXValue = startWall + 1;
+
+                    while (reXValue < endWall) {
+                        // check jump map to prevent reprocessing
+                        if (jumpMap[reXValue] > reXValue) {
+                            reXValue = jumpMap[reXValue]; // jump to pocket end
+                            continue;
+                        }
+
+                        // get the inner shape
+                        int innerRawID = parentPixels[IndexCalculator(w, reXValue, yValue)];
+                        int innerShapeID = shapeIndexAddressTable[innerRawID];
+
+                        localEnclosureMap[innerShapeID] = shapeID;
+
+                        firstSeenUngrouped[innerShapeID] = -1; // remove its data
+
+                        reXValue++;
+                    }
+
+                    jumpMap[startWall] = endWall;
+                    firstSeenUngrouped[shapeID] = endWall;
                 }
             }
         }
