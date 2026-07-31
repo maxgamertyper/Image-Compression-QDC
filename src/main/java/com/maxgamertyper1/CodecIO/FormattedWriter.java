@@ -39,11 +39,9 @@ public class FormattedWriter implements Closeable {
 
     public void finalizeMetadata(byte[] initialColors) throws IOException {
         bitWriter.writeRawValue(fileSignature,32);
-        System.out.println("expected flush");
         bitWriter.writeRawValue(compressionVersionMajor,8);
         bitWriter.writeRawValue(compressionVersionMinor,8);
         bitWriter.writeRawValue(thisImageWidth,16);
-        System.out.println("expected flush");
         bitWriter.writeRawValue(thisImageHeight,16);
         bitWriter.writeRawValue(flagByte,8);
 

@@ -23,7 +23,7 @@ public class Main {
         long Truestart = System.currentTimeMillis();
         long end;
 
-        ImageReader.ReadAllImageContent("TestingImages/white_black_white.png");
+        ImageReader.ReadAllImageContent("TestingImages/yellow_square.png");
         System.out.println("Image Data: \n" +"Name: "+ ImageDataHolder.metaImageName +"\nWidth: "+ImageDataHolder.width + "\nHeight: " + ImageDataHolder.height + "\n Flatsize: " + ImageDataHolder.flatsize + " (Megapixels: "+ (float)ImageDataHolder.flatsize/1000000 +")" + "\nExtension: "+ImageDataHolder.fileType +"\nGrayscale:"+ImageDataHolder.isGrayscale + "\nUniform Maximum Alpha:" + ImageDataHolder.UniformMaxAlpha + "\nUsing Version: "+ FormattedWriter.compressionVersionMajor+"."+FormattedWriter.compressionVersionMinor);
 
         end = System.currentTimeMillis();
@@ -76,9 +76,11 @@ public class Main {
             System.out.println(Arrays.toString(channel.getBuiltCorners()));
         }
 
-        System.out.println(FinalCompression.getCompressedChannels().length);
-        System.out.println(FinalCompression.getCompressedChannels()[0].getInitialPixel());
         FinalCompression.sortChannelOrder();
+        System.out.println(FinalCompression.getCompressedChannels().length);
+        for ( CompressedColorChannel ccc : FinalCompression.getCompressedChannels()) {
+            System.out.println(ccc.getInitialPixel());
+        }
         EncodingManager tempManager = new EncodingManager(FinalCompression,"testing.qdc");
         tempManager.writeMetadata();
 

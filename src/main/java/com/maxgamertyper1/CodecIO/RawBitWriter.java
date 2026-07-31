@@ -53,7 +53,6 @@ public class RawBitWriter {
 
             // shift so that any nonfilled bytes are then filled and the last byte has 0s
             intBuffer <<= emptyBits;
-            System.out.println("empty Bits: " + emptyBits + " bytes used: " + bytesUsed + " bit head: " + bitHead + " buffer value: " + intBuffer);
 
             for (int i = 0; i < bytesUsed; i++) {
                 int shift = 24 - (i * 8);
@@ -68,7 +67,6 @@ public class RawBitWriter {
     }
 
     private void flushBuffer() throws IOException {
-        System.out.println("flushing buffer: " + intBuffer);
         writeAndHash((intBuffer >>> 24) & 0xFF);
         writeAndHash((intBuffer >>> 16) & 0xFF);
         writeAndHash((intBuffer >>> 8) & 0xFF);
