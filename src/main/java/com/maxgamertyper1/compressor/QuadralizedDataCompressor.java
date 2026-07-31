@@ -55,51 +55,6 @@ public class QuadralizedDataCompressor {
         }
     }
 
-    public ChannelConcurrencyPercents getChannelConncurrencyPercents() {
-        float deltaChunkRate = getImageChunkRate(DeltaEncodedImage);
-        float colorChunkRate = getImageChunkRate(ImageDataHolder.channeledColors);
-
-        return new ChannelConcurrencyPercents(deltaChunkRate,colorChunkRate);
-    }
-
-    private static float getImageChunkRate(ImageRepresentative IR) {
-        int channelConcurrenciesTotal=0;
-        int channelCount = IR.getColorChannels().length;
-        long maxPossible = (long) ImageDataHolder.height * (ImageDataHolder.width - 1) + (long) ImageDataHolder.width * (ImageDataHolder.height - 1);
-
-        for (ColorChannel ch : IR.getColorChannels()) {
-            int channelConcurrencies = getChannelConcurrencies(ch);
-            channelConcurrenciesTotal+=channelConcurrencies;
-        }
-        return (float) channelConcurrenciesTotal / (maxPossible*channelCount);
-    }
-
-    private static int getChannelConcurrencies(ColorChannel ch) {
-        int channelConcurrencies = 0;
-        int[] pixels = ch.getChannelData();
-
-        for (int pixelIndex=0; pixelIndex<pixels.length; pixelIndex++) {
-            int pixelColor = pixels[pixelIndex];
-            int bottomIndex = pixelIndex+ImageDataHolder.width;
-            int rightIndex = pixelIndex+1;
-
-            boolean bottomOOB = false;
-            boolean rightOOB = false;
-
-            if (!IndexInImage(bottomIndex)) bottomOOB=true;
-            if (!IndexInImage(rightIndex) || !IndexsInSameRow(rightIndex,pixelIndex)) rightOOB=true;
-
-
-            if (!rightOOB) {
-                if (pixelColor==pixels[rightIndex]) channelConcurrencies++;
-            }
-            if (!bottomOOB) {
-                if (pixelColor==pixels[bottomIndex]) channelConcurrencies++;
-            }
-        }
-        return channelConcurrencies;
-    }
-
     private static int getPrediction(int leftPixelColor, int topPixelColor, int upperLeftPixelColor) {
         int paethPrediction = leftPixelColor + topPixelColor - upperLeftPixelColor;
 

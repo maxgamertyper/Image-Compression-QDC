@@ -1,0 +1,93 @@
+*Y is the graY color channel
+META data (14 - 17 Bytes based on flags):
+Signature (<MAX) (4 bytes)
+Compression Version Major (1 byte)
+Compression Version Minor (1 byte)
+Image dimenstions (2 bytes per) (height, width)
+Flag Tag (1 byte for room later):
+    Original file type (10 for png, 11 for jpg, 00 for unknown) (2 bits)
+    Alpha head (1 for maximum alpha, 0 for alpha color channel) (1 bit)
+    Grayscale head (1 for gray channel, 0 for RGB channels) (1 bit)
+Initial colors: (1 byte per channel, order is RGBYA, implied by previous rules)
+CRC-32 metadata integrity hash (4 bytes)
+
+
+
+Each channel is made up of chunks depending on how they were compressed and what settings were used
+
+starting decoding type (chunk types):
+00: raw colors
+10: rectangles
+11: corners
+
+since chunks are sequential, all things are grouped together
+a jump map is made to account for rectangles and corners
+a decoding type cannot follow itself, as such only a single bit is needed as a switch OPCODE *when an escape is read
+
+* order is implied based on the RGBYA as shown before
+Each channel:
+
+channel-META:
+channel size in bytes (4 bytes)
+unary prefix count (3 bits) 1-8 and last one is always an escape
+unary table mapping (3 bits to 24 bits depending on size) -> [000, 001, 010, 101, ESCAPE *implicit*] would map to the codes [0, 10, 110, 1110, 11110] and thats the data length
+starting OPCODE (2 bits)
+
+
+channel-DATA (prefixed-base, sequential data-stream):
+
+----- THIS IS FOR RAW COLORS --------
+* () indicates a prefix
+* [] indicates a swap (for the run-length map)
+* {} indicates a raw color value
+
+* already seen value
+(unary prefix to determine length) {X bit-length value from prefix, which then gets mapped in the run-length map}
+
+* newly seen value
+(unary prefix to determine length) {X bit-length value from prefix} *yes or no bit* [if 1, the run-length swap value]
+
+
+----- THIS IS FOR RECTANGLES --------
+* () indicates a prefix
+* [] indicates a dimension
+* {} indicates a "pre-prefix"
+
+* special rule: the "escape" unary code indicates an overflow here. If that overflow is all 1s (111111111), thats treated as an escape code as there is no way in hell i will need 512 bits for a delta
+
+
+* overflow prefix
+(ESCAPE unary *implies 9 bits*) [X bit-length width] {000, after mapping} (ESCAPE unary *implies 9 bits*) [X bit-length height] (3-bit prefix, mapped) COLOR-VALUE
+
+* non-overflow prefix
+(unary prefix) [X bit-length width] (unary prefix) [X bit-length height] (unary prefix, mapped) COLOR-VALUE
+
+
+
+----- THIS IS FOR CORNERS --------
+* () indicates a prefix
+* [] indicates a dimension
+* {} indicates a "pre-prefix"
+
+* previous special rule still applies
+
+* non-overflow
+(unary prefix) COLOR-VALUE (unary prefix) deltaX of next corner (unary prefix) deltaY of next corner ------ this is repeated until all corner points are added
+
+* overflow
+(unary prefix, mapped) COLOR-VALUE {ESCAPE} (9 bit prefix) [X bit-length deltaX] {ESCAPE} (9 bit prefix) [X bit-length deltaY] ------ this is repeated until all corner points are added
+
+
+
+
+Channel-TAIL:
+buffer bits to byte-align the tail
+channel CRC-32 integrity hash (4 bytes)
+
+
+Tail (28 bytes):
+Seek table (RGBYA):
+    Each channel gets a 4 byte offset address to the channel locaiton
+    If the channel doesnt exist, it gives 0x0000
+whole file CRC-32 integrity hash (4 bytes)
+END signature (MAX!, 4 bytes)

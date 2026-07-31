@@ -1242,3 +1242,42 @@ I'm going to stop working on optimization as it clearly is not being nice to me 
 I'll start working on the encoder and then the decoder after figuring out file structure!
 I have some other things to work on like classes, internship, scouts, and fbla nats
 But hopefully i can work on it when im back from those
+
+6/28/26:
+Nationals are tomorrow but after that im free as a bird so
+I need an escape code for the chunks so im thinking the (000) prefix for overflow
+and then (111111111) prefix since theres no way ill need a 2^512 delta
+the issue then is either how do i escape the raw colors since they dont have that overflow
+or how do i make a distinction between them
+
+I had this prefix map but i dont remember what its for, i remember it being good but ill have to delete it because i dont remember why or how i'd use it
+guess i should've written that down huh
+ok i changed it to unary with a similar format
+
+I know i need to change it to a more intermediary stage than this kind of garbage it is now
+instead of like chunkedIR and IR and CIR, just have an IR with a type enum, same with channels
+
+7/5/26:
+I realized that corners could actually have "islands"/ holes in them which id need to fill since i dont store concave corners
+so whats going to happen is i have a corner fill part and a layer override part
+
+corner fill:
+[value, delta x1, delta y1, delta x2, delta y2, etc.]
+
+corner override (corner fill sends an escape then a 1):
+(delta x reltaive to corner origin, delta y, {chunk data *could be raw or rect or another corner}, delta x relative to prev, delta y, {same thing}) ESCAPE
+
+7/27/26:
+classes suck dude.
+i think i can finish it by admissions.
+i also need to do sat studying but i think the start of school before my de classes start will be perfect to work on both
+
+7/30/26:
+I got the metadata code working, time to test it!
+It seems that there are 4 random extra bytes and i have no clue what they could be
+
+7/31/26:
+it looks like my flushRemaining() function fills the int buffer rather than to the next byte
+I was incorrect it was acutally because i was passing a byte[4] with a set size rather than byte[channels.length]
+causing there to be 3 empty bytes as 0x00
+metadata Done!

@@ -1,5 +1,7 @@
 package com.maxgamertyper1;
 
+import com.maxgamertyper1.CodecIO.EncodingManager;
+import com.maxgamertyper1.CodecIO.FormattedWriter;
 import com.maxgamertyper1.compressor.FinalizedCompressorData;
 import com.maxgamertyper1.compressor.QuadralizedDataCompressor;
 import com.maxgamertyper1.datatypes.*;
@@ -8,6 +10,8 @@ import com.maxgamertyper1.imagereading.ImageDataHolder;
 import com.maxgamertyper1.imagereading.ImageReader;
 
 import java.io.IOException;
+import java.util.Arrays;
+
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
@@ -19,8 +23,8 @@ public class Main {
         long Truestart = System.currentTimeMillis();
         long end;
 
-        ImageReader.ReadAllImageContent("CompressionTesting/all_colors_noise.png");
-        System.out.println("Image Data: \n" +"Name: "+ ImageDataHolder.metaImageName +"\nWidth: "+ImageDataHolder.width + "\nHeight: " + ImageDataHolder.height + "\n Flatsize: " + ImageDataHolder.flatsize + " (Megapixels: "+ (float)ImageDataHolder.flatsize/1000000 +")" + "\nExtension: "+ImageDataHolder.fileType +"\nGrayscale:"+ImageDataHolder.isGrayscale + "\nUniform Maximum Alpha:" + ImageDataHolder.UniformMaxAlpha + "\nUsing Version: "+ FinalizedCompressorData.compressionVersionMajor+"."+FinalizedCompressorData.compressionVersionMinor);
+        ImageReader.ReadAllImageContent("TestingImages/white_black_white.png");
+        System.out.println("Image Data: \n" +"Name: "+ ImageDataHolder.metaImageName +"\nWidth: "+ImageDataHolder.width + "\nHeight: " + ImageDataHolder.height + "\n Flatsize: " + ImageDataHolder.flatsize + " (Megapixels: "+ (float)ImageDataHolder.flatsize/1000000 +")" + "\nExtension: "+ImageDataHolder.fileType +"\nGrayscale:"+ImageDataHolder.isGrayscale + "\nUniform Maximum Alpha:" + ImageDataHolder.UniformMaxAlpha + "\nUsing Version: "+ FormattedWriter.compressionVersionMajor+"."+FormattedWriter.compressionVersionMinor);
 
         end = System.currentTimeMillis();
         long IOprocessingTime = end - start;
@@ -34,24 +38,8 @@ public class Main {
         System.out.println("Paeth encoding took: " + (end - start) + "ms");
         start = System.currentTimeMillis();
 
-        ChannelConcurrencyPercents dataPercents = QDC.getChannelConncurrencyPercents(); // IMPORTANT FOR LATER
-
-        System.out.println("Delta noise percent: "+(1-dataPercents.deltaChunkRate())*100);
-        System.out.println("Color noise percent: "+(1-dataPercents.colorChunkRate())*100);
-
-        boolean useColoredBFSPrediction = dataPercents.colorChunkRate() >= dataPercents.deltaChunkRate(); //
-        FinalizedCompressorData.usesColorCompression = useColoredBFSPrediction; //
-
-        end = System.currentTimeMillis();
-        System.out.println("Prediction processing took: " + (end - start) + "ms");
-        start = System.currentTimeMillis();
-
         ChunkedImageRepresentative chunkedImage;
-        if (useColoredBFSPrediction) {
-            chunkedImage = QDC.chunkImage(ImageDataHolder.channeledColors);
-        } else {
-            chunkedImage = QDC.chunkImage(QDC.DeltaEncodedImage);
-        }
+        chunkedImage = QDC.chunkImage(QDC.DeltaEncodedImage);
 
         chunkedImage.SequentiallyOrder();
 
@@ -59,7 +47,8 @@ public class Main {
         System.out.println("Flag Processing and Shaping (concurrent) took: " + (end - start) + "ms");
         start = System.currentTimeMillis();
 
-        CompressedImageRepresentative FinalCompression = QDC.QuadralizedDataCompressed(chunkedImage, useColoredBFSPrediction);
+        CompressedImageRepresentative FinalCompression = QDC.QuadralizedDataCompressed(chunkedImage, false);
+        FinalCompression.setMetaData((short) ImageDataHolder.height,(short) ImageDataHolder.width,ImageDataHolder.fileType);
 
         end = System.currentTimeMillis();
         System.out.println("Calculating Rectangles and Corners took: " + (end - start) + "ms");
@@ -69,7 +58,7 @@ public class Main {
             System.out.println("\n\nChannel (Color: " + channel.getChannelColorType() + ", Paeth? " + !FinalCompression.isPaethEncoded() + ") Breakdown:");
             System.out.println("\t Rectangles: "+ channel.getRectangleCount() + " Corners: "+channel.getCornerCount()+" Isolated Indexes: "+channel.getIsolatedCount());
 
-            /*System.out.println("----------- Detailed Breakdown: ");
+            System.out.println("----------- Detailed Breakdown: ");
             System.out.println("Channel Starting Index: "+channel.getInitialPixel());
 
             System.out.println("------------------------------------");
@@ -84,8 +73,19 @@ public class Main {
 
             System.out.println("------------------------------------");
             System.out.println("\t Corners: ");
-            System.out.println(Arrays.toString(channel.getBuiltCorners()));*/
+            System.out.println(Arrays.toString(channel.getBuiltCorners()));
         }
+
+        System.out.println(FinalCompression.getCompressedChannels().length);
+        System.out.println(FinalCompression.getCompressedChannels()[0].getInitialPixel());
+        FinalCompression.sortChannelOrder();
+        EncodingManager tempManager = new EncodingManager(FinalCompression,"testing.qdc");
+        tempManager.writeMetadata();
+
+        end = System.currentTimeMillis();
+        System.out.println("Encoding: " + (end - start) + "ms");
+        start = System.currentTimeMillis();
+
 
         long entireTime = System.currentTimeMillis() - Truestart;
 

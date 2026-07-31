@@ -1,0 +1,67 @@
+package com.maxgamertyper1.CodecIO;
+
+import com.maxgamertyper1.imagereading.OriginalFileType;
+
+import java.io.*;
+
+public class FormattedWriter implements Closeable {
+    private static final int fileSignature = 0x3C4D4158; // this is <MAX when converted to ascii
+    private static final int fileEndBytes = 0x4D415821; // this is MAX! when converted to ascii
+    public static final byte compressionVersionMajor = 0;
+    public static final byte compressionVersionMinor = 3;
+    private short thisImageHeight; // unsigned but manually
+    private short thisImageWidth; // unsigned but manually
+    private byte flagByte;
+    RawBitWriter bitWriter;
+
+    public FormattedWriter(String outFile) throws FileNotFoundException {
+        OutputStream fileStream = new FileOutputStream(outFile);
+        bitWriter = new RawBitWriter(new BufferedOutputStream(fileStream));
+    }
+
+    //METAdata
+    public void setImageData(short imageHeight, short imageWidth) {
+        thisImageHeight = imageHeight;
+        thisImageWidth = imageWidth;
+    }
+
+    public void calculateMetadataFlagByte(boolean isGrayscale, boolean isMaximumAlpha, OriginalFileType originalFileType) {
+        // isGrayscale (1 bit), isMaxAlpha (1 bit), original type (2 bits), empty bits (4)
+        flagByte = 0;
+        byte typeBits = originalFileType == OriginalFileType.Unknown ? (byte) 0 :
+                originalFileType == OriginalFileType.PNG ? (byte) 3 : 2;
+
+        flagByte |= isGrayscale ? (byte) (1 << 7) : 0;
+        flagByte |= isMaximumAlpha ? (byte) (1 << 6) : 0;
+        //unknow is 00, png is 11, jpg is 10
+        flagByte |= (byte) (typeBits << 4);
+    }
+
+    public void finalizeMetadata(byte[] initialColors) throws IOException {
+        bitWriter.writeRawValue(fileSignature,32);
+        System.out.println("expected flush");
+        bitWriter.writeRawValue(compressionVersionMajor,8);
+        bitWriter.writeRawValue(compressionVersionMinor,8);
+        bitWriter.writeRawValue(thisImageWidth,16);
+        System.out.println("expected flush");
+        bitWriter.writeRawValue(thisImageHeight,16);
+        bitWriter.writeRawValue(flagByte,8);
+
+
+        //RGBYA
+        for (byte color : initialColors) {
+            bitWriter.writeRawValue(color,8);
+        }
+        //metadata checksum
+        bitWriter.flushIntermediaryAdler();
+    }
+
+    public void finishFile() throws IOException {
+        bitWriter.close(fileEndBytes); // write the ending bytes, flush, save
+    }
+
+    @Override
+    public void close() throws IOException {
+        bitWriter.flushRemaining(); // byte aligns the next segment
+    }
+}
