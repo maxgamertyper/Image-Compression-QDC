@@ -52,17 +52,19 @@ public class EncodingManager {
         // find what shapes belong to what corners
         colorChannel.calculateCornerOverrides();
         colorChannel.zigzagIsolated(); // turn the isolated values into zigzag form
+        int[] optimalUnary = calculateChannelUnary(colorChannel);
+
+        System.out.println(Arrays.toString(optimalUnary));
 
 
     }
 
     private int[] calculateChannelUnary(CompressedColorChannel colorChannel) {
-        int[] unaryPrefixBitCount = new int[8];
-        unaryPrefixBitCount[1] = 0b00001001; //111 which is the overflow to 10 bits
-
         int[] bitLengthCount = countBitLengths(colorChannel);// index 0 is 1 bit length, 1 is 2, ..., 9 is overflow
 
+        UnaryCalculator calculator = new UnaryCalculator(bitLengthCount);
 
+        return calculator.calculateOptimalCombination();
     }
 
     private int[] countBitLengths(CompressedColorChannel colorChannel) {
@@ -97,7 +99,8 @@ public class EncodingManager {
     }
 
 
-    public void writeChannelData() throws IOException {
-        //TODO
+    public void processChannel(int index) throws IOException {
+        preprocessChannel(finalImage.getCompressedChannels()[index]);
+        //TODO: write the channel data
     }
 }

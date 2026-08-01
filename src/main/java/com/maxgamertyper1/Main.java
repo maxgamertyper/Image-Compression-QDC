@@ -85,6 +85,7 @@ public class Main {
         }
 
         tempManager.writeMetadata();
+        tempManager.processChannel(0);
 
         end = System.currentTimeMillis();
         System.out.println("Encoding: " + (end - start) + "ms");
