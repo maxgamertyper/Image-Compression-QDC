@@ -35,30 +35,32 @@ public class ChannelWriter implements Closeable {
         }
     }
 
-    public void writeCornerData(int[] convexCornerDimensionDeltas, int rawValue, boolean layerOverride) throws IOException {
+    public void writeCornerData(int[] convexCornerDimensionDeltasDxDy, int zigzagValue, boolean layerOverride) throws IOException {
         //CornerData: [Value, (corner 1) 10 (10 x delta), 5 (5 y delta), (corner 2) -2, 5]
         trySwitchChunkType(DataType.Corner);
-        writeValueWithPrefix(zigzagEncode(rawValue));
+        writeValueWithPrefix(zigzagValue);
 
-        for (int dimensionDelta : convexCornerDimensionDeltas) {
-            writeValueWithPrefix(zigzagEncode(dimensionDelta));
+        for (int dimensionDelta : convexCornerDimensionDeltasDxDy) {
+            writeValueWithPrefix(dimensionDelta);
         }
 
         bitWriter.writeRawValue(layerOverride ? 1 : 0,1);
     }
 
-    public void writeRectangleData(int rectangleHeight, int rectangleWidth, int rawValue) throws IOException {
+    //TODO: write corner override data
+
+    public void writeRectangleData(int rectangleHeight, int rectangleWidth, int zigzagValue) throws IOException {
         //RectangleData: [Value, Width, Height]
         trySwitchChunkType(DataType.Rectangle);
-        writeValueWithPrefix(zigzagEncode(rawValue));
+        writeValueWithPrefix(zigzagValue);
         writeValueWithPrefix(rectangleWidth);
         writeValueWithPrefix(rectangleHeight);
     }
 
-    public void writeRawData(int rawValue) throws IOException {
+    public void writeRawData(int zigzagValue) throws IOException {
         //RAW: color
         trySwitchChunkType(DataType.Raw);
-        writeValueWithPrefix(zigzagEncode(rawValue));
+        writeValueWithPrefix(zigzagValue);
     }
 
     private void writeValueWithPrefix(int value) throws IOException {
@@ -93,10 +95,7 @@ public class ChannelWriter implements Closeable {
         return stream;
     }
 
-    public int zigzagEncode(int number) {
-        //0: 0, 1: -1, 10: 1, 11:-1
-        return (number << 1) ^ (number >> 31);
-    }
+
 
     @Override
     public void close() throws IOException {

@@ -369,6 +369,7 @@ public class QuadralizedDataCompressor {
             CompressedColorChannel compressedColorChannel = new CompressedColorChannel(CCC.getChannelType(),sortedRectangles,sortedCorners, useColoredBFSPrediction ? -1 : CIR.getInitialPaethValues()[i]);
             compressedColorChannel.setIsolatedIndexes(sortedKeys,sortedValues);
             compressedColorChannels[i] = compressedColorChannel;
+            compressedColorChannel.setShapeOrganizer(shapeOrganizer);
 
         }
 
@@ -469,7 +470,7 @@ public class QuadralizedDataCompressor {
         // 1) update bitset
         for (int y = 0; y < currentGlobalBest.height(); y++) {
             int rowStart = currentGlobalBest.startingIndex() + (y * w);
-            proccessedPixels.set(rowStart, rowStart + currentGlobalBest.length());
+            proccessedPixels.set(rowStart, rowStart + currentGlobalBest.width());
         }
         // 2) remove swallowed corners
         processingList.removeIf(cp -> proccessedPixels.get(cp.index()));
@@ -477,12 +478,12 @@ public class QuadralizedDataCompressor {
         int[] startingCoordinates = ReverseIndexCalculator(w, currentGlobalBest.startingIndex());
 
         // 3) add new corners
-        int right = startingCoordinates[0] + currentGlobalBest.length();
+        int right = startingCoordinates[0] + currentGlobalBest.width();
         int left = startingCoordinates[0] - 1;
         int top = startingCoordinates[1] - 1;
         int bottom = startingCoordinates[1] + currentGlobalBest.height();
 
-        // length and height are inclusive so
+        // width and height are inclusive so
         //top and bottom boundary check
         for (int x=left; x<=right; x++) {
             int topTestingIndex = IndexCalculator(w,x,top);

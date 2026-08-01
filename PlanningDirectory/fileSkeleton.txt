@@ -30,7 +30,7 @@ Each channel:
 channel-META:
 channel size in bytes (4 bytes)
 unary prefix count (3 bits) 1-8 and last one is always an escape
-unary table mapping (3 bits to 24 bits depending on size) -> [000, 001, 010, 101, ESCAPE *implicit*] would map to the codes [0, 10, 110, 1110, 11110] and thats the data length
+unary table mapping (36 bits) -> [000, 001, 010, 101, ESCAPE *implicit*] would map to the codes [0, 10, 110, 1110, 11110] and thats the data length
 starting OPCODE (2 bits)
 
 
@@ -53,7 +53,7 @@ channel-DATA (prefixed-base, sequential data-stream):
 * [] indicates a dimension
 * {} indicates a "pre-prefix"
 
-* special rule: the "escape" unary code indicates an overflow here. If that overflow is all 1s (111111111), thats treated as an escape code as there is no way in hell i will need 512 bits for a delta
+* special rule: the "escape" unary code indicates an overflow here. If that overflow is all 1s (11111111), thats treated as an escape code as there is no way in hell i will need 255 bits for a delta
 
 
 * overflow prefix

@@ -18,6 +18,7 @@ public class ShapeUnionFind {
     private int[] rootIndexes;
     private int[] shapeIndexAddressTable;
     private int[][] shapeIndexGroupings;
+    private int[] shapeParentFromHole;
 
     public ShapeUnionFind(int size) {
         parentPixels = new int[size];
@@ -141,6 +142,9 @@ public class ShapeUnionFind {
     public void calculatePerimiterAndHoles(int[] relativeFlags) { // O(NlogN)
         shapeHolesBasedOnStart = new int[getTotalShapeCount()];
 
+        shapeParentFromHole = new int[getTotalShapeCount()];
+        Arrays.fill(shapeParentFromHole, -1);
+
         IntArrayList[] perimiterHolders = new IntArrayList[getTotalShapeCount()];
 
         for (int i=0; i<rootIndexes.length; i++) {
@@ -200,10 +204,11 @@ public class ShapeUnionFind {
             }
 
             shapeHolesBasedOnStart[parentShapeAddress]++;
+            shapeParentFromHole[thisShape] = parentShapeAddress;
         }
     }
 
-    public void CalculateHolesVersion3(int[] relativeFlags) {
+    /*public void CalculateHolesVersion3(int[] relativeFlags) {
         int w = ImageDataHolder.width;
 
         int[] globalEnclosureMap = new int[getTotalShapeCount()];
@@ -252,7 +257,7 @@ public class ShapeUnionFind {
                 }
             }
         }
-    }
+    }*/
 
     private void HandleSideTheSequel(int newIndex, IntArrayList currentHolder) {
         if (IndexInImage(newIndex)) {
@@ -264,5 +269,9 @@ public class ShapeUnionFind {
 
     public int getShapeArea(int shapeStartingID) {
         return shapeAreasBasedOnStart[shapeIndexAddressTable[shapeStartingID]];
+    }
+
+    public int getParentShapeID(int holeShapeIndex) {
+        return shapeParentFromHole[shapeIndexAddressTable[holeShapeIndex]];
     }
 }

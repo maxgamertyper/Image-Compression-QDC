@@ -76,12 +76,14 @@ public class Main {
             System.out.println(Arrays.toString(channel.getBuiltCorners()));
         }
 
+        EncodingManager tempManager = new EncodingManager(FinalCompression,"testing.qdc");
         FinalCompression.sortChannelOrder();
+
         System.out.println(FinalCompression.getCompressedChannels().length);
         for ( CompressedColorChannel ccc : FinalCompression.getCompressedChannels()) {
             System.out.println(ccc.getInitialPixel());
         }
-        EncodingManager tempManager = new EncodingManager(FinalCompression,"testing.qdc");
+
         tempManager.writeMetadata();
 
         end = System.currentTimeMillis();

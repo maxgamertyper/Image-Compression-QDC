@@ -1281,3 +1281,37 @@ it looks like my flushRemaining() function fills the int buffer rather than to t
 I was incorrect it was acutally because i was passing a byte[4] with a set size rather than byte[channels.length]
 causing there to be 3 empty bytes as 0x00
 metadata Done!
+
+to plan the unary branch, this is the test im thinking of
+EXAMPLE:
+* counts is an array of zigzag values with n-bit length so counts[0] is how many data points have a bit length of 1
+counts[0] = 100
+counts[1] = 10
+counts[2] = 20
+counts[8] = 80
+
+by default i need a base item and an escape value so [000,111] (unary: 0, 10)
+so the cost here would be
+counts[0] * 1 (0 is 1 bit) [extra bits] + counts[0] = 200 bits for all data with 1 bit needed
+counts[1] * 2 (10 is 2 bits) [extra bits] + counts[1] * (value length, 8) = 20 + 80 = 100
+20 * 2 + 20 * 8 = 200
+80 * 2 + 80 * 8 = 800
+so total cost with these prefixes is 1300
+
+Then I could try to add a prefix [000,001,111] -> (0,10,110)
+counts[0] * 1 (0 is 1 bit) [extra bits] + counts[0] = 200 bits for all data with 1 bit needed
+counts[1] * 2 (10 is 2 bits) [extra bits] + counts[1] * (value length, 2) = 20 + 20 = 40
+20 * 3 + 20 * 8 = 60 + 160 = 220
+80 * 3 + 80 * 2 = 400
+so the total bit count for all this data is 1060, which is less so this is preferred
+
+the final check is shifting the value so [001,111] -> (0, 10)
+
+counts[0] * 1 (0 is 1 bit) [extra bits] + counts[0] * 2 (bits total) = 300 bits for all data with 1 bit needed
+counts[1] * 1 (0 is 1 bits) [extra bits] + counts[1] * (value length, 2) = 10 + 20 = 30
+20 * 2 + 20 * 8 = 200
+80 * 2 + 80 * 8 = 800
+total here is 1330, so its not preferred
+
+thus the preferred value is [000,001,111] -> (0,10,110). After this check, the same thing happens but the 001 is set as
+the base so its shifted upwards to 010 and then adding anothe [000,001,010,111] is also checked

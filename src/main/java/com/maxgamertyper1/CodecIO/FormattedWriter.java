@@ -45,7 +45,6 @@ public class FormattedWriter implements Closeable {
         bitWriter.writeRawValue(thisImageHeight,16);
         bitWriter.writeRawValue(flagByte,8);
 
-
         //RGBYA
         for (byte color : initialColors) {
             bitWriter.writeRawValue(color,8);

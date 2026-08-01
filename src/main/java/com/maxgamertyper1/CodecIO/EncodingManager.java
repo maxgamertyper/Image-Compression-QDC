@@ -2,9 +2,12 @@ package com.maxgamertyper1.CodecIO;
 
 import com.maxgamertyper1.datatypes.CompressedColorChannel;
 import com.maxgamertyper1.datatypes.CompressedImageRepresentative;
+import com.maxgamertyper1.datatypes.records.CornerDataRepresentative;
+import com.maxgamertyper1.datatypes.records.RectangleRepresentative;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Arrays;
 
 public class EncodingManager {
     final FormattedWriter fileWritter;
@@ -41,5 +44,60 @@ public class EncodingManager {
 
             fileWritter.finalizeMetadata(initialPixels);
         }
+    }
+
+    public void preprocessChannel(CompressedColorChannel colorChannel) {
+        // order all data sequentially (will happen during encoding)
+
+        // find what shapes belong to what corners
+        colorChannel.calculateCornerOverrides();
+        colorChannel.zigzagIsolated(); // turn the isolated values into zigzag form
+
+
+    }
+
+    private int[] calculateChannelUnary(CompressedColorChannel colorChannel) {
+        int[] unaryPrefixBitCount = new int[8];
+        unaryPrefixBitCount[1] = 0b00001001; //111 which is the overflow to 10 bits
+
+        int[] bitLengthCount = countBitLengths(colorChannel);// index 0 is 1 bit length, 1 is 2, ..., 9 is overflow
+
+
+    }
+
+    private int[] countBitLengths(CompressedColorChannel colorChannel) {
+        int[] bitCounts = new int[32];
+
+        for (int isolatedValue : colorChannel.getCorrespondingIsolatedValues()) {
+            bitCounts[dataBitLength(isolatedValue) - 1]++;
+        }
+        for (RectangleRepresentative rectangle : colorChannel.getBuiltRectangles()) {
+            bitCounts[dataBitLength(rectangle.width()) - 1]++;
+            bitCounts[dataBitLength(rectangle.height()) - 1]++;
+            bitCounts[dataBitLength(rectangle.zigzagValue()) - 1]++;
+        }
+        for (CornerDataRepresentative corner : colorChannel.getBuiltCorners()) {
+            bitCounts[dataBitLength(corner.zigzagValue()) - 1]++;
+
+            for (int cornerDelta : corner.convexCornerDeltaDxDy()) {
+                bitCounts[dataBitLength(cornerDelta) - 1]++;
+            }
+        }
+
+        //compress >9
+        for (int i=10; i < 32; i++) {
+            bitCounts[9] += bitCounts[i]; //bitcounts[9] requires the OVERFLOW prefix and the rest of it does too so it just pushes all of them there
+        }
+        return Arrays.copyOf(bitCounts, 10);
+    }
+
+    private int dataBitLength(int data) {
+        int baseReturn = (32 - Integer.numberOfLeadingZeros(data));
+        return baseReturn == 0 ? 1 : baseReturn;
+    }
+
+
+    public void writeChannelData() throws IOException {
+        //TODO
     }
 }
