@@ -1,16 +1,19 @@
 package com.maxgamertyper1.CodecIO;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.zip.Adler32;
 
 public class RawBitWriter {
     private final OutputStream buffer;
-
+    private boolean closed = false;
+    private int bytesWritten = 0;
+    private int emptyBitsFromFlushRemaining = 0;
     private int bitHead = 0;
     private int intBuffer = 0;
-    Adler32 intermediaryAdler;
-    Adler32 masterAdler;
+    private final Adler32 intermediaryAdler;
+    private final Adler32 masterAdler;
 
     public RawBitWriter(OutputStream stream) {
         this.buffer = stream;
@@ -18,6 +21,14 @@ public class RawBitWriter {
         masterAdler = new Adler32();
     }
     // TODO: make a flush reminaing type fuction that adds the rest of the intbuffer to the actual buffer
+
+    public void addBytesWritten(int count) {
+        bytesWritten+=count;
+    }
+
+    public void updateMasterAdler(ByteArrayOutputStream stream) {
+        masterAdler.update(stream.toByteArray(), 0, stream.size());
+    }
 
     public void writeRawValue(int value, int numBits) throws IOException{
         if (bitHead+numBits>32) {
@@ -59,6 +70,8 @@ public class RawBitWriter {
                 writeAndHash((intBuffer >>> shift) & 0xFF);
             }
 
+            emptyBitsFromFlushRemaining = emptyBits;
+            bytesWritten+=bytesUsed;
             bitHead = 0;
             intBuffer = 0;
         }
@@ -72,6 +85,8 @@ public class RawBitWriter {
         writeAndHash((intBuffer >>> 8) & 0xFF);
         writeAndHash(intBuffer & 0xFF);
 
+
+        bytesWritten+=4;
         intBuffer = 0;
         bitHead = 0;
     }
@@ -83,6 +98,9 @@ public class RawBitWriter {
     }
 
     public void close(int endingBytes) throws IOException {
+        if (closed) return;
+        closed = true;
+
         flushRemaining();
 
         int masterHash = (int) masterAdler.getValue();
@@ -101,6 +119,9 @@ public class RawBitWriter {
     }
 
     public void close() throws IOException {
+        if (closed) return;
+        closed = true;
+
         flushRemaining();
 
         int masterHash = (int) masterAdler.getValue();
@@ -112,4 +133,8 @@ public class RawBitWriter {
 
         buffer.close();
     }
+
+    public int getBytesWritten() {return bytesWritten;}
+
+    public int getEmptyBitsFromFlushRemaining() {return emptyBitsFromFlushRemaining;}
 }

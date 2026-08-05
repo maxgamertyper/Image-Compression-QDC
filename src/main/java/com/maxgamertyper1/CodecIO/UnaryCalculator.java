@@ -60,6 +60,7 @@ public class UnaryCalculator {
             int costPerItem = dataSize + prefixIndex + (bitLength == 9 ? 8 : 0); // 8 bits needed to say the ESCAPE size
             totalCost += bitCount * costPerItem;
         }
+        totalCost += combination.length * 4;
         return totalCost;
     }
 }

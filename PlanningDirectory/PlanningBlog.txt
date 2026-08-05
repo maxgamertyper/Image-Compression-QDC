@@ -1315,3 +1315,111 @@ total here is 1330, so its not preferred
 
 thus the preferred value is [000,001,111] -> (0,10,110). After this check, the same thing happens but the 001 is set as
 the base so its shifted upwards to 010 and then adding anothe [000,001,010,111] is also checked
+
+8/4/26:
+OK, i think theres an issue in the first rectangle test so im going to try and break it down (this is a 20x20 yellow square)
+
+	// Offset 0x00000000 to 0x00000011
+	0x3C, 0x4D, 0x41, 0x58, 0x00, 0x03, 0x00, 0x14, 0x00, 0x14, 0x70, 0xFF,
+	0xF2, 0x00, 0x00, 0x0E, 0x61, 0x00
+
+0x3C, 0x4D, 0x41, 0x58 = <MAX (the file signature)
+0x00, 0x03 = Version (0.3)
+0x00, 0x14 = width (20)
+0x00, 0x14 = height (20)
+0x70 = flag (01110000) *no grayscale but maximum alpha, comes from a png
+0xFF, 0xF2, 0x00 = Initial Colors (255 R, 242 G, 0 B)
+0x0E, 0x61, 0x00, 0x00 = checksum (i assume this is right, im not verifying that sicne its a java code so i hope its right)
+
+(METADATA looks good)
+this next part i think is wrong
+
+	// Offset 0x00000012 to 0x00000025
+	0x00, 0x00, 0x00, 0x0C, 0x25, 0xA8, 0x05, 0x14, 0x02, 0xAE, 0x00, 0xE7,
+	0x02, 0xAE, 0x00, 0xE7, 0x02, 0xAE, 0x00, 0xE7
+
+0x00, 0x00, 0x00, 0x0C = Channel Data Byte Count (12 bytes) *correct (doesnt include the hash)
+0x25 = 0010 0101 (first 4 bits = unary count (2), second 4 bits equals the first value (5)) *matches my print statements
+0xA8 = 1010 1000 (first 4 bits = second unary value (ESCAPE here, 10), second 2 bits = starting OPCODE (10, Rectangle), next bit is a prefix (0 for 5 bits), next bit is the start of a color (0)
+0x05 = 0000 0101 (first 4 bits = the rest of the color value (0), 5th bit = prefix (0 for 5 bits), 6-8th bits = start of a value (the width))
+0x14 = 0001 0100 (first 2 bits = the rest of the width (20, 10100), 0 is a prefix (5 bits), next 5 bits = height (20))
+
+OK, i see that 0x02, 0xAE, 0x00, 0xE7 is repeating so im guessing that im flushing the adler multiple times somewhere
+I made a closed variable so if its closed it cant be closed again and that fixed it
+
+OK, this is it after changes
+
+	// Offset 0x00000000 to 0x00000012
+	0x3C, 0x4D, 0x41, 0x58, 0x00, 0x03, 0x00, 0x14, 0x00, 0x14, 0x70, 0xFF,
+	0xF2, 0x00, 0x00, 0x0E, 0x61, 0x00, 0x00
+
+
+0x3C, 0x4D, 0x41, 0x58 = <MAX (the file signature)
+0x00, 0x03 = Version (0.3)
+0x00, 0x14 = width (20)
+0x00, 0x14 = height (20)
+0x70 = flag (01110000) *no grayscale but maximum alpha, comes from a png
+0xFF, 0xF2, 0x00 = Initial Colors (255 R, 242 G, 0 B)
+0x0E, 0x61, 0x00, 0x00 = checksum (i assume this is right, im not verifying that sicne its a java code so i hope its right)
+
+
+	// Offset 0x00000012 to 0x0000001E
+	0x00, 0x00, 0x00, 0x04, 0x00, 0x25, 0xA8, 0x05, 0x14, 0x02, 0xAE, 0x00, 0xE7
+
+
+0x00, 0x00, 0x00, 0x04 = the byte size of the channel (4 bytes)
+0x00 = 0 (0 trailing bits)
+0x25 = 0010 0101 (first 4 bits = unary count (2), second 4 bits equals the first value (5)) *matches my print statements
+0xA8 = 1010 1000 (first 4 bits = second unary value (ESCAPE here, 10), second 2 bits = starting OPCODE (10, Rectangle), next bit is a prefix (0 for 5 bits), next bit is the start of a color (0)
+0x05 = 0000 0101 (first 4 bits = the rest of the color value (0), 5th bit = prefix (0 for 5 bits), 6-8th bits = start of a value (the width))
+0x14 = 0001 0100 (first 2 bits = the rest of the width (20, 10100), 0 is a prefix (5 bits), next 5 bits = height (20))
+0x02, 0xAE, 0x00, 0xE7 = the integirty checksum (again, not checking)
+
+
+I just added like 600ish lines of code to detect ownership and whatnot and it worked first try...
+I dont believe this at all, there has to be smth wrong
+ok, im going to break EVEYRTHING down in this first simple test
+Quick Issues I saw (not channel related somehow): the tail seek is off by 1 and by the channel length
+
+unsigned char ucDataBlock[85] = {
+	// Offset 0x00000000 to 0x00000054
+	0x3C, 0x4D, 0x41, 0x58, 0x00, 0x03, 0x00, 0x14, 0x00, 0x14, 0x70, 0xFF,
+	0xF2, 0x00, 0x0E, 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x25,
+	0xA8, 0x05, 0x14, 0x02, 0xAE, 0x00, 0xE7, 0x00, 0x00, 0x00, 0x04, 0x00,
+	0x25, 0xA8, 0x05, 0x14, 0x02, 0xAE, 0x00, 0xE7, 0x00, 0x00, 0x00, 0x04,
+	0x00, 0x25, 0xA8, 0x05, 0x14, 0x02, 0xAE, 0x00, 0xE7, 0x00, 0x00, 0x00,
+	0x12, 0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00, 0x2C, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0xBB, 0x85, 0x04, 0x87, 0x4D, 0x41, 0x58, 0x21
+};
+
+META-DATA:
+0x3C, 0x4D, 0x41, 0x58 = <MAX (file signature)
+0x00, 0x03 = Major + Minor version (0.3)
+0x00, 0x14, 0x00, 0x14 = Width, Height (20x20)
+0x70 = flag bits (01110000, means maximum alpha, originally a png)
+0xFF, 0xF2, 0x00 = initial colors (255, 242, 0)
+0x0E, 0x61, 0x00, 0x00 = what i assume is the adler32 hash for the metadata
+CHANNEL-DATA:
+* this next part is repeated 3 times due to the 3 channels (R,G,B)
+0x00, 0x00, 0x00, 0x04 = the channel length (4 bytes)
+0x00 = how many trailing dead bits to fill the byte (0)
+0x25, 0xA8, 0x05, 0x14 = the channel data (broken down below as it appears 4 times since its a uniform image)
+0x02, 0xAE, 0x00, 0xE7 = what i assume to be the channel hash
+TAIL:
+0x00, 0x00, 0x00, 0x12 = R channel seek (18th byte is starting, true)
+0x00, 0x00, 0x00, 0x1F = G channel seek (31st byte is starting, true)
+0x00, 0x00, 0x00, 0x2C = B channel seek (44th byte is starting, true)
+0x00, 0x00, 0x00, 0x00 = Y channel seek (0th byte means null because thats where metadata is, true because no gray channel here)
+0x00, 0x00, 0x00, 0x00 = A channel seek (same as above, true because there is no alpha channel)
+0xBB, 0xAC, 0x04, 0x8A = Should be the Adler32 hash for the whole file (again, not checking)
+NOTE: above is probably wrong because i forgot i need to actually stream this through the bitwriter (EDIT: i fixed it and it looks right now)
+0x4D, 0x41, 0x58, 0x21 = MAX! (file end signautre)
+
+BREAK DOWN:
+0x25 = 0010 0101 (first 4 bits is unary length, 2) (second 4 bits is first table mapping, 0 -> 5 bits)
+0xA8 = 1010 1000 (first 4 bits is second table mapping (ESCAPE, 10 -> 10 bits)) (next 2 bits is starting OPCODE, 10 *rectangles) (next 2 bits start a color-value (0, 5 bits))
+0x05 = 0000 0101 (first 4 bits finish the value, which = 0) (second 4 start the next value, 0 (5 bits) 101)
+0x14 = 0001 0100 (first 2 bits finish the value, 10100 (20)) (next 6 bits start a new value, 0(5 bits)10100(20)
+
+Means a rectangle of size 20 with paeth value 0
+using the initial value we get a 20x20 square of 255, 242, 0

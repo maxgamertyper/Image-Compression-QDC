@@ -1,5 +1,6 @@
 package com.maxgamertyper1.datatypes;
 
+import com.maxgamertyper1.CodecIO.DataType;
 import com.maxgamertyper1.datatypes.records.CornerDataRepresentative;
 import com.maxgamertyper1.datatypes.records.RectangleRepresentative;
 
@@ -23,6 +24,7 @@ public class CompressedColorChannel {
     private int[] cornerIndexOffsets;
     private int[] cornerIndexesBucketed;
 
+    private int[][] cornerOwnershipMap;
     private int[] cornerShapeMap;
 
     public CompressedColorChannel(ChannelColorTypes channelColor, RectangleRepresentative[] builtRectangles, CornerDataRepresentative[] builtCorners, int initialPixel) {
@@ -30,30 +32,6 @@ public class CompressedColorChannel {
         this.builtCorners = builtCorners;
         this.builtRectangles = builtRectangles;
         this.initialPixel = initialPixel;
-    }
-
-    public int[] getCornerIndexesMap() {
-        return cornerIndexesMap;
-    }
-
-    public int[] getCornerIndexOffsets() {
-        return cornerIndexOffsets;
-    }
-
-    public int[] getCornerRectanglesMap() {
-        return cornerRectanglesMap;
-    }
-
-    public int[] getCornerRectOffsets() {
-        return cornerRectOffsets;
-    }
-
-    public ShapeUnionFind getShapeOrganizer() {
-        return shapeOrganizer;
-    }
-
-    public int[] getCornerShapeMap() {
-        return cornerShapeMap;
     }
 
     public void setShapeOrganizer(ShapeUnionFind shapeOrganizer) {
@@ -111,7 +89,7 @@ public class CompressedColorChannel {
         calculateCornerShapeMap();
         calculateCornerRectangleOverrides();
         calculateCornerIndexesOverrides();
-        //TODO: also map corners to other corners in case they stack on one another
+        calculateCornerOwnership();
     }
 
     private void calculateCornerShapeMap() {
@@ -128,7 +106,6 @@ public class CompressedColorChannel {
             cornerShapeMap[cornerShapeID] = i;
         }
     }
-
     public static int zigzagEncode(int number) {
         //0: 0, 1: -1, 10: 1, 11:-2, ...
         return (number << 1) ^ (number >> 31);
@@ -206,5 +183,70 @@ public class CompressedColorChannel {
             if (cornerIndex == -1) continue;
             cornerIndexesBucketed[writeCursors[cornerIndex]++] = i;
         }
+    }
+
+    private void calculateCornerOwnership() {
+        cornerOwnershipMap = new int[builtCorners.length][];
+        int[] shapeIDMap = shapeOrganizer.getRawData();
+        IntArrayList ownedCorners = new IntArrayList(8);
+
+        for (int i=0; i < builtCorners.length; i++) {
+            CornerDataRepresentative corner = builtCorners[i];
+            int shapeID = shapeIDMap[corner.startingIndex()];
+
+            ownedCorners.Clear();
+
+            int[] potentialShapes = shapeOrganizer.getChildShapes(shapeID);
+
+            if (potentialShapes != null) {
+                for (int childShapeID : potentialShapes) {
+                    int cornerIndex = cornerShapeMap[childShapeID];
+                    if (cornerIndex == -1) continue;
+                    ownedCorners.Add(cornerIndex);
+                }
+            }
+
+
+            cornerOwnershipMap[i] = ownedCorners.toIntArray();
+        }
+    }
+
+    public DataType getFirstType() {
+        int cornerStart = 0 == builtCorners.length ? Integer.MAX_VALUE : builtCorners[0].startingIndex();
+        int rectStart = 0 == builtRectangles.length ? Integer.MAX_VALUE : builtRectangles[0].startingIndex();
+        int rawStart = 0 == isolatedIndexes.length ? Integer.MAX_VALUE : isolatedIndexes[0];
+        return cornerStart==0 ? DataType.Corner : rectStart==0 ? DataType.Rectangle : DataType.Raw;
+    }
+
+    public int[] getOwnedRectangles(int cornerIndex) {
+        int start = cornerRectOffsets[cornerIndex];
+        int end = cornerRectOffsets[cornerIndex + 1];
+        return Arrays.copyOfRange(cornerRectanglesBucketed, start, end);
+    }
+
+    public int[] getOwnedIndexes(int cornerIndex) {
+        int start = cornerIndexOffsets[cornerIndex];
+        int end = cornerIndexOffsets[cornerIndex + 1];
+        return Arrays.copyOfRange(cornerIndexesBucketed, start, end);
+    }
+
+    public int[] getOwnedCorners(int cornerIndex) {
+        return cornerOwnershipMap[cornerIndex];
+    }
+
+    public boolean isOwnedIndex(int index) {
+        return cornerIndexesMap[index] != -1;
+    }
+
+    public boolean isOwnedRectangle(int index) {
+        return cornerRectanglesMap[index] != -1;
+    }
+
+    public boolean isChildCorner(int index) {
+        CornerDataRepresentative corner = builtCorners[index];
+        int shapeID = shapeOrganizer.getRawData()[corner.startingIndex()];
+
+        int parentShapeID = shapeOrganizer.getParentShapeID(corner.startingIndex());
+        return parentShapeID != -1 && cornerShapeMap[parentShapeID] != -1;
     }
 }

@@ -9,7 +9,7 @@ Flag Tag (1 byte for room later):
     Alpha head (1 for maximum alpha, 0 for alpha color channel) (1 bit)
     Grayscale head (1 for gray channel, 0 for RGB channels) (1 bit)
 Initial colors: (1 byte per channel, order is RGBYA, implied by previous rules)
-CRC-32 metadata integrity hash (4 bytes)
+Adler-32 metadata integrity hash (4 bytes)
 
 
 
@@ -29,8 +29,9 @@ Each channel:
 
 channel-META:
 channel size in bytes (4 bytes)
-unary prefix count (3 bits) 1-8 and last one is always an escape
-unary table mapping (36 bits) -> [000, 001, 010, 101, ESCAPE *implicit*] would map to the codes [0, 10, 110, 1110, 11110] and thats the data length
+amount of empty trailing bits (1 Byte, idk how to just make it 3 bits since im doint writeto) (1-7)
+unary prefix count (4 bits) 1-9
+unary table mapping (4 to 36 bits) -> [0000, 0001, 0010, 0101, ESCAPE *implicit*] would map to the codes [0, 10, 110, 1110, 11110] and thats the data length
 starting OPCODE (2 bits)
 
 
@@ -57,10 +58,10 @@ channel-DATA (prefixed-base, sequential data-stream):
 
 
 * overflow prefix
-(ESCAPE unary *implies 9 bits*) [X bit-length width] {000, after mapping} (ESCAPE unary *implies 9 bits*) [X bit-length height] (3-bit prefix, mapped) COLOR-VALUE
+(Prefix) COLOR-VALUE (ESCAPE unary *implies 9 bits*) [X bit-length width] {000, after mapping} (ESCAPE unary *implies 9 bits*) [X bit-length height]
 
 * non-overflow prefix
-(unary prefix) [X bit-length width] (unary prefix) [X bit-length height] (unary prefix, mapped) COLOR-VALUE
+(unary prefix, mapped) COLOR-VALUE (unary prefix) [X bit-length width] (unary prefix) [X bit-length height]
 
 
 
@@ -82,12 +83,12 @@ channel-DATA (prefixed-base, sequential data-stream):
 
 Channel-TAIL:
 buffer bits to byte-align the tail
-channel CRC-32 integrity hash (4 bytes)
+channel Adler-32 integrity hash (4 bytes)
 
 
 Tail (28 bytes):
 Seek table (RGBYA):
     Each channel gets a 4 byte offset address to the channel locaiton
     If the channel doesnt exist, it gives 0x0000
-whole file CRC-32 integrity hash (4 bytes)
+whole file Adler-32 integrity hash (4 bytes)
 END signature (MAX!, 4 bytes)

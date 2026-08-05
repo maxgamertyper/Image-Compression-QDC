@@ -86,6 +86,9 @@ public class Main {
 
         tempManager.writeMetadata();
         tempManager.processChannel(0);
+        tempManager.processChannel(1);
+        tempManager.processChannel(2);
+        tempManager.finalizeFile();
 
         end = System.currentTimeMillis();
         System.out.println("Encoding: " + (end - start) + "ms");
@@ -95,7 +98,7 @@ public class Main {
         long entireTime = System.currentTimeMillis() - Truestart;
 
         System.out.println("Entire thing took: " + (entireTime) + "ms");
-        System.out.println("IO Time: " + (IOprocessingTime) + "ms");
+        System.out.println("IO Time (non-encoding): " + (IOprocessingTime) + "ms");
         System.out.println("Computational Time: " + (entireTime - IOprocessingTime) + "ms");
         System.out.println("MP thorughput: " + (((float)ImageDataHolder.flatsize/1000000)/((float)(entireTime - IOprocessingTime)/1000)) + "MP/s");
     }

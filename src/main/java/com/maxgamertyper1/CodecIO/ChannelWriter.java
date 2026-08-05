@@ -1,5 +1,8 @@
 package com.maxgamertyper1.CodecIO;
 
+import com.maxgamertyper1.datatypes.records.CornerDataRepresentative;
+import com.maxgamertyper1.datatypes.records.RectangleRepresentative;
+
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -14,17 +17,29 @@ public class ChannelWriter implements Closeable {
     private static final int[] unaryValueRaw = new int[]{0,2,6,14,30,62,126,254}; //0,10,110,1110,etc
 
 
-    public ChannelWriter(DataType startingType, int[] unaryPrefixValueSet) throws IOException {
+    public ChannelWriter() {
         stream = new ByteArrayOutputStream();
-        bitWriter = new RawBitWriter(stream);
-
-        bitWriter.writeRawValue(startingType.getOpCode(),2);
-        currentChunkType = startingType;
-        this.unaryPrefixValueSet = unaryPrefixValueSet;
     }
 
-    public void setUnaryList(int[] unaryPrefixValues) {
-        unaryPrefixValueSet = unaryPrefixValues;
+    public void setData(DataType startingType, int[] unaryPrefixValueSet) throws IOException {
+        stream.reset();
+        createChannelInfo(startingType, unaryPrefixValueSet);
+    }
+
+    private void createChannelInfo(DataType startingType, int[] unaryPrefixValueSet) throws IOException {
+        bitWriter = new RawBitWriter(stream);
+        currentChunkType = startingType;
+        this.unaryPrefixValueSet = unaryPrefixValueSet;
+
+        writeMetadata(startingType);
+    }
+
+    private void writeMetadata(DataType startingType) throws IOException {
+        bitWriter.writeRawValue(unaryPrefixValueSet.length,4);
+        for (int unaryPrefixValue : unaryPrefixValueSet) {
+            bitWriter.writeRawValue(unaryPrefixValue,4);
+        }
+        bitWriter.writeRawValue(startingType.getOpCode(),2);
     }
 
     private void trySwitchChunkType(DataType chunk) throws IOException {
@@ -35,26 +50,39 @@ public class ChannelWriter implements Closeable {
         }
     }
 
-    public void writeCornerData(int[] convexCornerDimensionDeltasDxDy, int zigzagValue, boolean layerOverride) throws IOException {
+    public void writeCornerData(CornerDataRepresentative data, boolean layerOverride) throws IOException {
         //CornerData: [Value, (corner 1) 10 (10 x delta), 5 (5 y delta), (corner 2) -2, 5]
         trySwitchChunkType(DataType.Corner);
-        writeValueWithPrefix(zigzagValue);
+        writeValueWithPrefix(data.zigzagValue());
 
-        for (int dimensionDelta : convexCornerDimensionDeltasDxDy) {
+        for (int dimensionDelta : data.convexCornerDeltaDxDy()) {
             writeValueWithPrefix(dimensionDelta);
         }
 
         bitWriter.writeRawValue(layerOverride ? 1 : 0,1);
     }
 
-    //TODO: write corner override data
+    public void writeDeltas(int[] deltas) throws IOException {
+        writeValueWithPrefix(deltas[0]);
+        writeValueWithPrefix(deltas[1]);
+    }
 
-    public void writeRectangleData(int rectangleHeight, int rectangleWidth, int zigzagValue) throws IOException {
+    public void writeOverriden(int[] deltas, RectangleRepresentative data) throws IOException {
+        writeDeltas(deltas);
+        writeRectangleData(data);
+    }
+
+    public void writeOverriden(int[] deltas, int zigzagValue) throws IOException {
+        writeDeltas(deltas);
+        writeValueWithPrefix(zigzagValue);
+    }
+
+    public void writeRectangleData(RectangleRepresentative data) throws IOException {
         //RectangleData: [Value, Width, Height]
         trySwitchChunkType(DataType.Rectangle);
-        writeValueWithPrefix(zigzagValue);
-        writeValueWithPrefix(rectangleWidth);
-        writeValueWithPrefix(rectangleHeight);
+        writeValueWithPrefix(data.zigzagValue());
+        writeValueWithPrefix(data.width());
+        writeValueWithPrefix(data.height());
     }
 
     public void writeRawData(int zigzagValue) throws IOException {
@@ -95,7 +123,7 @@ public class ChannelWriter implements Closeable {
         return stream;
     }
 
-
+    public int lastEmptyBits() {return bitWriter.getEmptyBitsFromFlushRemaining();}
 
     @Override
     public void close() throws IOException {

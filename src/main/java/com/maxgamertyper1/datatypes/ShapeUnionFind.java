@@ -19,6 +19,7 @@ public class ShapeUnionFind {
     private int[] shapeIndexAddressTable;
     private int[][] shapeIndexGroupings;
     private int[] shapeParentFromHole;
+    private int[][] shapeChildrenMap;
 
     public ShapeUnionFind(int size) {
         parentPixels = new int[size];
@@ -273,5 +274,26 @@ public class ShapeUnionFind {
 
     public int getParentShapeID(int holeShapeIndex) {
         return shapeParentFromHole[shapeIndexAddressTable[holeShapeIndex]];
+    }
+
+    public void calculateChildrenMap() {
+        shapeChildrenMap = new int[getTotalShapeCount()][];
+        for (int parentID = 0; parentID < shapeHolesBasedOnStart.length; parentID++) {
+            shapeChildrenMap[parentID] = new int[shapeHolesBasedOnStart[parentID]];
+        }
+
+        int[] childCounters = new int[getTotalShapeCount()];
+
+        for (int childID = 0; childID < shapeParentFromHole.length; childID++) {
+            int parentID = shapeParentFromHole[childID];
+            if (parentID != -1) {
+                int index = childCounters[parentID]++;
+                shapeChildrenMap[parentID][index] = childID;
+            }
+        }
+    }
+
+    public int[] getChildShapes(int shapeID) {
+        return shapeChildrenMap[shapeID];
     }
 }

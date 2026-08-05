@@ -1,9 +1,9 @@
 package com.maxgamertyper1.CodecIO;
 
 public enum DataType {
-    Raw(0),
-    Rectangle(2),
-    Corner(3);
+    Raw(0), //00
+    Rectangle(2), // 10
+    Corner(3); // 11
 
     private final int opCode;
 

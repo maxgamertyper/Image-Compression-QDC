@@ -1,5 +1,7 @@
 package com.maxgamertyper1.CodecIO;
 
+import com.maxgamertyper1.datatypes.ChannelColorTypes;
+import com.maxgamertyper1.datatypes.IntArrayList;
 import com.maxgamertyper1.imagereading.OriginalFileType;
 
 import java.io.*;
@@ -12,11 +14,16 @@ public class FormattedWriter implements Closeable {
     private short thisImageHeight; // unsigned but manually
     private short thisImageWidth; // unsigned but manually
     private byte flagByte;
-    RawBitWriter bitWriter;
+    private final RawBitWriter bitWriter;
+    private final BufferedOutputStream bufferStream;
+    private final FileOutputStream fileStream;
+    private int[] channelSeekTable = {0,0,0,0,0};
+
 
     public FormattedWriter(String outFile) throws FileNotFoundException {
-        OutputStream fileStream = new FileOutputStream(outFile);
-        bitWriter = new RawBitWriter(new BufferedOutputStream(fileStream));
+        fileStream = new FileOutputStream(outFile);
+        bufferStream = new BufferedOutputStream(fileStream);
+        bitWriter = new RawBitWriter(bufferStream);
     }
 
     //METAdata
@@ -55,6 +62,25 @@ public class FormattedWriter implements Closeable {
 
     public void finishFile() throws IOException {
         bitWriter.close(fileEndBytes); // write the ending bytes, flush, save
+    }
+
+    public void writeChannel(ByteArrayOutputStream channelData, int emptyBits, ChannelColorTypes channelColor) throws IOException {
+        channelSeekTable[channelColor.getOrderValue()] = bitWriter.getBytesWritten();
+
+        bitWriter.writeRawValue(channelData.size()-4,32); // 4 bytes to hold the channel size (-4 from the integrity hash)
+        bitWriter.writeRawValue(emptyBits, 8);
+        bitWriter.flushRemaining();
+        channelData.writeTo(bufferStream);
+        bitWriter.addBytesWritten(channelData.size());
+
+        //update masterAdler
+        bitWriter.updateMasterAdler(channelData);
+    }
+
+    public void writeTail() throws IOException {
+        for (int byteLocation : channelSeekTable) {
+            bitWriter.writeRawValue(byteLocation,32); // writes the byte position and in order
+        }
     }
 
     @Override
