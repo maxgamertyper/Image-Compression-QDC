@@ -1,4 +1,4 @@
-package com.maxgamertyper1.CodecIO;
+package com.maxgamertyper1.CodecIO.Encoding;
 
 public enum DataType {
     Raw(0), //00

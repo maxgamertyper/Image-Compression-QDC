@@ -1,4 +1,4 @@
-package com.maxgamertyper1.CodecIO;
+package com.maxgamertyper1.CodecIO.Encoding;
 
 import com.maxgamertyper1.datatypes.CompressedColorChannel;
 import com.maxgamertyper1.datatypes.CompressedImageRepresentative;
@@ -7,7 +7,6 @@ import com.maxgamertyper1.datatypes.records.RectangleRepresentative;
 import com.maxgamertyper1.imagereading.ImageDataHolder;
 import com.maxgamertyper1.imagereading.PixelHelper;
 
-import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;

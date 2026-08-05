@@ -1,4 +1,4 @@
-package com.maxgamertyper1.CodecIO;
+package com.maxgamertyper1.CodecIO.Encoding;
 
 import com.maxgamertyper1.datatypes.records.CornerDataRepresentative;
 import com.maxgamertyper1.datatypes.records.RectangleRepresentative;
@@ -44,6 +44,10 @@ public class ChannelWriter implements Closeable {
 
     private void trySwitchChunkType(DataType chunk) throws IOException {
         if (currentChunkType != chunk) {
+            int lastUnaryPrefix = unaryPrefixValueSet.length - 1;
+            bitWriter.writeRawValue(unaryValueRaw[lastUnaryPrefix],lastUnaryPrefix); // escape code
+            bitWriter.writeRawValue(1,1);
+
             int switchBit = currentChunkType.getSwitchBit(chunk);
             bitWriter.writeRawValue(switchBit,1);
             currentChunkType = chunk;
@@ -97,6 +101,9 @@ public class ChannelWriter implements Closeable {
 
         //write prefix
         bitWriter.writeRawValue(unaryValueRaw[prefixIndex], prefixIndex + 1);
+        if (rawStorageSize > 9) {
+            bitWriter.writeRawValue(rawStorageSize, 8); // the byte for size
+        }
         //write value
         bitWriter.writeRawValue(value, unaryPrefixValueSet[prefixIndex]);
     }

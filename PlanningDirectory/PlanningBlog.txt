@@ -1426,3 +1426,16 @@ using the initial value we get a 20x20 square of 255, 242, 0
 
 
 I realized I havent even implemented the value swapping so I might try to figure that out in like a V2
+
+
+
+
+
+
+frequency = {8: 10000, 6: 2000, 4: 20, 100:2, 0: 1}
+unary = {1,10 (ESCAPE)}
+
+
+
+010101010101010100101010101001010101010101001
+(ESCAPE) 101 (111) 10

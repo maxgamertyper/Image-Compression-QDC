@@ -269,11 +269,15 @@ public class ShapeUnionFind {
     }
 
     public int getShapeArea(int shapeStartingID) {
-        return shapeAreasBasedOnStart[shapeIndexAddressTable[shapeStartingID]];
+        int rootPixel = parentPixels[shapeStartingID];
+        int address = shapeIndexAddressTable[rootPixel];
+        return shapeAreasBasedOnStart[address];
     }
 
     public int getParentShapeID(int holeShapeIndex) {
-        return shapeParentFromHole[shapeIndexAddressTable[holeShapeIndex]];
+        int rootPixel = parentPixels[holeShapeIndex];
+        int address = shapeIndexAddressTable[rootPixel];
+        return shapeParentFromHole[address];
     }
 
     public void calculateChildrenMap() {

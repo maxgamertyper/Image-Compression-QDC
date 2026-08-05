@@ -1,6 +1,6 @@
 package com.maxgamertyper1.datatypes;
 
-import com.maxgamertyper1.CodecIO.DataType;
+import com.maxgamertyper1.CodecIO.Encoding.DataType;
 import com.maxgamertyper1.datatypes.records.CornerDataRepresentative;
 import com.maxgamertyper1.datatypes.records.RectangleRepresentative;
 

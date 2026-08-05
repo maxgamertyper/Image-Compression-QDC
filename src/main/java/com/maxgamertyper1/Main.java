@@ -1,11 +1,10 @@
 package com.maxgamertyper1;
 
-import com.maxgamertyper1.CodecIO.EncodingManager;
-import com.maxgamertyper1.CodecIO.FormattedWriter;
-import com.maxgamertyper1.compressor.FinalizedCompressorData;
+import com.maxgamertyper1.CodecIO.Decoding.Disassembler;
+import com.maxgamertyper1.CodecIO.Encoding.EncodingManager;
+import com.maxgamertyper1.CodecIO.Encoding.FormattedWriter;
 import com.maxgamertyper1.compressor.QuadralizedDataCompressor;
 import com.maxgamertyper1.datatypes.*;
-import com.maxgamertyper1.datatypes.records.ChannelConcurrencyPercents;
 import com.maxgamertyper1.imagereading.ImageDataHolder;
 import com.maxgamertyper1.imagereading.ImageReader;
 
@@ -16,6 +15,20 @@ import java.util.Arrays;
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
     public static void main(String[] args) throws IOException {
+        String inFileName = "testing.qdc"; //TestingImages/yellow_square.png
+        String outFileName = "testing.qdca";
+
+        disassemble(inFileName,outFileName);
+        //encode(inFileName);
+    }
+
+    public static void disassemble(String inFileName, String outFileName) throws IOException {
+        Disassembler ds = new Disassembler(inFileName, outFileName);
+
+        ds.Dissassemble();
+    }
+
+    public static void encode(String fileName) throws IOException {
         System.out.println("PRESS ENTER TO START PROFILING...");
         System.in.read();
 
@@ -23,7 +36,7 @@ public class Main {
         long Truestart = System.currentTimeMillis();
         long end;
 
-        ImageReader.ReadAllImageContent("TestingImages/white_black_white.png");
+        ImageReader.ReadAllImageContent(fileName);
         System.out.println("Image Data: \n" +"Name: "+ ImageDataHolder.metaImageName +"\nWidth: "+ImageDataHolder.width + "\nHeight: " + ImageDataHolder.height + "\n Flatsize: " + ImageDataHolder.flatsize + " (Megapixels: "+ (float)ImageDataHolder.flatsize/1000000 +")" + "\nExtension: "+ImageDataHolder.fileType +"\nGrayscale:"+ImageDataHolder.isGrayscale + "\nUniform Maximum Alpha:" + ImageDataHolder.UniformMaxAlpha + "\nUsing Version: "+ FormattedWriter.compressionVersionMajor+"."+FormattedWriter.compressionVersionMinor);
 
         end = System.currentTimeMillis();

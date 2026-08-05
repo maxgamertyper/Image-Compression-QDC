@@ -1,4 +1,4 @@
-package com.maxgamertyper1.CodecIO;
+package com.maxgamertyper1.CodecIO.Encoding;
 
 import com.maxgamertyper1.datatypes.IntArrayList;
 

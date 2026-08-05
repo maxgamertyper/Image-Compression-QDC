@@ -1,4 +1,4 @@
-package com.maxgamertyper1.CodecIO;
+package com.maxgamertyper1.CodecIO.Encoding;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,7 +14,6 @@ public class RawBitWriter {
     private int intBuffer = 0;
     private final Adler32 intermediaryAdler;
     private final Adler32 masterAdler;
-
     public RawBitWriter(OutputStream stream) {
         this.buffer = stream;
         intermediaryAdler = new Adler32();
