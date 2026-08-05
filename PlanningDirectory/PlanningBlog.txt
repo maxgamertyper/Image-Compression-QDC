@@ -1423,3 +1423,6 @@ BREAK DOWN:
 
 Means a rectangle of size 20 with paeth value 0
 using the initial value we get a 20x20 square of 255, 242, 0
+
+
+I realized I havent even implemented the value swapping so I might try to figure that out in like a V2

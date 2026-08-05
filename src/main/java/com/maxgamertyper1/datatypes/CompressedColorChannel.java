@@ -189,6 +189,7 @@ public class CompressedColorChannel {
         cornerOwnershipMap = new int[builtCorners.length][];
         int[] shapeIDMap = shapeOrganizer.getRawData();
         IntArrayList ownedCorners = new IntArrayList(8);
+        shapeOrganizer.calculateChildrenMap();
 
         for (int i=0; i < builtCorners.length; i++) {
             CornerDataRepresentative corner = builtCorners[i];

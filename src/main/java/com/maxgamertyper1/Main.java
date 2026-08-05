@@ -23,7 +23,7 @@ public class Main {
         long Truestart = System.currentTimeMillis();
         long end;
 
-        ImageReader.ReadAllImageContent("TestingImages/yellow_square.png");
+        ImageReader.ReadAllImageContent("TestingImages/white_black_white.png");
         System.out.println("Image Data: \n" +"Name: "+ ImageDataHolder.metaImageName +"\nWidth: "+ImageDataHolder.width + "\nHeight: " + ImageDataHolder.height + "\n Flatsize: " + ImageDataHolder.flatsize + " (Megapixels: "+ (float)ImageDataHolder.flatsize/1000000 +")" + "\nExtension: "+ImageDataHolder.fileType +"\nGrayscale:"+ImageDataHolder.isGrayscale + "\nUniform Maximum Alpha:" + ImageDataHolder.UniformMaxAlpha + "\nUsing Version: "+ FormattedWriter.compressionVersionMajor+"."+FormattedWriter.compressionVersionMinor);
 
         end = System.currentTimeMillis();
@@ -85,9 +85,9 @@ public class Main {
         }
 
         tempManager.writeMetadata();
-        tempManager.processChannel(0);
-        tempManager.processChannel(1);
-        tempManager.processChannel(2);
+        for (int i=0; i < FinalCompression.getCompressedChannels().length; i++) {
+            tempManager.processChannel(i);
+        }
         tempManager.finalizeFile();
 
         end = System.currentTimeMillis();

@@ -97,7 +97,10 @@ public class QuadralizedDataCompressor {
 
 
             int[] correspondingIsolatedColors = new int[isoIndexes.length];
-            System.arraycopy(rawValues, 0, correspondingIsolatedColors, 0, isoIndexes.length);
+
+            for (int j=0; j < isoIndexes.length; j++) {
+                correspondingIsolatedColors[j] = rawValues[isoIndexes[j]];
+            }
 
             CCC.setIsolatedIndexes(isoIndexes,correspondingIsolatedColors);
             CCC.setChannelChunks(PCs);
