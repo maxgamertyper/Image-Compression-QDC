@@ -1,6 +1,5 @@
 package com.maxgamertyper1;
 
-import com.maxgamertyper1.compressor.FinalizedCompressorData;
 import com.maxgamertyper1.compressor.QuadralizedDataCompressor;
 import com.maxgamertyper1.datatypes.*;
 import com.maxgamertyper1.datatypes.records.CornerPoint;

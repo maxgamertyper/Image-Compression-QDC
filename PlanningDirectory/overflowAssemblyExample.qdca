@@ -1,0 +1,71 @@
+; =====================================================================================
+; FILE: testing.qdc  |  SIZE: 97
+; HEADER: Version 0.3  |  Canvas: 10000x10000
+; FLAGS: Grayscale: FALSE  |  Max Alpha: TRUE  |  Original File Flag: 3
+; INITIAL COLORS: [15, 255, 32]
+; HEADER HASH: 0xFC70000
+; =====================================================================================
+
+SECTION .channel_red  LOCATION  0x000012
+SECTION .channel_red   INITIAL   15
+
+ BYTE_S  |  BIT_S  |  V_LENGTH    OPERATION          VALUE
+0x000012 | Bit: 00 | Length: 32  [SIZE]         Payload Length: 8
+0x000016 | Bit: 00 | Length: 08  [TRAILING]     Bit Trailing Count: 0
+0x000017 | Bit: 00 | Length: 04  [UNARY_TABLE]  Table Count: 2
+0x000017 | Bit: 04 | Length: 04  [UNARY_TABLE]  Entry #0: 1
+0x000018 | Bit: 00 | Length: 04  [UNARY_TABLE]  Entry #1: 10
+0x000018 | Bit: 04 | Length: 02  [SWITCH_OP]    [OP_RECT]      
+0x00001A | Bit: 06 | Length: 34  [OP_RECT]      10000x10000 RECT: 0
+; =====================================================================================
+; Channel Hash: 0xF24033E
+; =====================================================================================
+
+
+
+SECTION .channel_green  LOCATION  0x000023
+SECTION .channel_green   INITIAL   255
+
+ BYTE_S  |  BIT_S  |  V_LENGTH    OPERATION          VALUE
+0x000023 | Bit: 00 | Length: 32  [SIZE]         Payload Length: 8
+0x000027 | Bit: 00 | Length: 08  [TRAILING]     Bit Trailing Count: 0
+0x000028 | Bit: 00 | Length: 04  [UNARY_TABLE]  Table Count: 2
+0x000028 | Bit: 04 | Length: 04  [UNARY_TABLE]  Entry #0: 1
+0x000029 | Bit: 00 | Length: 04  [UNARY_TABLE]  Entry #1: 10
+0x000029 | Bit: 04 | Length: 02  [SWITCH_OP]    [OP_RECT]      
+0x00002B | Bit: 06 | Length: 34  [OP_RECT]      10000x10000 RECT: 0
+; =====================================================================================
+; Channel Hash: 0xF24033E
+; =====================================================================================
+
+
+
+SECTION .channel_blue  LOCATION  0x000034
+SECTION .channel_blue   INITIAL   32
+
+ BYTE_S  |  BIT_S  |  V_LENGTH    OPERATION          VALUE
+0x000034 | Bit: 00 | Length: 32  [SIZE]         Payload Length: 8
+0x000038 | Bit: 00 | Length: 08  [TRAILING]     Bit Trailing Count: 0
+0x000039 | Bit: 00 | Length: 04  [UNARY_TABLE]  Table Count: 2
+0x000039 | Bit: 04 | Length: 04  [UNARY_TABLE]  Entry #0: 1
+0x00003A | Bit: 00 | Length: 04  [UNARY_TABLE]  Entry #1: 10
+0x00003A | Bit: 04 | Length: 02  [SWITCH_OP]    [OP_RECT]      
+0x00003C | Bit: 06 | Length: 34  [OP_RECT]      10000x10000 RECT: 0
+; =====================================================================================
+; Channel Hash: 0xF24033E
+; =====================================================================================
+
+
+
+SECTION   .tail   LOCATION  0x000045
+
+; A SEEK of 0x00000000 means the channel does not exist
+
+0x000045 | Bit: 00 | Length: 32       [RED_SEEK]       0x000012
+0x000049 | Bit: 00 | Length: 32      [GREEN_SEEK]      0x000023
+0x00004D | Bit: 00 | Length: 32      [BLUE_SEEK]       0x000034
+0x000051 | Bit: 00 | Length: 32      [GRAY_SEEK]       0x000000
+0x000055 | Bit: 00 | Length: 32      [ALPHA_SEEK]      0x000000
+0x000059 | Bit: 00 | Length: 32    [FILE_INTEGRITY]    0x78D8105F
+0x00005D | Bit: 00 | Length: 32  [FILE_END_SIGNATURE]  0x4D415821
+; means MAX! in ASCII

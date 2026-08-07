@@ -129,14 +129,17 @@ public class EncodingManager {
                 if (rectPosition < rawPosition && rectPosition < cornerPosition) { // rect
                     RectangleRepresentative thisRect = builtRectangles[rectIdx++];
                     channelWriter.writeRectangleData(thisRect);
+                    System.out.println("Wrote + " + thisRect);
                     i++;
                 } else if (rawPosition < cornerPosition) { //raw
                     int thisRawValue = rawValues[rawIdx++];
                     channelWriter.writeRawData(thisRawValue);
+                    System.out.println("Wrote + (zigzag)" + thisRawValue);
                     i++;
                 } else { //corner
                     CornerDataRepresentative thisCorner = builtCorners[cornerIdx];
                     i += processCornerWrite(thisChannel,thisCorner,cornerIdx);
+                    System.out.println("Wrote + " + thisCorner);
                     cornerIdx++;
                 }
             }
@@ -185,6 +188,9 @@ public class EncodingManager {
             int[] thisLocation;
 
             if (rectPosition < rawPosition && rectPosition < cornerPosition) { // rect
+                if (i==0) {
+                    channelWriter.writeRawOPCode(DataType.Rectangle);
+                }
                 RectangleRepresentative thisRect = builtRects[rectOverrides[rectOverrideIdx++]];
                 thisLocation = PixelHelper.ReverseIndexCalculator(ImageDataHolder.width,thisRect.startingIndex());
                 deltaInfo[0] = zigzagEncode(thisLocation[0] - previousLocation[0]);
@@ -192,6 +198,9 @@ public class EncodingManager {
 
                 channelWriter.writeOverriden(deltaInfo,thisRect);
             } else if (rawPosition < cornerPosition) { //raw
+                if (i==0) {
+                    channelWriter.writeRawOPCode(DataType.Raw);
+                }
                 int overrideIndex = rawOverrides[rawOverrideIdx++];
                 int thisRawValue = rawValues[overrideIndex];
                 int thisRawIndex = builtRaws[overrideIndex];
@@ -202,6 +211,9 @@ public class EncodingManager {
 
                 channelWriter.writeOverriden(deltaInfo, thisRawValue);
             } else { //corner
+                if (i==0) {
+                    channelWriter.writeRawOPCode(DataType.Corner);
+                }
                 int thisCornerIdx = cornerOverrides[cornerOverrideIdx];
                 CornerDataRepresentative thisCorner = builtCorners[thisCornerIdx];
 
@@ -217,6 +229,7 @@ public class EncodingManager {
             previousLocation = thisLocation;
             i++;
         }
+        channelWriter.writeEscapeData();
 
         return totalChanges;
     }

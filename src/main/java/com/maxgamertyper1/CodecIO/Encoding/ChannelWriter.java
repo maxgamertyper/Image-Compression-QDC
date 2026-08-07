@@ -13,6 +13,7 @@ public class ChannelWriter implements Closeable {
     DataType currentChunkType;
     int[] unaryPrefixValueSet; // lsat one by default is escape sequence
     ByteArrayOutputStream stream;
+    private boolean previousWasCorner;
 
     private static final int[] unaryValueRaw = new int[]{0,2,6,14,30,62,126,254}; //0,10,110,1110,etc
 
@@ -24,6 +25,10 @@ public class ChannelWriter implements Closeable {
     public void setData(DataType startingType, int[] unaryPrefixValueSet) throws IOException {
         stream.reset();
         createChannelInfo(startingType, unaryPrefixValueSet);
+    }
+
+    public void writeRawOPCode(DataType type) throws IOException {
+        bitWriter.writeRawValue(type.getOpCode(),2);
     }
 
     private void createChannelInfo(DataType startingType, int[] unaryPrefixValueSet) throws IOException {
@@ -39,19 +44,23 @@ public class ChannelWriter implements Closeable {
         for (int unaryPrefixValue : unaryPrefixValueSet) {
             bitWriter.writeRawValue(unaryPrefixValue,4);
         }
-        bitWriter.writeRawValue(startingType.getOpCode(),2);
+        writeRawOPCode(startingType);
     }
 
     private void trySwitchChunkType(DataType chunk) throws IOException {
         if (currentChunkType != chunk) {
-            int lastUnaryPrefix = unaryPrefixValueSet.length - 1;
-            bitWriter.writeRawValue(unaryValueRaw[lastUnaryPrefix],lastUnaryPrefix); // escape code
-            bitWriter.writeRawValue(1,1);
+            writeEscapeData();
 
             int switchBit = currentChunkType.getSwitchBit(chunk);
             bitWriter.writeRawValue(switchBit,1);
             currentChunkType = chunk;
         }
+    }
+
+    public void writeEscapeData() throws IOException {
+        int lastUnaryPrefix = unaryPrefixValueSet.length - 1;
+        bitWriter.writeRawValue(unaryValueRaw[lastUnaryPrefix],lastUnaryPrefix + 1); // escape code
+        bitWriter.writeRawValue(1,1);
     }
 
     public void writeCornerData(CornerDataRepresentative data, boolean layerOverride) throws IOException {
@@ -63,7 +72,10 @@ public class ChannelWriter implements Closeable {
             writeValueWithPrefix(dimensionDelta);
         }
 
+        writeEscapeData();
         bitWriter.writeRawValue(layerOverride ? 1 : 0,1);
+
+        previousWasCorner = true;
     }
 
     public void writeDeltas(int[] deltas) throws IOException {
@@ -77,6 +89,7 @@ public class ChannelWriter implements Closeable {
     }
 
     public void writeOverriden(int[] deltas, int zigzagValue) throws IOException {
+        System.out.println("Corner Override (RAW): Deltas: " + Arrays.toString(deltas) + "; Value: " + zigzagValue);
         writeDeltas(deltas);
         writeValueWithPrefix(zigzagValue);
     }
@@ -102,10 +115,14 @@ public class ChannelWriter implements Closeable {
         //write prefix
         bitWriter.writeRawValue(unaryValueRaw[prefixIndex], prefixIndex + 1);
         if (rawStorageSize > 9) {
-            bitWriter.writeRawValue(rawStorageSize, 8); // the byte for size
+            System.out.println(rawStorageSize);
+            bitWriter.writeRawValue(0, 1); // the overflow code
+            bitWriter.writeRawValue(rawStorageSize, 7); // the byte for size
+            bitWriter.writeRawValue(value, rawStorageSize);
+        } else {
+            bitWriter.writeRawValue(value, unaryPrefixValueSet[prefixIndex]);
         }
-        //write value
-        bitWriter.writeRawValue(value, unaryPrefixValueSet[prefixIndex]);
+        System.out.println("Prefix: " + unaryValueRaw[prefixIndex] + " Value: " + value);
     }
 
     private int getPrefixIndex(int bitLength) {

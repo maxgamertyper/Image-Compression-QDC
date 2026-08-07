@@ -24,4 +24,12 @@ public enum DataType {
             default -> -1;
         };
     }
+
+    public DataType getNextType(int switchBit) {
+        return switch (this) {
+            case Raw -> (switchBit == 1) ? Rectangle : Corner;
+            case Rectangle -> (switchBit == 1) ? Corner : Raw;
+            case Corner -> (switchBit == 1) ? Raw : Rectangle;
+        };
+    }
 }

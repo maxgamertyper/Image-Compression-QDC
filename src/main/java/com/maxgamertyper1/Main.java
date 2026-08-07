@@ -15,17 +15,18 @@ import java.util.Arrays;
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
     public static void main(String[] args) throws IOException {
-        String inFileName = "testing.qdc"; //TestingImages/yellow_square.png
+        String inFileName = "testing.qdc";
+        String encodeFileName = "TestingImages/cross.png";
         String outFileName = "testing.qdca";
 
+        encode(encodeFileName);
         disassemble(inFileName,outFileName);
-        //encode(inFileName);
     }
 
     public static void disassemble(String inFileName, String outFileName) throws IOException {
-        Disassembler ds = new Disassembler(inFileName, outFileName);
-
-        ds.Dissassemble();
+        try (Disassembler ds = new Disassembler(inFileName, outFileName)) {
+            ds.Dissassemble();
+        }
     }
 
     public static void encode(String fileName) throws IOException {

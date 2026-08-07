@@ -9,23 +9,23 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class Disassembler {
+public class Disassembler implements AutoCloseable{
     private final FormattedReader reader;
     private final String inFileName;
-    private final String outFileName;
     private final BufferedWriter fileStream;
     private String[] channelNames;
     private int[] unaryLengths;
     private DataType currentType;
     private int currentChannelLength;
     private int trailingBits;
-    private boolean previousWasTypeEnd;
     private int dataLength = 1;
     String OPCode;
     private int[] colors;
+    private boolean override = false;
+    private long storedByte = 0;
+    private int storedBit = 0;
 
     public Disassembler(String inFileName, String outFileName) throws IOException {
-        this.outFileName = outFileName;
         this.inFileName = inFileName;
         reader = new FormattedReader(inFileName);
         fileStream = new BufferedWriter(new FileWriter(outFileName));
@@ -117,9 +117,7 @@ public class Disassembler {
             unaryLengths[i] = value;
         }
 
-        int startingCode = reader.readBits(2);
-        currentType = startingCode == 0 ? DataType.Raw : startingCode == 2 ? DataType.Rectangle : DataType.Corner;
-        writeOPCodeSwitch();
+        readLongOPcode();
 
         fileStream.flush();
     }
@@ -136,16 +134,33 @@ public class Disassembler {
         fileStream.newLine();
     }
 
+    private void readLongOPcode() throws IOException {
+        int startingCode = reader.readBits(2);
+        currentType = startingCode == 0 ? DataType.Raw : startingCode == 2 ? DataType.Rectangle : DataType.Corner;
+        writeOPCodeSwitch(2);
+    }
+
     private void writeLocationHead(int bitsRead) throws IOException {
         long byteEnd = reader.getTotalBytesRead();
         int bitEnd = reader.getTotalBitsRead();
 
-        long byteStart = byteEnd - bitsRead / 8;
-        int bitStart = bitEnd - (bitsRead & 7);
+        long byteStart;
+        int bitStart;
 
-        if (bitStart<0) {
-            byteStart--;
-            bitStart+=8;
+
+        if (bitsRead == -1) {
+            bitStart = storedBit;
+            byteStart = storedByte;
+
+            bitsRead = (int)((byteEnd - byteStart) * 8) + bitEnd - bitStart;
+        } else {
+            byteStart = byteEnd - bitsRead / 8;
+            bitStart = bitEnd - (bitsRead & 7);
+
+            if (bitStart<0) {
+                byteStart--;
+                bitStart+=8;
+            }
         }
 
         fileStream.write(
@@ -154,27 +169,38 @@ public class Disassembler {
         );
     }
 
+    private void logCursorLocaiton() {
+        storedBit = reader.getTotalBitsRead();
+        storedByte = reader.getTotalBytesRead();
+    }
+
     private String formatInt(int number) {
         return String.format("%02d", number);
     }
 
-    private void writeOPCodeSwitch() throws IOException {
+    private void writeOPCodeSwitch(int bitsRead) throws IOException {
+        String ovr = "";
+        if (override) {
+            ovr = "OVR_";
+        }
         switch (currentType) {
             case Raw -> {
-                OPCode = "[OP_RAW]       ";
+                OPCode = "[" + ovr + "OP_RAW]       ";
                 dataLength = 1;
             }
             case Rectangle -> {
-                OPCode = "[OP_RECT]      ";
+                OPCode = "[" + ovr + "OP_RECT]      ";
                 dataLength = 3;
             }
             case Corner -> {
-                OPCode = "[OP_CORNER]    ";
+                OPCode = "[" + ovr + "OP_CORNER]   ";
                 dataLength = -1;
             }
-            default -> OPCode = "[OP_UNKNOWN]  ";
+            default -> OPCode = "[" + ovr + "OP_UNKNOWN]  ";
         }
-        writeWithLocation("[SWITCH_OP]    " + OPCode,2);
+
+        writeWithLocation("[SWITCH_OP]    " + OPCode,bitsRead);
+        logCursorLocaiton();
     }
 
     private void writeWithNewLine(String text) throws IOException {
@@ -187,46 +213,103 @@ public class Disassembler {
     }
 
     private void processChannelData() throws IOException {
-        previousWasTypeEnd = true;
+        boolean previousWasTypeEnd = true;
         int thisPrefix = 0;
         int bitsToRead = 0;
         int value = 0;
         int iDataLength = dataLength;
-        int bitsRead = 0;
         IntArrayList values = new IntArrayList(4);
+        boolean justLeftOverride = false;
+        logCursorLocaiton();
 
         long targetTotalBits = (currentChannelLength * 8L) - trailingBits;
 
         while ((reader.getByteTracker() * 8L + reader.getBitsTracker()) < targetTotalBits) {
             thisPrefix = reader.readUnary();
 
+            System.out.println("Prefix: " + ((1 << (thisPrefix + 1)) - 2));
+
             if (thisPrefix == unaryLengths.length-1) {
-                bitsToRead = reader.readBits(8);
+                bitsToRead = checkEscape();
+
+                if (bitsToRead == -1) { // escape code
+
+                    if (currentType == DataType.Corner && !override && !justLeftOverride) {
+                        int oValue = reader.readBits(1);
+                        override = oValue == 1;
+                        values.Add(oValue);
+
+                        writeValueRead(values.toIntArray());
+                        System.out.println("Writing Corner data");
+
+                        readLongOPcode();
+                    } else if (override) {
+                        dataLength = -1;
+                        currentType = DataType.Corner;
+                        override = false;
+                        justLeftOverride= true;
+                        writeOPCodeSwitch(-1);
+
+                        System.out.println("Left Override");
+
+                    } else {
+                        processSwitchOP();
+                        System.out.println("ESCAPE");
+                        fileStream.flush();
+                    }
+
+                    previousWasTypeEnd = true;
+                    iDataLength = dataLength + (override ? 2 : 0);
+                    values.Clear();
+                    continue;
+                }
+
+                System.out.println("OVERFLOW");
+            } else {
+                bitsToRead = unaryLengths[thisPrefix];
             }
 
-            bitsToRead = unaryLengths[thisPrefix];
 
-            if (previousWasTypeEnd) {
+            if (previousWasTypeEnd || currentType == DataType.Corner || (override && iDataLength > dataLength-2)) { // read the color
                 value = reader.readZigZag(bitsToRead);
             } else {
                 value = reader.readBits(bitsToRead);
             } // figure out how to do this for corners!
 
-            bitsRead += (thisPrefix + bitsToRead + 1);
+            System.out.println("Value: " + value);
+
             values.Add(value);
 
             iDataLength--;
             previousWasTypeEnd = false;
-            if (iDataLength==0) {
+            justLeftOverride= false;
+            if (iDataLength == 0) {
+                System.out.println("Writing data");
                 previousWasTypeEnd = true;
-                iDataLength = dataLength;
-                writeValueRead(values.toIntArray(),bitsRead);
+                iDataLength = dataLength + (override ? 2 : 0);
+                writeValueRead(values.toIntArray());
+                logCursorLocaiton();
                 values.Clear();
             }
         }
         reader.jumpToByteBoundary(); // eat them
 
         fileStream.flush();
+    }
+
+    private void processSwitchOP() throws IOException {
+        int OPCode = reader.readBits(1);
+        System.out.println("OPCODE: " + OPCode + " Chunk: " + currentType);
+        currentType = currentType.getNextType(OPCode);
+        writeOPCodeSwitch(-1);
+    }
+
+    private int checkEscape() throws IOException {
+        int isEscapeFlag = reader.readBits(1);
+        if (isEscapeFlag == 1) {
+            return -1;
+        }
+        return reader.readBits(7);
     }
 
     private void channelTail() throws IOException {
@@ -236,19 +319,52 @@ public class Disassembler {
         fileStream.flush();
     }
 
-    private void writeValueRead(int[] values, int bitsRead) throws IOException {
+    private void writeValueRead(int[] values) throws IOException {
+        String ovr = "";
+        int offset = 0;
+        if (override) {
+            offset = 2;
+            ovr = "Corner Delta: (" + values[0] + ", " + values[1] + "); ";
+        }
         switch (currentType) {
             case Raw -> {
-                writeWithLocation(OPCode + "Paeth Value: " + values[0], bitsRead);
+                writeWithLocation(OPCode + ovr + "Paeth Value: " + values[offset], -1);
             }
             case Rectangle -> {
-                writeWithLocation(OPCode + values[1] + "x" + values[2] + " RECT: " + values[0], bitsRead);
+                writeWithLocation(OPCode + ovr + values[1+offset] + "x" + values[2+offset] + " RECT: " + values[offset], -1);
             }
             case Corner -> {
-                System.out.println("NOT IMPLEMENTED");
+                writeWithLocation(OPCode + ovr + formatCornerData(values), -1);
+            }
+        }
+        fileStream.flush();
+    }
+
+    private String formatCornerData(int[] value) {
+        StringBuilder returnHolder = new StringBuilder();
+        int offset = 0;
+        if (override) {
+            offset = 2;
+        }
+
+
+        returnHolder.append("Paeth Value: ").append(value[offset]).append("; Override: ").append((value[value.length - 1] == 1))
+                .append("; Corner Deltas: [");
+
+        for (int i=1; i < value.length - 1; i++) {
+            int val = value[i];
+
+            if ((i-1 + offset)%2==0) { // -1 from the color being the first
+                returnHolder.append("(").append(val).append(", ");
+            } else {
+                returnHolder.append(val).append(")").append(", ");
             }
         }
 
+        returnHolder.delete(returnHolder.length() - 2, returnHolder.length());
+        returnHolder.append("]");
+
+        return returnHolder.toString();
     }
 
     private void processTail() throws IOException {
@@ -267,6 +383,11 @@ public class Disassembler {
         writeWithLocation("  [FILE_INTEGRITY]    " + formatHex(reader.readBytes(4)),32);
         writeWithLocation("[FILE_END_SIGNATURE]  " + formatHex(reader.readBytes(4)),32);
         writeWithNewLine("; means MAX! in ASCII");
+        fileStream.flush();
+    }
+
+    @Override
+    public void close() throws IOException {
         fileStream.flush();
     }
 }

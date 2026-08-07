@@ -1439,3 +1439,15 @@ unary = {1,10 (ESCAPE)}
 
 010101010101010100101010101001010101010101001
 (ESCAPE) 101 (111) 10
+
+
+8/5/26:
+ok it seems like the disassembler is struggling with OPCODE switching so im trying to see whats wrong
+
+0x000019 (0x65) = 0110 0101, says it starts at the beginning
+0x00001A (0x24) = 0010 0100
+says it ends at 6th bit
+
+4 bits = (0) 1100 (
+
+ok there was an issue in displaying the starting assemble, i was at the wrong location
