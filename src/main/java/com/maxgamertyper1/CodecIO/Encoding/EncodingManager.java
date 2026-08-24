@@ -112,6 +112,10 @@ public class EncodingManager {
 
         int totalItems = thisChannel.getRectangleCount() + thisChannel.getCornerCount() + thisChannel.getIsolatedCount();
 
+        if (thisChannel.getIsolatedCount() != 0) totalItems--;
+        if (thisChannel.getRectangleCount() != 0) totalItems--;
+        if (thisChannel.getCornerCount() != 0) totalItems--;
+
         int rectIdx = 0;
         int cornerIdx = 0;
         int rawIdx = 0;
@@ -122,16 +126,17 @@ public class EncodingManager {
 
         try (channelWriter) {
             for (int i = 0; i < totalItems;) {
+                System.out.println(i);
                 int rectPosition = (rectIdx < builtRectangles.length) ? builtRectangles[rectIdx].startingIndex() : Integer.MAX_VALUE;
                 int cornerPosition = (cornerIdx < builtCorners.length) ? builtCorners[cornerIdx].startingIndex() : Integer.MAX_VALUE;
                 int rawPosition = (rawIdx < builtRaws.length) ? builtRaws[rawIdx] : Integer.MAX_VALUE;
 
-                if (rectPosition < rawPosition && rectPosition < cornerPosition) { // rect
+                if (rectPosition < rawPosition && rectPosition < cornerPosition && !thisChannel.isOwnedRectangle(rectIdx)) { // rect
                     RectangleRepresentative thisRect = builtRectangles[rectIdx++];
                     channelWriter.writeRectangleData(thisRect);
                     System.out.println("Wrote + " + thisRect);
                     i++;
-                } else if (rawPosition < cornerPosition) { //raw
+                } else if (rawPosition < cornerPosition && !thisChannel.isOwnedIndex(rawIdx)) { //raw
                     int thisRawValue = rawValues[rawIdx++];
                     channelWriter.writeRawData(thisRawValue);
                     System.out.println("Wrote + (zigzag)" + thisRawValue);
@@ -180,6 +185,9 @@ public class EncodingManager {
         int[] previousLocation = PixelHelper.ReverseIndexCalculator(ImageDataHolder.width,builtCorners[cornerIdx].startingIndex());
         int[] deltaInfo = new int[2];
 
+        if (rectOverrides.length!=0) totalOverrides--;
+        if (rawOverrides.length!=0) totalOverrides--;
+        if (cornerOverrides.length!=0) totalOverrides--;
 
         for (int i=0; i < totalOverrides;) {
             int rectPosition = (rectOverrideIdx < rectOverrides.length) ? builtRects[rectOverrides[rectOverrideIdx]].startingIndex() : Integer.MAX_VALUE;
@@ -197,6 +205,7 @@ public class EncodingManager {
                 deltaInfo[1] = zigzagEncode(thisLocation[1] - previousLocation[1]);
 
                 channelWriter.writeOverriden(deltaInfo,thisRect);
+                totalChanges += 1;
             } else if (rawPosition < cornerPosition) { //raw
                 if (i==0) {
                     channelWriter.writeRawOPCode(DataType.Raw);
@@ -204,12 +213,15 @@ public class EncodingManager {
                 int overrideIndex = rawOverrides[rawOverrideIdx++];
                 int thisRawValue = rawValues[overrideIndex];
                 int thisRawIndex = builtRaws[overrideIndex];
+                System.out.println(thisRawValue + ", " + thisRawIndex);
+
 
                 thisLocation = PixelHelper.ReverseIndexCalculator(ImageDataHolder.width,thisRawIndex);
                 deltaInfo[0] = zigzagEncode(thisLocation[0] - previousLocation[0]);
                 deltaInfo[1] = zigzagEncode(thisLocation[1] - previousLocation[1]);
 
                 channelWriter.writeOverriden(deltaInfo, thisRawValue);
+                totalChanges += 1;
             } else { //corner
                 if (i==0) {
                     channelWriter.writeRawOPCode(DataType.Corner);

@@ -1,6 +1,6 @@
 package com.maxgamertyper1;
 
-import com.maxgamertyper1.CodecIO.Decoding.Disassembler;
+import com.maxgamertyper1.CodecIO.Assembly.Disassembler;
 import com.maxgamertyper1.CodecIO.Encoding.EncodingManager;
 import com.maxgamertyper1.CodecIO.Encoding.FormattedWriter;
 import com.maxgamertyper1.compressor.QuadralizedDataCompressor;
@@ -16,11 +16,11 @@ import java.util.Arrays;
 public class Main {
     public static void main(String[] args) throws IOException {
         String inFileName = "testing.qdc";
-        String encodeFileName = "TestingImages/cross.png";
+        String encodeFileName = "TestingImages/Lenna.png";
         String outFileName = "testing.qdca";
 
         encode(encodeFileName);
-        disassemble(inFileName,outFileName);
+        //disassemble(inFileName,outFileName);
     }
 
     public static void disassemble(String inFileName, String outFileName) throws IOException {

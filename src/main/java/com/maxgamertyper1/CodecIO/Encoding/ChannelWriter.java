@@ -13,7 +13,6 @@ public class ChannelWriter implements Closeable {
     DataType currentChunkType;
     int[] unaryPrefixValueSet; // lsat one by default is escape sequence
     ByteArrayOutputStream stream;
-    private boolean previousWasCorner;
 
     private static final int[] unaryValueRaw = new int[]{0,2,6,14,30,62,126,254}; //0,10,110,1110,etc
 
@@ -74,8 +73,6 @@ public class ChannelWriter implements Closeable {
 
         writeEscapeData();
         bitWriter.writeRawValue(layerOverride ? 1 : 0,1);
-
-        previousWasCorner = true;
     }
 
     public void writeDeltas(int[] deltas) throws IOException {
@@ -89,7 +86,6 @@ public class ChannelWriter implements Closeable {
     }
 
     public void writeOverriden(int[] deltas, int zigzagValue) throws IOException {
-        System.out.println("Corner Override (RAW): Deltas: " + Arrays.toString(deltas) + "; Value: " + zigzagValue);
         writeDeltas(deltas);
         writeValueWithPrefix(zigzagValue);
     }

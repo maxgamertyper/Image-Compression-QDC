@@ -1451,3 +1451,46 @@ says it ends at 6th bit
 4 bits = (0) 1100 (
 
 ok there was an issue in displaying the starting assemble, i was at the wrong location
+
+8/7/26:
+I keep forgetting to right in here, but theres been a lot of issues
+im basically duct-taping everything together so now im trying to make it better, thats the reason for the commit
+right now im assuming one of my values is being read as zigzag when its not as its going from 20 -> 10
+yeah, i was writing locations wrong and my logic was inverted on accident so only if it was the last one would it read it as zigzag
+
+ok, after fixing that, i got it to work perfectly with the yellow square image os now im going to try the cross image (rects and isolated) to test op code switching
+somehow the escape stuff (rect -> raw -> rect) worked first try so im really scared as to whats going on.
+i tested it and the overflow also just worked first try...
+this is very suspicious
+
+ok thank goodness there was an error while parsing the corner data
+
+NOTE: OK, technically speaking, the deltaY of the corner data does not need to be zigzag encoded, and as such, it would be smaller
+
+i ran into an error that happened earlier but im a genius and didnt write it down so now i have to resolve it again
+:CCCCCCCCCCC
+
+basically i have 4 extra values being read
+
+0x0000B9 | Bit: 02 | Length: 04  [OP_RAW]       Paeth Value: 0
+0x0000B9 | Bit: 06 | Length: 04  [OP_RAW]       Paeth Value: -1
+0x0000BA | Bit: 02 | Length: 11  [OP_RAW]       Paeth Value: 255
+0x0000BB | Bit: 05 | Length: 11  [OP_RAW]       Paeth Value: -211
+
+which causes the rest of the file to be off and it to get an EOF error only by exactly a byte tho so idk whats wrong
+ok yeah, theres a desync in reading somewhere because theoretically it should end with 0 bits remaining but it ends with -8 so it overshoots 8
+
+8/10/26:
+its really weird icl theres some issue in the bit parsing but i really dk what, i fixed the original issue, but its till off by 8 bits
+i literally have no clue why this is off
+ive messed with so much stuff and theres just extra data for no reason
+
+ok well i found one issue being that overrides are written after in addition to as overrides
+and second i found that the hole tracking is wrong
+so thats just like amazing yknow
+
+ok, i fixed the shape thing mostly. Ill just have to add some code when constructing the image actually as a weird kind of after-process
+its still reading 2 extra bits when leaving the override though which is weird
+
+8/24/26:
+school started and stuff so i had to work on other stuff but im gonna try to manually make an override thing to see whats wrong

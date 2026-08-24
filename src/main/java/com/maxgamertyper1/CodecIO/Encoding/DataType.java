@@ -32,4 +32,13 @@ public enum DataType {
             case Corner -> (switchBit == 1) ? Raw : Rectangle;
         };
     }
+
+    public static DataType fromOPCode(int opCode) {
+        for (DataType type : DataType.values()) {
+            if (type.getOpCode() == opCode) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Invalid OPCode");
+    }
 }

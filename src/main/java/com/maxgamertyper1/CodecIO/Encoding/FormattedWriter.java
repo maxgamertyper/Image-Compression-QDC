@@ -15,12 +15,11 @@ public class FormattedWriter implements Closeable {
     private byte flagByte;
     private final RawBitWriter bitWriter;
     private final BufferedOutputStream bufferStream;
-    private final FileOutputStream fileStream;
-    private int[] channelSeekTable = {0,0,0,0,0};
+    private final int[] channelSeekTable = {0,0,0,0,0};
 
 
     public FormattedWriter(String outFile) throws FileNotFoundException {
-        fileStream = new FileOutputStream(outFile);
+        FileOutputStream fileStream = new FileOutputStream(outFile);
         bufferStream = new BufferedOutputStream(fileStream);
         bitWriter = new RawBitWriter(bufferStream);
     }
