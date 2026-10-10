@@ -195,7 +195,7 @@ public class CompressedColorChannel {
             CornerDataRepresentative corner = builtCorners[i];
             int shapeID = shapeIDMap[corner.startingIndex()];
 
-            ownedCorners.Clear();
+            ownedCorners.clear();
 
             int[] potentialShapes = shapeOrganizer.getChildShapes(shapeID);
 
@@ -203,7 +203,7 @@ public class CompressedColorChannel {
                 for (int childShapeID : potentialShapes) {
                     int cornerIndex = cornerShapeMap[childShapeID];
                     if (cornerIndex == -1) continue;
-                    ownedCorners.Add(cornerIndex);
+                    ownedCorners.add(cornerIndex);
                 }
             }
 

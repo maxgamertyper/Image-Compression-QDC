@@ -8,7 +8,7 @@ public class PixelChunk {
     private final ChannelColorTypes colorType;
     private final int colorValue;
     private int totalArea;
-    public int StartingIndex;
+    public int startingIndex;
     public ArrayList<CornerPoint> cornerPoints;
     public int convexCorners;
 
@@ -36,9 +36,17 @@ public class PixelChunk {
         return totalArea;
     }
 
+    public int getStartingIndex() {
+        return startingIndex;
+    }
+
+    public void setStartingIndex(int startingIndex) {
+        this.startingIndex = startingIndex;
+    }
+
     @Override
     public String toString() {
-        return "Color Type: "+colorType+"; Color Value: "+colorValue+"; Starting Index: "+StartingIndex+"\nCorners: "+cornerPoints;
+        return "Color Type: "+colorType+"; Color Value: "+colorValue+"; Starting Index: "+ startingIndex +"\nCorners: "+cornerPoints;
     }
 
 }

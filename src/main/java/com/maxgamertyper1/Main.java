@@ -3,7 +3,8 @@ package com.maxgamertyper1;
 import com.maxgamertyper1.CodecIO.Assembly.Disassembler;
 import com.maxgamertyper1.CodecIO.Encoding.EncodingManager;
 import com.maxgamertyper1.CodecIO.Encoding.FormattedWriter;
-import com.maxgamertyper1.compressor.PaethProccessor;
+import com.maxgamertyper1.compressor.ChunkProcessor;
+import com.maxgamertyper1.compressor.PaethProcessor;
 import com.maxgamertyper1.compressor.QuadralizedDataCompressor;
 import com.maxgamertyper1.datatypes.*;
 import com.maxgamertyper1.imagereading.ImageDataHolder;
@@ -52,7 +53,7 @@ public class Main {
 
         //NOTE: will need to adjust the ImageRep instantiation
 
-        PaethProccessor paethProccessor = new PaethProccessor(image);
+        PaethProcessor paethProccessor = new PaethProcessor(image);
         ImageRepresentative paethImage = paethProccessor.paethEncode();
 
         System.out.println("Paeth Encoding Output: ");
@@ -64,6 +65,20 @@ public class Main {
             System.out.println(Arrays.toString(channel.getChannelData()));
         }
         //NOTE: had to adjust initial pixel length since it needs to be set before, related to above note
+
+        ChunkProcessor chunkProcessor = new ChunkProcessor(paethImage);
+        ChunkedImageRepresentative chunkedImage = chunkProcessor.chunkImage();
+        chunkedImage.sequentiallyOrder();
+
+        for (ChunkedColorChannel channel : chunkedImage.getChunkedChannels()) {
+            System.out.println("Channel: " + channel.getChannelType());
+            System.out.println("Pixel Chunks: ");
+            System.out.println(Arrays.toString(channel.getChannelChunks()));
+            System.out.println("Isolated Pixels: ");
+            System.out.println(Arrays.toString(channel.getChannelIsolatedIndexes()));
+            System.out.println("Corresponding Colors: ");
+            System.out.println(Arrays.toString(channel.getChannelIsolatedCorrespondingColor()));
+        }
     }
 
     public static void disassemble(String inFileName, String outFileName) throws IOException {
@@ -98,7 +113,7 @@ public class Main {
         ChunkedImageRepresentative chunkedImage;
         chunkedImage = QDC.chunkImage(QDC.DeltaEncodedImage);
 
-        chunkedImage.SequentiallyOrder();
+        chunkedImage.sequentiallyOrder();
 
         end = System.currentTimeMillis();
         System.out.println("Flag Processing and Shaping (concurrent) took: " + (end - start) + "ms");

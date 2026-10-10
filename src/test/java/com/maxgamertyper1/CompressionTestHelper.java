@@ -62,7 +62,7 @@ public class CompressionTestHelper {
 
     public static PixelChunk buildPixelChunk(ChannelColorTypes colorType, int val, int startingIndex, int convexCorners, int[][] CornerPairs,int totalArea) {
         PixelChunk PC = new PixelChunk(colorType,val);
-        PC.StartingIndex = startingIndex;
+        PC.startingIndex = startingIndex;
         PC.convexCorners = convexCorners;
         PC.setTotalArea(totalArea);
 

@@ -2,7 +2,6 @@ package com.maxgamertyper1.datatypes;
 
 import com.maxgamertyper1.imagereading.ImageDataHolder;
 
-import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.BitSet;
 
@@ -34,9 +33,9 @@ public class ShapeUnionFind {
         this.parentPixels = parentPixels;
     }
 
-    public void Union(int pixelIndex1, int pixelIndex2) {
-        int rootIndex1 = Find(pixelIndex1);
-        int rootIndex2 = Find(pixelIndex2);
+    public void union(int pixelIndex1, int pixelIndex2) {
+        int rootIndex1 = find(pixelIndex1);
+        int rootIndex2 = find(pixelIndex2);
 
         if (rootIndex1!=rootIndex2) {
             // make it have the smalles root be the actual root!
@@ -48,7 +47,7 @@ public class ShapeUnionFind {
         }
     }
 
-    public int Find(int pixelIndex) {
+    public int find(int pixelIndex) {
         while (parentPixels[pixelIndex]!=pixelIndex) {
             parentPixels[pixelIndex] = parentPixels[parentPixels[pixelIndex]];
 
@@ -57,9 +56,9 @@ public class ShapeUnionFind {
         return pixelIndex;
     }
 
-    public void Finalize() { // flatten the array to unique shape IDs, which the IDs are also the first index in the shape
+    public void flatten() { // flatten the array to unique shape IDs, which the IDs are also the first index in the shape
         for (int i=0; i<parentPixels.length; i++) {
-            parentPixels[i] = Find(i);
+            parentPixels[i] = find(i);
         }
         calculateShapeRoots();
     }
@@ -71,8 +70,8 @@ public class ShapeUnionFind {
 
         for (int i = 0; i < parentPixels.length; i++) {
             if (parentPixels[i] == i) {
-                shapeIndexAddressTable[i] = uniqueBosses.Size();
-                uniqueBosses.Add(i);
+                shapeIndexAddressTable[i] = uniqueBosses.size();
+                uniqueBosses.add(i);
             }
         }
         rootIndexes = uniqueBosses.toIntArray();
@@ -186,7 +185,7 @@ public class ShapeUnionFind {
             IntArrayList IAL = perimiterHolders[i];
             IAL.removeDuplicatesUnsorted();
 
-            if (IAL.Size()==1) {
+            if (IAL.size()==1) {
                 shapeQueue.enqueue(i);
             }
         }
@@ -199,8 +198,8 @@ public class ShapeUnionFind {
             int parentShapeAddress = shapeIndexAddressTable[parentShape];
 
             IntArrayList parentNeighbors = perimiterHolders[parentShapeAddress];
-            parentNeighbors.SwapRemove(thisShape);
-            if (parentNeighbors.Size()==1) {
+            parentNeighbors.swapRemove(thisShape);
+            if (parentNeighbors.size()==1) {
                 shapeQueue.enqueue(parentShape);
             }
 
@@ -262,9 +261,9 @@ public class ShapeUnionFind {
 
     private void HandleSideTheSequel(int newIndex, IntArrayList currentHolder) {
         if (IndexInImage(newIndex)) {
-            currentHolder.Add(parentPixels[newIndex]);
+            currentHolder.add(parentPixels[newIndex]);
         } else {
-            currentHolder.Add(-1); // represents the image edge
+            currentHolder.add(-1); // represents the image edge
         }
     }
 

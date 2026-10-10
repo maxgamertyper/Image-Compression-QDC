@@ -12,12 +12,24 @@ public class ChunkedColorChannel {
     private final ShapeUnionFind shapeOrganizer;
     private final EdgeMapHolder cardinalMaps;
     private final int[] computedFlags;
+    private final byte[] refactorFlags;
 
     public ChunkedColorChannel(ChannelColorTypes channelColor, int pixelChunkDataLength, int isolatedIndexesDataLength, ShapeUnionFind shapeOrganizer, EdgeMapHolder cardinalMaps, int[] computedFlags) {
         this.channelColor=channelColor;
         this.shapeOrganizer = shapeOrganizer;
         this.cardinalMaps = cardinalMaps;
         this.computedFlags = computedFlags;
+        refactorFlags = new byte[1];
+        channelChunks = new PixelChunk[pixelChunkDataLength];
+        channelIsolatedIndexes = new int[isolatedIndexesDataLength];
+    }
+
+    public ChunkedColorChannel(ChannelColorTypes channelColor, int pixelChunkDataLength, int isolatedIndexesDataLength, ShapeUnionFind shapeOrganizer, EdgeMapHolder cardinalMaps, byte[] refactorFlags) {
+        this.channelColor=channelColor;
+        this.shapeOrganizer = shapeOrganizer;
+        this.cardinalMaps = cardinalMaps;
+        this.refactorFlags = refactorFlags;
+        computedFlags = new int[1];
         channelChunks = new PixelChunk[pixelChunkDataLength];
         channelIsolatedIndexes = new int[isolatedIndexesDataLength];
     }
@@ -70,6 +82,6 @@ public class ChunkedColorChannel {
 
     public void SequentiallyOrder() {
         Arrays.sort(channelIsolatedIndexes);
-        Arrays.sort(channelChunks, (a,b) -> Integer.compare(a.StartingIndex, b.StartingIndex));
+        Arrays.sort(channelChunks, (a,b) -> Integer.compare(a.startingIndex, b.startingIndex));
     }
 }

@@ -207,22 +207,22 @@ public class Parser {
     }
 
     public int[] processShape() throws IOException {
-        values.Clear();
+        values.clear();
         int iDataLength = dataLength;
         // already prefix processed because of if statement
-        values.Add(processDataEntry(iDataLength));
+        values.add(processDataEntry(iDataLength));
 
 
         if (currentType == DataType.Corner) { // is a corner
             while (!prepareNextLength()) {
-                values.Add(processDataEntry(iDataLength));
+                values.add(processDataEntry(iDataLength));
             }
             int oValue = reader.readBits(1);
-            values.Add(oValue); // override Value
+            values.add(oValue); // override Value
         } else { // is a non-corner
             iDataLength--; // subtract for the first color value (above if statement)
             while (iDataLength > 0 && !prepareNextLength()) { // prepareNextLength should never be an escape here, but just in case
-                values.Add(processDataEntry(iDataLength));
+                values.add(processDataEntry(iDataLength));
                 iDataLength--;
             }
         }

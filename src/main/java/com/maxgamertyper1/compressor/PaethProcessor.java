@@ -5,9 +5,9 @@ import com.maxgamertyper1.datatypes.ImageRepresentative;
 import com.maxgamertyper1.imagereading.ImageMeta;
 import com.maxgamertyper1.imagereading.PixelHelper;
 
-public class PaethProccessor {
+public class PaethProcessor {
     ImageRepresentative image;
-    public PaethProccessor(ImageRepresentative imageToProcess) {
+    public PaethProcessor(ImageRepresentative imageToProcess) {
         image = imageToProcess;
     }
 

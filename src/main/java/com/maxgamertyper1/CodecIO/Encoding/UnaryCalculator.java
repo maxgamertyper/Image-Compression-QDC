@@ -18,14 +18,14 @@ public class UnaryCalculator {
         IntArrayList thisCombination = new IntArrayList(10);
 
         for (int i=0; i < 512; i++) {
-            thisCombination.Clear();
+            thisCombination.clear();
 
             for (int bitNumber = 0; bitNumber < 9; bitNumber++) {
                 if ((i & (1 << bitNumber)) != 0) { // last bit set 0b00000001
-                    thisCombination.Add(bitNumber + 1);
+                    thisCombination.add(bitNumber + 1);
                 }
             }
-            thisCombination.Add(10); // ESCAPE code always needs to be present
+            thisCombination.add(10); // ESCAPE code always needs to be present
             unaryCombinations[i] = thisCombination.toIntArray();
         }
     }

@@ -11,22 +11,22 @@ public class IntArrayList {
         this.size = 0;
     }
 
-    public void Add(int data) {
+    public void add(int data) {
         if (size==InternalArray.length) {
             ensureCapacity(size + (size >> 1) + 1);
         }
         InternalArray[size++]=data;
     }
 
-    public int Size() {
+    public int size() {
         return size;
     }
 
-    public void Clear() {
+    public void clear() {
         size=0;
     }
 
-    public void SwapRemove(int value) {
+    public void swapRemove(int value) {
         for (int i = 0; i < size; i++) {
             if (InternalArray[i] == value) {
                 InternalArray[i] = InternalArray[size - 1];

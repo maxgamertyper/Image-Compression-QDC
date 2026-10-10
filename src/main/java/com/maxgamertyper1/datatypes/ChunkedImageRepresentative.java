@@ -1,16 +1,16 @@
 package com.maxgamertyper1.datatypes;
 
-import java.util.Arrays;
-import java.util.Comparator;
+import com.maxgamertyper1.imagereading.ImageMeta;
 
 public class ChunkedImageRepresentative {
     private boolean SequentiallyOrdered = false;
     private ChunkedColorChannel[] ChunkedChannels;
+    private ImageMeta metaData;
     private final boolean grayScale;
-    private final boolean uniformMaxAlpha;
+    private boolean uniformMaxAlpha;
     private int ChunkCount;
     private int IndexCount;
-    private final boolean IsPaeth;
+    private boolean IsPaeth;
     private int[] initialPaethValues;
 
     public ChunkedImageRepresentative(boolean isGrayscale, boolean uniformMaxAlpha, boolean IsPaeth) {
@@ -18,6 +18,15 @@ public class ChunkedImageRepresentative {
         this.uniformMaxAlpha = uniformMaxAlpha;
         this.IsPaeth = IsPaeth;
         InitializeChunkChannels();
+    }
+
+    public ChunkedImageRepresentative(boolean isGrayscale) {
+        this.grayScale = isGrayscale;
+        InitializeChunkChannels();
+    }
+
+    public void setMetaData(ImageMeta metaData) {
+        this.metaData = metaData;
     }
 
     private void InitializeChunkChannels() {
@@ -50,7 +59,7 @@ public class ChunkedImageRepresentative {
         return SequentiallyOrdered;
     }
 
-    public void SequentiallyOrder() {
+    public void sequentiallyOrder() {
         SequentiallyOrdered=true;
 
         for (ChunkedColorChannel channel : ChunkedChannels) {

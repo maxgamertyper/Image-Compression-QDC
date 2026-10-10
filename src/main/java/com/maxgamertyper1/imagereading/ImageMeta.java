@@ -3,7 +3,7 @@ package com.maxgamertyper1.imagereading;
 public record ImageMeta(
         int height,
         int width,
-        long flatsize,
+        int flatsize,
 
         boolean grayscale, // no RGB channels
         boolean opaque, // no alpha channel
@@ -23,7 +23,7 @@ public record ImageMeta(
         this(
                 height,
                 width,
-                (long) height * width,
+                height * width,
                 grayscale,
                 opaque,
                 fileType,

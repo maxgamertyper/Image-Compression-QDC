@@ -3,6 +3,7 @@ package com.maxgamertyper1.compressor;
 import com.maxgamertyper1.datatypes.*;
 import com.maxgamertyper1.datatypes.records.*;
 import com.maxgamertyper1.imagereading.ImageDataHolder;
+import com.maxgamertyper1.imagereading.ImageMeta;
 import com.maxgamertyper1.imagereading.PixelHelper;
 import java.util.*;
 
@@ -82,7 +83,7 @@ public class QuadralizedDataCompressor {
             ColorChannel CR = currentChannels[i];
             int[] rawValues = CR.getChannelData();
             NeighborScanReturn NSR = NeighborScan(CR);
-            ShapeGrouperReturn SGR = ConvertToPixelChunks(NSR.Shapes(), CR, NSR.Flags());
+            ShapeGrouperResult SGR = ConvertToPixelChunks(NSR.Shapes(), CR, NSR.Flags());
 
             int[] isoIndexes = SGR.IsolatedIndexes().toIntArray();
             PixelChunk[] PCs = SGR.Chunks();
@@ -150,7 +151,7 @@ public class QuadralizedDataCompressor {
 
                 if (yValue>0) { // for the top coordinate it just has to be greater than 1
                     if (pixelData[topCoordinate]==currentColor) {
-                        shapeOrganizer.Union(currentFlatCoordinate, topCoordinate); // if the same color, add to the shape
+                        shapeOrganizer.union(currentFlatCoordinate, topCoordinate); // if the same color, add to the shape
                     } else  {
                         flagBitMask |= 1<<3; // if not the same color, mark as an edge
                     }
@@ -159,7 +160,7 @@ public class QuadralizedDataCompressor {
                 }
                 if (xValue>0) { // itll always be in if its not on the left
                     if (pixelData[leftCoordinate]==currentColor) {
-                        shapeOrganizer.Union(currentFlatCoordinate, leftCoordinate);
+                        shapeOrganizer.union(currentFlatCoordinate, leftCoordinate);
                     } else  {
                         flagBitMask |= 1;
                     }
@@ -181,7 +182,7 @@ public class QuadralizedDataCompressor {
             }
         }
 
-        shapeOrganizer.Finalize();
+        shapeOrganizer.flatten();
         shapeOrganizer.calculateShapeAreas();
         shapeOrganizer.calculateShapeContinuity();
         shapeOrganizer.calculatePerimiterAndHoles(pixelFlags);
@@ -216,7 +217,7 @@ public class QuadralizedDataCompressor {
         return new NeighborScanReturn(shapeOrganizer,pixelFlags,new EdgeMapHolder(finalXBasedMap,finalYBasedMap));
     }
 
-    public ShapeGrouperReturn ConvertToPixelChunks(ShapeUnionFind shapeOrganizer, ColorChannel CR, int[] computedFlags) {
+    public ShapeGrouperResult ConvertToPixelChunks(ShapeUnionFind shapeOrganizer, ColorChannel CR, int[] computedFlags) {
         int[] shapeHolder = shapeOrganizer.getRawData();
         int[] rawPixels = CR.getChannelData();
 
@@ -234,12 +235,12 @@ public class QuadralizedDataCompressor {
 
             if (dataKey==-1) {
                 if (flag==15) {
-                    IsolatedPixels.Add(pixelIndex);
+                    IsolatedPixels.add(pixelIndex);
                     continue;
                 }
 
                 PixelChunk PC = new PixelChunk(CR.getChannelType(),rawPixels[pixelIndex]);
-                PC.StartingIndex = shapeID;
+                PC.startingIndex = shapeID;
                 PC.setTotalArea(shapeOrganizer.getShapeArea(shapeID));
 
                 if (flag!=8 && flag!=12 && flag>4) {
@@ -283,7 +284,7 @@ public class QuadralizedDataCompressor {
             }
         }
 
-        return new ShapeGrouperReturn(noNullChunks,IsolatedPixels);
+        return new ShapeGrouperResult(noNullChunks,IsolatedPixels);
     }
 
     public CompressedImageRepresentative QuadralizedDataCompressed(ChunkedImageRepresentative CIR, boolean useColoredBFSPrediction) {
@@ -308,22 +309,22 @@ public class QuadralizedDataCompressor {
             ArrayList<CornerDataRepresentative> finalCornerHolder = new ArrayList<>();
 
             for (int isolatedIndex : currentIsolated) {
-                finalIsolatedIndexes.Add(isolatedIndex);
+                finalIsolatedIndexes.add(isolatedIndex);
             }
             for (int indexValue : CCC.getChannelIsolatedCorrespondingColor()) {
-                IsolatedIndexesValues.Add(indexValue);
+                IsolatedIndexesValues.add(indexValue);
             }
 
 
             for (PixelChunk pixelChunk : CCC.getChannelChunks()) {
-                int startingIndex = pixelChunk.StartingIndex;
+                int startingIndex = pixelChunk.startingIndex;
                 boolean useRectangles = PixelChunkUseRectangles(pixelChunk.convexCorners,shapeOrganizer.getContinuity(startingIndex),shapeOrganizer.getHoles(startingIndex));
-                int[] indexBucket = shapeOrganizer.getIndexGrouping(pixelChunk.StartingIndex);
+                int[] indexBucket = shapeOrganizer.getIndexGrouping(pixelChunk.startingIndex);
 
                 if (indexBucket.length<5) { // label any shape <5 as an isolated pixel since its not efficient to store a rectangle for less than 5 pixels
                     for (int index : indexBucket) {
-                        finalIsolatedIndexes.Add(index);
-                        IsolatedIndexesValues.Add(pixelChunk.getColorValue());
+                        finalIsolatedIndexes.add(index);
+                        IsolatedIndexesValues.add(pixelChunk.getColorValue());
                     }
                     continue;
                 }
@@ -338,7 +339,7 @@ public class QuadralizedDataCompressor {
                     finalCornerHolder.add(holder);
                 }
 
-                int[] shapeData = shapeOrganizer.getIndexGrouping(pixelChunk.StartingIndex);
+                int[] shapeData = shapeOrganizer.getIndexGrouping(pixelChunk.startingIndex);
                 proccessedPixels.set(shapeData[0],shapeData[shapeData.length-1]);
             }
 
@@ -397,7 +398,7 @@ public class QuadralizedDataCompressor {
             prevIndex = currentIndex;
         }
 
-        return new CornerDataRepresentative(indexDelta,pixelChunk.StartingIndex,flagMask, pixelChunk.getColorValue());
+        return new CornerDataRepresentative(indexDelta,pixelChunk.startingIndex,flagMask, pixelChunk.getColorValue());
     }
 
     public boolean PixelChunkUseRectangles(int convexCorners, int continuity, int holes) {
@@ -412,7 +413,7 @@ public class QuadralizedDataCompressor {
 
         int[] raw = shapeOrganizer.getRawData();
 
-        for (int index : shapeOrganizer.getIndexGrouping(pixelChunk.StartingIndex)) {
+        for (int index : shapeOrganizer.getIndexGrouping(pixelChunk.startingIndex)) {
             processedPixels.clear(index);
         }
 
@@ -707,7 +708,7 @@ public class QuadralizedDataCompressor {
     }
 
     private int nearestCardinalEdge(EdgeMapHolder EMH, boolean useXmap, boolean positiveDirection, int absoluteBasis, int relativeCoordinateLocation) {
-        int[] dataset = useXmap ? EMH.xBasedMap()[absoluteBasis] : EMH.yBasedMap()[absoluteBasis];
+        int[] dataset = useXmap ? EMH.columnBottomEdges()[absoluteBasis] : EMH.rowRightEdges()[absoluteBasis];
 
         if (dataset == null || dataset.length == 0) return -1;
 
