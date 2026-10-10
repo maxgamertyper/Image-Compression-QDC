@@ -182,7 +182,7 @@ public class Disassembler implements AutoCloseable {
                 System.out.println(Arrays.toString(shapeValues));
                 writeValueRead(shapeValues,parser.getCurrentType(),parser.isInOverride());
 
-                if (shapeValues[shapeValues.length - 1] == 1) { // if override
+                if (shapeValues[shapeValues.length - 1] == 1 && parser.getCurrentType() == DataType.Corner) { // if override
                     parser.updateOverrideData(true);
                     writeOPCodeSwitch(parser.getCurrentType(),true);
                 }

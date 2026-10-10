@@ -16,11 +16,11 @@ import java.util.Arrays;
 public class Main {
     public static void main(String[] args) throws IOException {
         String inFileName = "testing.qdc";
-        String encodeFileName = "TestingImages/Lenna.png";
+        String encodeFileName = "TestingImages/yellow_square.png";
         String outFileName = "testing.qdca";
 
         encode(encodeFileName);
-        //disassemble(inFileName,outFileName);
+        disassemble(inFileName,outFileName);
     }
 
     public static void disassemble(String inFileName, String outFileName) throws IOException {

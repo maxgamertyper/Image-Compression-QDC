@@ -4,7 +4,7 @@ import com.maxgamertyper1.datatypes.ChannelColorTypes;
 import com.maxgamertyper1.datatypes.PixelChunk;
 import com.maxgamertyper1.datatypes.records.EdgeMapHolder;
 
-import static com.maxgamertyper1.TestHelper.buildPixelChunk;
+import static com.maxgamertyper1.CompressionTestHelper.buildPixelChunk;
 
 public class ExpectedDataHolder {
     public static int[] StaticBasedCorrespondingIsolatedIndexes(int SVA) {
@@ -124,15 +124,15 @@ public class ExpectedDataHolder {
 
     // Compression Data
 
-    public static final PixelChunk fullSquare = TestHelper.buildPixelChunk(ChannelColorTypes.Alpha,10,0,4,
+    public static final PixelChunk fullSquare = CompressionTestHelper.buildPixelChunk(ChannelColorTypes.Alpha,10,0,4,
             new int[][]{{0,9},{9,10},{90,5},{99,6}},100
     ); // a 10x10 square (this represents all 0 hole rectangles)
 
-    public static final PixelChunk holeSquare = TestHelper.buildPixelChunk(ChannelColorTypes.Alpha,10,0,4,
+    public static final PixelChunk holeSquare = CompressionTestHelper.buildPixelChunk(ChannelColorTypes.Alpha,10,0,4,
             new int[][]{{0,9},{9,10},{90,5},{99,6}},96
     ); // a 10x10 square with a hole in the middle (change is in the shapeOrganizer)
 
-    public static final PixelChunk swissCheese = TestHelper.buildPixelChunk(ChannelColorTypes.Alpha,10,0,7,
+    public static final PixelChunk swissCheese = CompressionTestHelper.buildPixelChunk(ChannelColorTypes.Alpha,10,0,7,
             new int[][]{{0,9},{4,10},{7,7},{16,10},{20,6},{24,6}},21
     );
 

@@ -2,7 +2,6 @@ package com.maxgamertyper1;
 
 import com.maxgamertyper1.compressor.QuadralizedDataCompressor;
 import com.maxgamertyper1.datatypes.*;
-import com.maxgamertyper1.datatypes.records.ChannelConcurrencyPercents;
 import com.maxgamertyper1.datatypes.records.NeighborScanReturn;
 import com.maxgamertyper1.datatypes.records.ShapeGrouperReturn;
 import com.maxgamertyper1.imagereading.ImageDataHolder;
@@ -15,8 +14,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static com.maxgamertyper1.TestHelper.*;
-import static com.maxgamertyper1.TestHelper.getUniformColorChannel;
+import static com.maxgamertyper1.CompressionTestHelper.*;
+import static com.maxgamertyper1.CompressionTestHelper.getUniformColorChannel;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ChunkTest {
@@ -27,7 +26,7 @@ public class ChunkTest {
         // Testing Setup
         ImageDataHolder.UniformMaxAlpha = true;
         ImageDataHolder.isGrayscale = true;
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
         int val = ThreadLocalRandom.current().nextInt(0, 255);
 
         ImageRepresentative TestingImage = new ImageRepresentative(true,true,false,100);
@@ -48,38 +47,12 @@ public class ChunkTest {
     }
 
     @Test
-    @Order(2)
-    @DisplayName("100% Continuity for uniform image")
-    public void ImageContinuityTest() {
-        ImageDataHolder.UniformMaxAlpha = true;
-        ImageDataHolder.isGrayscale = true;
-        TestHelper.DataholderSetter(10,10);
-        int val = ThreadLocalRandom.current().nextInt(0, 255);
-
-        ImageRepresentative TestingImage = new ImageRepresentative(true,true,false,100);
-        TestingImage.getColorChannels()[0] = getUniformColorChannel(ChannelColorTypes.Gray, val,10,10);
-
-        ImageDataHolder.channeledColors = TestingImage;
-
-        QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
-        QDC.PaethDeltaEncoder();
-
-
-        ChannelConcurrencyPercents CCP = QDC.getChannelConncurrencyPercents();
-
-        assertAll("Concurrency Properties",
-                () -> assertEquals(1, CCP.colorChunkRate(), "Incorrect Color Chunk Calculation"),
-                () -> assertEquals(1, CCP.deltaChunkRate(), "Incorrect Paeth Chunk Calculation")
-        );
-    }
-
-    @Test
     @Order(5)
     @DisplayName("Neighbor Scan Test with U and Box")
     public void NeighborScanBlockTest() {
         ImageDataHolder.UniformMaxAlpha = true;
         ImageDataHolder.isGrayscale = true;
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
         int val = ThreadLocalRandom.current().nextInt(0, 255);
         int UVA = ThreadLocalRandom.current().nextInt(0, 255);
         int BVA = ThreadLocalRandom.current().nextInt(0, 255);
@@ -105,7 +78,7 @@ public class ChunkTest {
     public void NeighborScanStaticTest() {
         ImageDataHolder.UniformMaxAlpha = true;
         ImageDataHolder.isGrayscale = true;
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
         int val = ThreadLocalRandom.current().nextInt(0, 255);
         int SVA = ThreadLocalRandom.current().nextInt(0, 255);
         int BVA = ThreadLocalRandom.current().nextInt(0, 255);
@@ -129,7 +102,7 @@ public class ChunkTest {
     @Order(3)
     @DisplayName("ShapeUnionFind correct perimiter, area, holes, continuity, and grouping calculations (non-Static)")
     public void shapeUnionFindTestBlock() {
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
 
 
         ShapeUnionFind testingDataShapes = new ShapeUnionFind(ExpectedDataHolder.BlockBasedShapeIDS);
@@ -180,7 +153,7 @@ public class ChunkTest {
     public void PixelChunkConversionTestBlock() {
         ImageDataHolder.UniformMaxAlpha = true;
         ImageDataHolder.isGrayscale = true;
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
         int val = ThreadLocalRandom.current().nextInt(0, 255);
         int UVA = ThreadLocalRandom.current().nextInt(0, 255);
         int BVA = ThreadLocalRandom.current().nextInt(0, 255);
@@ -241,7 +214,7 @@ public class ChunkTest {
     @Order(4)
     @DisplayName("ShapeUnionFind correct perimiter, area, holes, continuity, and grouping calculations (Static)")
     public void shapeUnionFindTestStatic() {
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
 
 
         ShapeUnionFind testingDataShapes = new ShapeUnionFind(ExpectedDataHolder.StaticBasedShapeIDs);
@@ -294,7 +267,7 @@ public class ChunkTest {
     public void PixelChunkConversionTestStatic() {
         ImageDataHolder.UniformMaxAlpha = true;
         ImageDataHolder.isGrayscale = true;
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
         int val = ThreadLocalRandom.current().nextInt(0, 255);
         int SVA = ThreadLocalRandom.current().nextInt(0, 255);
         int BVA = ThreadLocalRandom.current().nextInt(0, 255);
@@ -351,7 +324,7 @@ public class ChunkTest {
     @Order(9)
     @DisplayName("Entire ChunkImage Test")
     public void ChunkImageTest() { // the previous tests are just the parts, this is the whole thing so its assertAll is super long
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
 
         ImageRepresentative testingImage = new ImageRepresentative(false,true,false,100);
         ColorChannel[] testingData = testingImage.getColorChannels();

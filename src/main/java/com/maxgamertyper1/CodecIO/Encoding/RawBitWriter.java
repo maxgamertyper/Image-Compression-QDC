@@ -30,10 +30,18 @@ public class RawBitWriter {
     }
 
     public void writeRawValue(int value, int numBits) throws IOException{
+        System.out.println("Writing value: "+ value + " with bit count: " + numBits);
         if (bitHead+numBits>32) {
-            int newDataLength = 32-bitHead;
-            writeRawValue(value >>> (numBits - newDataLength), newDataLength);
-            writeRawValue(value & ((1 << (numBits - newDataLength)) - 1), numBits-newDataLength); // uses an and for the rest of the btis to 0 out the top bits
+            System.out.println("Overflowing, splitting payload");
+            int bitsToFill = 32-bitHead;
+            int overflowBits = numBits - bitsToFill;
+
+            int upperBits = value >>> overflowBits; // cut off overflowbits
+            writeRawValue(upperBits, bitsToFill); // write data
+
+            int lowerMask = (overflowBits == 32) ? -1 : (1 << overflowBits) - 1; // shift either -1 or like
+            int lowerBits = value & lowerMask; // cut off top
+            writeRawValue(lowerBits, overflowBits); // write bits
         } else {
             int mask = (numBits == 32) ? -1 : (1 << numBits) - 1; // java is stinky and only uses 5 bits as a shift on a 32-bit number so otherwise do -1 which is 0xFFFFFFFF
             int maskedValue = value & mask; // mask the value to the number of bits specified
@@ -55,11 +63,10 @@ public class RawBitWriter {
     }
 
     public void flushRemaining() throws IOException {
+        System.out.println("Called FlushRemaining with buffer: " + intBuffer + " with size: " + bitHead);
         if (bitHead > 0) {
-            //left shift
             int bytesUsed = (bitHead+7) / 8;
-            int emptyBits = bytesUsed*8 - bitHead;
-            // unused bytes = 4-bytesUsed
+            int emptyBits = 32 - bitHead;
 
             // shift so that any nonfilled bytes are then filled and the last byte has 0s
             intBuffer <<= emptyBits;
@@ -69,7 +76,7 @@ public class RawBitWriter {
                 writeAndHash((intBuffer >>> shift) & 0xFF);
             }
 
-            emptyBitsFromFlushRemaining = emptyBits;
+            emptyBitsFromFlushRemaining = (bytesUsed * 8) - bitHead;
             bytesWritten+=bytesUsed;
             bitHead = 0;
             intBuffer = 0;
@@ -83,9 +90,10 @@ public class RawBitWriter {
         writeAndHash((intBuffer >>> 16) & 0xFF);
         writeAndHash((intBuffer >>> 8) & 0xFF);
         writeAndHash(intBuffer & 0xFF);
+        System.out.println("Flushing buffer with value: " + intBuffer);
 
 
-        bytesWritten+=4;
+        bytesWritten += 4;
         intBuffer = 0;
         bitHead = 0;
     }

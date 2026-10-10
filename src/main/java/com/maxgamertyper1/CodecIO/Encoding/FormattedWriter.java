@@ -64,6 +64,7 @@ public class FormattedWriter implements Closeable {
 
     public void writeChannel(ByteArrayOutputStream channelData, int emptyBits, ChannelColorTypes channelColor) throws IOException {
         channelSeekTable[channelColor.getOrderValue()] = bitWriter.getBytesWritten();
+        System.out.println(channelData.size());
 
         bitWriter.writeRawValue(channelData.size()-4,32); // 4 bytes to hold the channel size (-4 from the integrity hash)
         bitWriter.writeRawValue(emptyBits, 8);

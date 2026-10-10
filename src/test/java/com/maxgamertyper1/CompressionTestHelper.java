@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 
-public class TestHelper {
+public class CompressionTestHelper {
     public static ColorChannel getUniformColorChannel(ChannelColorTypes color, int value, int width, int height) {
         ColorChannel Gray = new ColorChannel(color,width*height);
 

@@ -1,5 +1,5 @@
 *Y is the graY color channel
-META data (14 - 17 Bytes based on flags):
+META data (15 - 19 Bytes based on flags):
 Signature (<MAX) (4 bytes)
 Compression Version Major (1 byte)
 Compression Version Minor (1 byte)

@@ -57,7 +57,7 @@ public class UnaryCalculator {
             prefixIndex++; // make it equal to the length of the unary
             int bitCount = bitCounts[bitLength]; // offset by 1 so 0 is 1 bit, 1 is 2, 9 is OVERFLOW
 
-            int costPerItem = dataSize + prefixIndex + (bitLength == 9 ? 8 : 0); // 8 bits needed to say the ESCAPE size
+            int costPerItem = dataSize + prefixIndex + (prefixIndex == combination.length ? 8 : 0); // 8 bits needed to say the ESCAPE size
             totalCost += bitCount * costPerItem;
         }
         totalCost += combination.length * 4;

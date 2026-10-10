@@ -17,7 +17,6 @@ public class Parser {
     private int totalChannels;
     private StreamLocation channelEndLocaiton;
     private final IntArrayList values = new IntArrayList(4);
-    private boolean justEnteredOverride = false;
 
     //data Tracking
     private boolean inOverride;
@@ -129,7 +128,8 @@ public class Parser {
     }
 
     public DataType readExtendedOPCode() throws IOException {
-        currentType = DataType.fromOPCode(reader.readBits(2));
+        int a = reader.readBits(2);
+        currentType = DataType.fromOPCode(a);
         setDataLength();
         return currentType;
     }
@@ -142,12 +142,16 @@ public class Parser {
     public int processEscape() throws IOException {
         int branch = 0;
 
-        if (inOverride) { // leave an override
+        if (inOverride) {
             currentType = DataType.Corner;
-            setDataLength();
             inOverride = false;
+            setDataLength();
             justExitedOverride = true;
-        } else { // normal flow
+        } else if (justExitedOverride && currentType == DataType.Corner) {
+            justExitedOverride = false;
+            readOPCode();
+            branch = 1;
+        } else {
             justExitedOverride = false;
             readOPCode();
             branch = 2;

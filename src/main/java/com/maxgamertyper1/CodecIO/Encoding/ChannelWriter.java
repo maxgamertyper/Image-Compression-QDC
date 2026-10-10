@@ -86,8 +86,10 @@ public class ChannelWriter implements Closeable {
     }
 
     public void writeOverriden(int[] deltas, int zigzagValue) throws IOException {
+        System.out.println("Writing Override");
         writeDeltas(deltas);
         writeValueWithPrefix(zigzagValue);
+        System.out.println("Wrote Override");
     }
 
     public void writeRectangleData(RectangleRepresentative data) throws IOException {
@@ -110,15 +112,14 @@ public class ChannelWriter implements Closeable {
 
         //write prefix
         bitWriter.writeRawValue(unaryValueRaw[prefixIndex], prefixIndex + 1);
-        if (rawStorageSize > 9) {
-            System.out.println(rawStorageSize);
-            bitWriter.writeRawValue(0, 1); // the overflow code
+        if (prefixIndex == unaryPrefixValueSet.length-1) { // "overflow" bucket
+            bitWriter.writeRawValue(0, 1); // yes, i am an overflow
             bitWriter.writeRawValue(rawStorageSize, 7); // the byte for size
-            bitWriter.writeRawValue(value, rawStorageSize);
+            bitWriter.writeRawValue(value, rawStorageSize); // the number
         } else {
             bitWriter.writeRawValue(value, unaryPrefixValueSet[prefixIndex]);
         }
-        System.out.println("Prefix: " + unaryValueRaw[prefixIndex] + " Value: " + value);
+        //System.out.println("Prefix: " + unaryValueRaw[prefixIndex] + " Value: " + value);
     }
 
     private int getPrefixIndex(int bitLength) {

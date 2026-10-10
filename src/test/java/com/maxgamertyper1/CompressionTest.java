@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.BitSet;
 
-import static com.maxgamertyper1.TestHelper.emptyBitSet;
+import static com.maxgamertyper1.CompressionTestHelper.emptyBitSet;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CompressionTest {
@@ -27,7 +27,7 @@ public class CompressionTest {
         ShapeUnionFind holeSquareSUF = new ShapeUnionFind(ExpectedDataHolder.holeSquareParentIDs);
         ShapeUnionFind swissCheeseSUF = new ShapeUnionFind(ExpectedDataHolder.swissCheeseParentIDs);
 
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
         squareSUF.calculateShapeRoots();
         squareSUF.calculateShapeContinuity();
         squareSUF.calculatePerimiterAndHoles(ExpectedDataHolder.ExpectedUniformFlags);
@@ -36,7 +36,7 @@ public class CompressionTest {
         holeSquareSUF.calculateShapeContinuity();
         holeSquareSUF.calculatePerimiterAndHoles(ExpectedDataHolder.expectedHoleSquareFlags);
 
-        TestHelper.DataholderSetter(5,5);
+        CompressionTestHelper.DataholderSetter(5,5);
         swissCheeseSUF.calculateShapeRoots();
         swissCheeseSUF.calculateShapeContinuity();
         swissCheeseSUF.calculatePerimiterAndHoles(ExpectedDataHolder.expectedSwissCheeseFlags);
@@ -106,7 +106,7 @@ public class CompressionTest {
     @DisplayName("Uniform Limit Grabbing Test")
     public void uniformLimitCalculationTest() {
         QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
 
         assertAll(
                 // checking top-left to bottom-right diagonal for uniform as its a good base
@@ -144,7 +144,7 @@ public class CompressionTest {
     @DisplayName("Block Limit Grabbing Test")
     public void blockLimitCalculationTest() {
         QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
 
         EdgeMapHolder EMH = ExpectedDataHolder.BlockBasedEdgeMaps;
 
@@ -191,7 +191,7 @@ public class CompressionTest {
     @DisplayName("Static Limit Grabbing Test")
     public void staticLimitCalculationTest() {
         QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
 
         EdgeMapHolder EMH = ExpectedDataHolder.StaticBasedEdgeMaps;
 
@@ -238,7 +238,7 @@ public class CompressionTest {
     @DisplayName("Uniform Rectangle Rep Test")
     public void rectangleRectangleRepTest() {
         QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
 
         PixelChunk[] chunks = ExpectedDataHolder.getExpectedUniformChunkData(ChannelColorTypes.Gray,10,10,10);
 
@@ -293,7 +293,7 @@ public class CompressionTest {
     @DisplayName("Block Rectangle Rep Test")
     public void blockRectangleRepTest() {
         QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
 
         PixelChunk[] chunks = ExpectedDataHolder.getExpectedBlockChunkData(ChannelColorTypes.Gray,10,100,255);
 
@@ -387,7 +387,7 @@ public class CompressionTest {
     @DisplayName("Static Rectangle Rep Test")
     public void staticRectangleRepTest() {
         QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
 
         PixelChunk[] chunks = ExpectedDataHolder.getExpectedStaticChunkData(ChannelColorTypes.Gray,10,100);
 
@@ -469,7 +469,7 @@ public class CompressionTest {
 
         BitSet trackingSet = new BitSet(100);
 
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
 
         ArrayList<CornerPoint> trackingCorners = new ArrayList<>(ExpectedDataHolder.fullSquare.cornerPoints);
 
@@ -495,7 +495,7 @@ public class CompressionTest {
         trackingSet.flip(32);
         trackingSet.flip(33);
 
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
 
         ArrayList<CornerPoint> trackingCorners = new ArrayList<>(ExpectedDataHolder.holeSquare.cornerPoints);
 
@@ -523,7 +523,7 @@ public class CompressionTest {
     @DisplayName("Hole Square Rectangle Processing with PreProcessed")
     public void holeSquareRectangleProcessWithCutOut() {
         QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
-        TestHelper.DataholderSetter(10,10);
+        CompressionTestHelper.DataholderSetter(10,10);
 
         PixelChunk[] chunks = ExpectedDataHolder.getExpectedBlockChunkData(ChannelColorTypes.Gray,10,100,255);
 

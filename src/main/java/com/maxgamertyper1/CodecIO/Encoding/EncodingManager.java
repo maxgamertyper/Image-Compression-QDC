@@ -55,7 +55,7 @@ public class EncodingManager {
         colorChannel.calculateCornerOverrides();
         colorChannel.zigzagIsolated(); // turn the isolated values into zigzag form
         int[] optimalUnary = calculateChannelUnary(colorChannel);
-        System.out.println(Arrays.toString(optimalUnary));
+        //System.out.println(Arrays.toString(optimalUnary));
 
         //write the channel-META but not byte size, the formattedWriter will do that
         channelWriter.setData(colorChannel.getFirstType(),optimalUnary);
@@ -125,8 +125,8 @@ public class EncodingManager {
         int[] rawValues = thisChannel.getCorrespondingIsolatedValues();
 
         try (channelWriter) {
-            for (int i = 0; i < totalItems;) {
-                System.out.println(i);
+            for (int i = 0; i <= totalItems;) {
+                //System.out.println(i);
                 int rectPosition = (rectIdx < builtRectangles.length) ? builtRectangles[rectIdx].startingIndex() : Integer.MAX_VALUE;
                 int cornerPosition = (cornerIdx < builtCorners.length) ? builtCorners[cornerIdx].startingIndex() : Integer.MAX_VALUE;
                 int rawPosition = (rawIdx < builtRaws.length) ? builtRaws[rawIdx] : Integer.MAX_VALUE;
@@ -189,7 +189,7 @@ public class EncodingManager {
         if (rawOverrides.length!=0) totalOverrides--;
         if (cornerOverrides.length!=0) totalOverrides--;
 
-        for (int i=0; i < totalOverrides;) {
+        for (int i=0; i <= totalOverrides;) {
             int rectPosition = (rectOverrideIdx < rectOverrides.length) ? builtRects[rectOverrides[rectOverrideIdx]].startingIndex() : Integer.MAX_VALUE;
             int cornerPosition = (cornerOverrideIdx < cornerOverrides.length) ? builtCorners[cornerOverrides[cornerOverrideIdx]].startingIndex() : Integer.MAX_VALUE;
             int rawPosition = (rawOverrideIdx < rawOverrides.length) ? builtRaws[rawOverrides[rawOverrideIdx]] : Integer.MAX_VALUE;
@@ -213,12 +213,11 @@ public class EncodingManager {
                 int overrideIndex = rawOverrides[rawOverrideIdx++];
                 int thisRawValue = rawValues[overrideIndex];
                 int thisRawIndex = builtRaws[overrideIndex];
-                System.out.println(thisRawValue + ", " + thisRawIndex);
-
 
                 thisLocation = PixelHelper.ReverseIndexCalculator(ImageDataHolder.width,thisRawIndex);
                 deltaInfo[0] = zigzagEncode(thisLocation[0] - previousLocation[0]);
                 deltaInfo[1] = zigzagEncode(thisLocation[1] - previousLocation[1]);
+                System.out.println(Arrays.toString(deltaInfo) + ", " + thisRawValue);
 
                 channelWriter.writeOverriden(deltaInfo, thisRawValue);
                 totalChanges += 1;
