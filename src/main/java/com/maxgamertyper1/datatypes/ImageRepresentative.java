@@ -1,11 +1,14 @@
 package com.maxgamertyper1.datatypes;
 
+import com.maxgamertyper1.imagereading.ImageMeta;
+
 public class ImageRepresentative {
+    private ImageMeta metaData;
     private ColorChannel[] colorChannels;
-    private final boolean deltaEncoded;
-    private final boolean grayScale;
+    private boolean deltaEncoded = true;
+    private boolean grayScale = false;
     private int[] initialPixels;
-    private final boolean uniformMaxAlpha;
+    private boolean uniformMaxAlpha = false;
 
     public ImageRepresentative(boolean grayScale, boolean uniformMaxAlpha, boolean deltaEncoded, int flatsize) {
         this.grayScale=grayScale;
@@ -14,6 +17,21 @@ public class ImageRepresentative {
         InitializeColorChannels(flatsize);
 
         if (deltaEncoded) initialPixels = new int[grayScale ? 2 : 4];
+    }
+
+    public ImageRepresentative(int flatsize) {
+        InitializeColorChannels(flatsize);
+    }
+
+    public void setMetaData(ImageMeta metaData) {
+        this.metaData = metaData;
+
+        int alphaModifier = metaData.opaque() ? 1 : 0;
+        initialPixels = new int[(metaData.grayscale() ? 2 : 4) - alphaModifier];
+    }
+
+    public ImageMeta getMetaData() {
+        return metaData;
     }
 
     public ColorChannel[] getColorChannels() {

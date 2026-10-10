@@ -6,8 +6,10 @@ import com.maxgamertyper1.CodecIO.Encoding.FormattedWriter;
 import com.maxgamertyper1.compressor.QuadralizedDataCompressor;
 import com.maxgamertyper1.datatypes.*;
 import com.maxgamertyper1.imagereading.ImageDataHolder;
+import com.maxgamertyper1.imagereading.ImageMeta;
 import com.maxgamertyper1.imagereading.ImageReader;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -19,8 +21,26 @@ public class Main {
         String encodeFileName = "TestingImages/yellow_square.png";
         String outFileName = "testing.qdca";
 
-        encode(encodeFileName);
-        disassemble(inFileName,outFileName);
+        //encode(encodeFileName);
+        //disassemble(inFileName,outFileName);
+        testImageReaderRefactor(encodeFileName);
+    }
+
+    public static void testImageReaderRefactor(String encodeFileName) {
+        File imageFile = new File(encodeFileName);
+
+        ImageReader reader = new ImageReader(imageFile);
+        ImageRepresentative image = reader.readImageFile();
+
+        ImageMeta metaData = image.getMetaData();
+
+        System.out.println("Grayscale: " + metaData.grayscale());
+        System.out.println("Opaque: " + metaData.opaque());
+        System.out.println("Height: " + metaData.height());
+        System.out.println("Width: " + metaData.width());
+        System.out.println("Flatsize: " + metaData.flatsize());
+        System.out.println("originalName: " + metaData.metaImageName());
+        System.out.println("originalType: " + metaData.fileType());
     }
 
     public static void disassemble(String inFileName, String outFileName) throws IOException {

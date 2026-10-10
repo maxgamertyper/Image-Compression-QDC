@@ -1597,3 +1597,9 @@ im going to sleep
 school is so busy rn
 holy moly
 i have work to do but want to try and fix this the best i can before i submit my applications
+
+
+10/9/26
+I just realized i could just remove the corner components for now and just use rectangles until i get it working and pretty then add them back
+so ill do that
+lets start the refactor

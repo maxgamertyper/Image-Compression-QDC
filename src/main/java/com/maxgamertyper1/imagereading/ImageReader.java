@@ -11,6 +11,15 @@ import java.io.IOException;
 import static com.maxgamertyper1.imagereading.PixelHelper.IndexCalculator;
 
 public class ImageReader {
+    private int imageHeight;
+    private int imageWidth;
+    private String imageName;
+    private OriginalFileType imageType;
+    private boolean imageOpaque = true;
+    private boolean imageGrayscale = true;
+    private final File imageFile2;
+    private int[] pixelData;
+
 
     public static void ReadAllImageContent(String ImagePath) {
         File imageFile = ImageReader.FillDataHolder(ImagePath);
@@ -19,6 +28,114 @@ public class ImageReader {
         ImageDataHolder.isGrayscale = DSR.grayscale();
         ImageDataHolder.UniformMaxAlpha = DSR.uniformAlpha();
         SplitColorArray(ImageDataHolder.flatsize,ImageDataHolder.isGrayscale,rawpixels);
+    }
+
+    private ImageMeta consolidateMetaData() {
+        return new ImageMeta(
+                imageHeight,
+                imageWidth,
+                imageGrayscale,
+                imageOpaque,
+                imageType,
+                imageName
+        );
+    }
+
+    private void getFileData() {
+        imageName = imageFile2.getName();
+        String path = imageFile2.getAbsolutePath();
+
+        int lastIndexOfDot = path.lastIndexOf('.');
+        if (lastIndexOfDot == -1) {
+            System.err.println("No file path found, continuing");
+        }
+
+        try {
+            imageType = OriginalFileType.valueOf(path.substring(lastIndexOfDot + 1).toUpperCase());
+        } catch (IllegalArgumentException e){
+            imageType = OriginalFileType.Unknown;
+        }
+    }
+
+    private  int[] getPixelData() {
+        BufferedImage image;
+
+        try {
+            image = ImageIO.read(imageFile2);
+        } catch (IOException e) {
+            System.out.println("Error occured when reading the image file");
+            throw new RuntimeException(e);
+        }
+
+        imageWidth = image.getWidth();
+        imageHeight = image.getHeight();
+        int[] Colors = new int[imageHeight * imageWidth];
+
+        for (int y = 0; y < imageHeight; y++) {
+            for (int x = 0; x < imageWidth; x++) {
+                int colors = image.getRGB(x, y);
+                Colors[IndexCalculator(imageWidth, x, y)] = colors;
+            }
+        }
+
+        return Colors;
+    }
+
+    public ImageRepresentative readImageFile() {
+        getFileData();
+
+        pixelData = getPixelData();
+        imageChannelVerification();
+
+        ImageRepresentative returnHolder = splitColorArray();
+
+        returnHolder.setMetaData(consolidateMetaData());
+
+        return returnHolder;
+    }
+
+    public ImageReader(File imageFile) {
+        imageFile2 = imageFile;
+    }
+
+    private void imageChannelVerification() {
+        for (int color : pixelData) {
+            if (!imageGrayscale && !imageOpaque) break;
+
+            if (imageOpaque && ((color >> 24) & 0xFF) != 255) imageOpaque = false;
+
+            if (imageGrayscale) {
+                int r = (color >> 16) & 0xFF;
+                int g = (color >> 8) & 0xFF;
+                int b = color & 0xFF;
+                if (r != g || g != b) {
+                    imageGrayscale = false;
+                }
+            }
+        }
+    }
+
+    private ImageRepresentative splitColorArray() {
+        ImageRepresentative returnHolder = new ImageRepresentative(imageHeight*imageWidth);
+
+        for (int cIndex=0;cIndex< pixelData.length; cIndex++) {
+            int color = pixelData[cIndex];
+            int a = (color >> 24) & 0xFF;
+            int r = (color >> 16) & 0xFF;
+            int g = (color >> 8) & 0xFF;
+            int b = color & 0xFF;
+
+            if (imageGrayscale) {
+                returnHolder.setPixelColorChannel(ChannelColorTypes.Gray, cIndex, r);
+            } else {
+                returnHolder.setPixelColorChannel(ChannelColorTypes.Red, cIndex, r);
+                returnHolder.setPixelColorChannel(ChannelColorTypes.Green, cIndex, g);
+                returnHolder.setPixelColorChannel(ChannelColorTypes.Blue, cIndex, b);
+            }
+            if (!imageOpaque) returnHolder.setPixelColorChannel(ChannelColorTypes.Alpha, cIndex, a);
+        }
+
+        return returnHolder;
     }
 
     private static File FillDataHolder(String ImagePath) {
