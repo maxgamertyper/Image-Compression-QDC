@@ -27,7 +27,7 @@ public class ImageRepresentative {
         this.metaData = metaData;
 
         int alphaModifier = metaData.opaque() ? 1 : 0;
-        initialPixels = new int[(metaData.grayscale() ? 2 : 4) - alphaModifier];
+        initialPixels = new int[(metaData.grayscale() ? 2 : 4)];
     }
 
     public ImageMeta getMetaData() {

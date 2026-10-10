@@ -3,6 +3,7 @@ package com.maxgamertyper1;
 import com.maxgamertyper1.CodecIO.Assembly.Disassembler;
 import com.maxgamertyper1.CodecIO.Encoding.EncodingManager;
 import com.maxgamertyper1.CodecIO.Encoding.FormattedWriter;
+import com.maxgamertyper1.compressor.PaethProccessor;
 import com.maxgamertyper1.compressor.QuadralizedDataCompressor;
 import com.maxgamertyper1.datatypes.*;
 import com.maxgamertyper1.imagereading.ImageDataHolder;
@@ -41,6 +42,28 @@ public class Main {
         System.out.println("Flatsize: " + metaData.flatsize());
         System.out.println("originalName: " + metaData.metaImageName());
         System.out.println("originalType: " + metaData.fileType());
+
+        System.out.println("Raw Pixel Output: ");
+        for (ColorChannel channel : image.getColorChannels()) {
+            System.out.println("Channel: " + channel.getChannelType());
+            System.out.println("Pixels: ");
+            System.out.println(Arrays.toString(channel.getChannelData()));
+        }
+
+        //NOTE: will need to adjust the ImageRep instantiation
+
+        PaethProccessor paethProccessor = new PaethProccessor(image);
+        ImageRepresentative paethImage = paethProccessor.paethEncode();
+
+        System.out.println("Paeth Encoding Output: ");
+        for (ColorChannel channel : paethImage.getColorChannels()) {
+            System.out.println("Channel: " + channel.getChannelType());
+            System.out.println("Initial Value: ");
+            System.out.println(paethImage.getInitialPixels()[paethImage.getChannelIndex(channel.getChannelType())]);
+            System.out.println("Paeth Values: ");
+            System.out.println(Arrays.toString(channel.getChannelData()));
+        }
+        //NOTE: had to adjust initial pixel length since it needs to be set before, related to above note
     }
 
     public static void disassemble(String inFileName, String outFileName) throws IOException {
