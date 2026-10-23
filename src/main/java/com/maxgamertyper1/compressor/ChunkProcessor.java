@@ -22,20 +22,16 @@ public class ChunkProcessor {
     public ChunkedImageRepresentative chunkImage() {
         ColorChannel[] currentChannels = imageToChunk.getColorChannels();
         ChunkedColorChannel[] returnData = new ChunkedColorChannel[currentChannels.length];
+        ImageMeta metaData = imageToChunk.getMetaData();
 
         for (int i=0;i<currentChannels.length;i++) {
             ColorChannel CR = currentChannels[i];
             int[] rawValues = CR.getChannelData();
             NeighborScanResult NSR = neighborScan(CR);
 
-
             ShapeUnionFind shapeOrganizer = NSR.Shapes();
 
-            shapeOrganizer.flatten();
-            shapeOrganizer.calculateShapeAreas();
-            shapeOrganizer.calculateShapeContinuity();
-            //shapeOrganizer.calculatePerimiterAndHoles(NSR.Flags());
-            shapeOrganizer.calculateIndexGroupings();
+            shapeOrganizer.solveShapes(NSR.Flags(),metaData);
 
             ShapeGrouperResult SGR = convertToPixelChunks(NSR.Shapes(), CR, NSR.Flags());
 
@@ -60,8 +56,6 @@ public class ChunkProcessor {
             CCC.setChannelChunks(PCs);
             returnData[i] = CCC;
         }
-
-        ImageMeta metaData = imageToChunk.getMetaData();
 
         ChunkedImageRepresentative CIR = new ChunkedImageRepresentative(metaData.grayscale());
         CIR.setMetaData(metaData);
@@ -144,16 +138,14 @@ public class ChunkProcessor {
         int[][] edgeArray = new int[edgeBits.length][];
 
         for (int i=0; i<edgeBits.length;i++) {
-            int[] edges = edgeArray[i];
             BitSet bits = edgeBits[i];
 
-            int count = bits.cardinality();
-            edges = new int[count+1];
-            edges[0] = IMAGE_WALL;
+            edgeArray[i] = new int[bits.cardinality()+1];
+            edgeArray[i][0] = IMAGE_WALL;
 
             int j =1;
             for (int bit = bits.nextSetBit(0); bit >= 0; bit = bits.nextSetBit(bit + 1)) {
-                edges[j++] = bit;
+                edgeArray[i][j++] = bit;
             }
         }
 

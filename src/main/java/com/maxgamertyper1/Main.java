@@ -3,15 +3,14 @@ package com.maxgamertyper1;
 import com.maxgamertyper1.CodecIO.Assembly.Disassembler;
 import com.maxgamertyper1.CodecIO.Encoding.EncodingManager;
 import com.maxgamertyper1.CodecIO.Encoding.FormattedWriter;
-import com.maxgamertyper1.compressor.ChunkProcessor;
-import com.maxgamertyper1.compressor.PaethProcessor;
-import com.maxgamertyper1.compressor.QuadralizedDataCompressor;
+import com.maxgamertyper1.compressor.*;
 import com.maxgamertyper1.datatypes.*;
 import com.maxgamertyper1.imagereading.ImageDataHolder;
 import com.maxgamertyper1.imagereading.ImageMeta;
 import com.maxgamertyper1.imagereading.ImageReader;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -20,15 +19,15 @@ import java.util.Arrays;
 public class Main {
     public static void main(String[] args) throws IOException {
         String inFileName = "testing.qdc";
-        String encodeFileName = "TestingImages/yellow_square.png";
-        String outFileName = "testing.qdca";
+        String encodeFileName = "TestingImages/holePicture.png";
+        String outFileName = "newTesting.qdca";
 
         //encode(encodeFileName);
-        //disassemble(inFileName,outFileName);
-        testImageReaderRefactor(encodeFileName);
+        testImageReaderRefactor(encodeFileName, outFileName);
+        disassemble(inFileName,outFileName);
     }
 
-    public static void testImageReaderRefactor(String encodeFileName) {
+    public static void testImageReaderRefactor(String encodeFileName, String outFileName) throws IOException {
         File imageFile = new File(encodeFileName);
 
         ImageReader reader = new ImageReader(imageFile);
@@ -79,6 +78,37 @@ public class Main {
             System.out.println("Corresponding Colors: ");
             System.out.println(Arrays.toString(channel.getChannelIsolatedCorrespondingColor()));
         }
+
+        //NOTE: compression still needs to be refactored, still bad, just stringed together in a seperate class to use meta and some clarity like EdgeFlags
+
+        SpatialCompressor compressor = new SpatialCompressor(chunkedImage, CompressionConfig.DEFAULT);
+        CompressedImageRepresentative compressedImage = compressor.QuadralizedDataCompressed();
+        compressedImage.sortChannelOrder();
+
+        System.out.println("Compressed Image:\n\n\n\n");
+
+        for (CompressedColorChannel channel : compressedImage.getCompressedChannels()) {
+            System.out.println("Channel: " + channel.getChannelColorType());
+            System.out.println("Rectangles: ");
+            System.out.println(Arrays.toString(channel.getBuiltRectangles()));
+            System.out.println("Isolated Pixels: ");
+            System.out.println(Arrays.toString(channel.getIsolatedIndexes()));
+            System.out.println("Corresponding Colors: ");
+            System.out.println(Arrays.toString(channel.getCorrespondingIsolatedValues()));
+        }
+
+        EncodingManager encoder = new EncodingManager(compressedImage,outFileName, CompressionConfig.DEFAULT);
+
+        System.out.println(compressedImage.getCompressedChannels().length);
+        for (CompressedColorChannel ccc : compressedImage.getCompressedChannels()) {
+            System.out.println(ccc.getInitialPixel());
+        }
+
+        encoder.writeMetadata();
+        for (int i=0; i < compressedImage.getCompressedChannels().length; i++) {
+            encoder.processChannel(i);
+        }
+        encoder.finalizeFile();
     }
 
     public static void disassemble(String inFileName, String outFileName) throws IOException {
@@ -148,7 +178,7 @@ public class Main {
             System.out.println(Arrays.toString(channel.getBuiltCorners()));
         }
 
-        EncodingManager tempManager = new EncodingManager(FinalCompression,"testing.qdc");
+        EncodingManager tempManager = new EncodingManager(FinalCompression,"testing.qdc", CompressionConfig.OLD);
         FinalCompression.sortChannelOrder();
 
         System.out.println(FinalCompression.getCompressedChannels().length);

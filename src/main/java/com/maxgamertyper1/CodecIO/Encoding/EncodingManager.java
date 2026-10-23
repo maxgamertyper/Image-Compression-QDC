@@ -1,5 +1,6 @@
 package com.maxgamertyper1.CodecIO.Encoding;
 
+import com.maxgamertyper1.compressor.CompressionConfig;
 import com.maxgamertyper1.datatypes.CompressedColorChannel;
 import com.maxgamertyper1.datatypes.CompressedImageRepresentative;
 import com.maxgamertyper1.datatypes.records.CornerDataRepresentative;
@@ -15,11 +16,13 @@ public class EncodingManager {
     final FormattedWriter fileWritter;
     final ChannelWriter channelWriter;
     CompressedImageRepresentative finalImage;
+    final CompressionConfig config;
 
-    public EncodingManager(CompressedImageRepresentative imageRepresentative, String outFile) throws FileNotFoundException {
+    public EncodingManager(CompressedImageRepresentative imageRepresentative, String outFile, CompressionConfig config) throws FileNotFoundException {
         finalImage = imageRepresentative;
         fileWritter = new FormattedWriter(outFile);
         channelWriter = new ChannelWriter();
+        this.config = config;
     }
 
     public void writeMetadata() throws IOException {
@@ -106,10 +109,37 @@ public class EncodingManager {
     }
 
 
-    public void processChannel(int index) throws IOException {
+    public void processChannel(int index) throws IOException { // orchestrator
         CompressedColorChannel thisChannel = finalImage.getCompressedChannels()[index];
         preprocessChannel(thisChannel);
 
+        if (config.cornersEnabled()) {
+            processCornerIncluded(thisChannel);
+        } else {
+            processWithoutCorners(thisChannel); // working on this right now
+        }
+    }
+
+    private void processWithoutCorners(CompressedColorChannel channel) throws IOException {
+        RectangleRepresentative[] rects = channel.getBuiltRectangles();
+        int[] rawIndexes = channel.getIsolatedIndexes();
+        int[] rawValues = channel.getCorrespondingIsolatedValues();
+
+        int currentRectangle = 0, currentPixel = 0;
+        while (currentRectangle < rects.length || currentPixel < rawIndexes.length) {
+            boolean takeRect = currentPixel == rawIndexes.length ||
+                    (currentRectangle < rects.length && rects[currentRectangle].startingIndex() < rawIndexes[currentPixel]);
+
+            if (takeRect) {
+                channelWriter.writeRectangleData(rects[currentRectangle++]);
+            } else {
+                channelWriter.writeRawData(rawValues[currentPixel++]);
+            }
+        }
+    }
+
+    // old processing method
+    private void processCornerIncluded(CompressedColorChannel thisChannel) throws IOException {
         int totalItems = thisChannel.getRectangleCount() + thisChannel.getCornerCount() + thisChannel.getIsolatedCount();
 
         if (thisChannel.getIsolatedCount() != 0) totalItems--;

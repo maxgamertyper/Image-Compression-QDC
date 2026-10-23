@@ -1,14 +1,16 @@
 package com.maxgamertyper1.datatypes;
 
+import com.maxgamertyper1.imagereading.ImageMeta;
 import com.maxgamertyper1.imagereading.OriginalFileType;
 
 import java.util.Arrays;
 
 public class CompressedImageRepresentative {
     private final CompressedColorChannel[] CompressedChannels;
-    private final boolean grayScale;
-    private final boolean uniformMaxAlpha;
-    private final boolean paethEncoded;
+    private ImageMeta metaData;
+    private boolean grayScale;
+    private boolean uniformMaxAlpha;
+    private boolean paethEncoded;
     private short imageHeight;
     private short imageWidth;
     private OriginalFileType originalFileType;
@@ -18,6 +20,11 @@ public class CompressedImageRepresentative {
         this.uniformMaxAlpha = uniformMaxAlpha;
         this.CompressedChannels = CompressedChannels;
         this.paethEncoded = paethEncoded;
+    }
+
+    public CompressedImageRepresentative(ImageMeta metaData, CompressedColorChannel[] CompressedChannels) {
+        this.CompressedChannels = CompressedChannels;
+        this.metaData = metaData;
     }
 
     public void setMetaData(short imageHeight, short imageWidth, OriginalFileType fileType) {

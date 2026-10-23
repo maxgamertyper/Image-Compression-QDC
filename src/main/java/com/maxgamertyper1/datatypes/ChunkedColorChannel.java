@@ -42,6 +42,10 @@ public class ChunkedColorChannel {
         return computedFlags;
     }
 
+    public byte[] getRefactorFlags() {
+        return refactorFlags;
+    }
+
     public ShapeUnionFind getShapeOrganizer() {
         return shapeOrganizer;
     }

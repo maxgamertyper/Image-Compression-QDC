@@ -34,4 +34,8 @@ public record RectangleRepresentative(
         //0: 0, 1: -1, 10: 1, 11:-2, ...
         return (number << 1) ^ (number >> 31);
     }
+
+    public boolean betterThan(RectangleRepresentative other) {
+        return (long) area() * other.storageCost() > (long) other.area() * storageCost();
+    }
 }

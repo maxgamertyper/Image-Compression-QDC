@@ -1,7 +1,9 @@
 package com.maxgamertyper1.datatypes;
 
 import com.maxgamertyper1.imagereading.ImageDataHolder;
+import com.maxgamertyper1.imagereading.ImageMeta;
 
+import java.awt.*;
 import java.util.Arrays;
 import java.util.BitSet;
 
@@ -27,6 +29,14 @@ public class ShapeUnionFind {
         for (int i = 0; i < size; i++) {
             parentPixels[i] = i;
         }
+    }
+
+    public void solveShapes(byte[] flags, ImageMeta metaData) {
+        flatten();
+        calculateShapeAreas(metaData);
+        calculateShapeContinuity(metaData);
+        calculatePerimiterAndHoles(flags,metaData.width());
+        calculateIndexGroupings(metaData);
     }
 
     public ShapeUnionFind(int[] parentPixels) {
@@ -77,6 +87,20 @@ public class ShapeUnionFind {
         rootIndexes = uniqueBosses.toIntArray();
     }
 
+    public void calculateShapeRoots(ImageMeta metaData) {
+        IntArrayList uniqueBosses = new IntArrayList(16);
+        shapeIndexAddressTable = new int[metaData.flatsize()+1];
+        Arrays.fill(shapeIndexAddressTable,-1);
+
+        for (int i = 0; i < parentPixels.length; i++) {
+            if (parentPixels[i] == i) {
+                shapeIndexAddressTable[i] = uniqueBosses.size();
+                uniqueBosses.add(i);
+            }
+        }
+        rootIndexes = uniqueBosses.toIntArray();
+    }
+
     public int getTotalShapeCount() {
         return rootIndexes.length;
     }
@@ -89,6 +113,16 @@ public class ShapeUnionFind {
         shapeAreasBasedOnStart = new int[getTotalShapeCount()];
 
         for (int i = 0; i < ImageDataHolder.flatsize; i++) {
+            int root = parentPixels[i]; // find the root of a pixel
+
+            shapeAreasBasedOnStart[shapeIndexAddressTable[root]]++;
+        }
+    }
+
+    public void calculateShapeAreas(ImageMeta metaData) {
+        shapeAreasBasedOnStart = new int[getTotalShapeCount()];
+
+        for (int i = 0; i < metaData.flatsize(); i++) {
             int root = parentPixels[i]; // find the root of a pixel
 
             shapeAreasBasedOnStart[shapeIndexAddressTable[root]]++;
@@ -109,6 +143,20 @@ public class ShapeUnionFind {
         }
     }
 
+    public void calculateIndexGroupings(ImageMeta metaData) {
+        shapeIndexGroupings = new int[getTotalShapeCount()][];
+
+        for (int i=0; i<shapeIndexGroupings.length; i++) {
+            shapeIndexGroupings[i] = new int[getShapeArea(rootIndexes[i])];
+        }
+        int[] shapePointers = new int[getTotalShapeCount()];
+
+        for (int index = 0; index<metaData.flatsize(); index++) {
+            int address = shapeIndexAddressTable[parentPixels[index]];
+            shapeIndexGroupings[address][shapePointers[address]++] = index;
+        }
+    }
+
     public int[] getIndexGrouping(int shapeID) {
         return shapeIndexGroupings[shapeIndexAddressTable[shapeID]];
     }
@@ -120,6 +168,24 @@ public class ShapeUnionFind {
             int root = parentPixels[i];
 
             int topIndex = i-ImageDataHolder.width;
+            int LeftIndex = i-1;
+
+            if (IndexInImage(topIndex) && parentPixels[topIndex]==root) {
+                shapeContinuityBasedOnStart[shapeIndexAddressTable[root]]++;
+            }
+            if (IndexInImage(LeftIndex) && IndexsInSameRow(LeftIndex,i) && parentPixels[LeftIndex]==root) {
+                shapeContinuityBasedOnStart[shapeIndexAddressTable[root]]++;
+            }
+        }
+    }
+
+    public void calculateShapeContinuity(ImageMeta metaData) {
+        shapeContinuityBasedOnStart = new int[getTotalShapeCount()];
+
+        for (int i = 0; i < metaData.flatsize(); i++) {
+            int root = parentPixels[i];
+
+            int topIndex = i-metaData.width();
             int LeftIndex = i-1;
 
             if (IndexInImage(topIndex) && parentPixels[topIndex]==root) {
@@ -208,56 +274,82 @@ public class ShapeUnionFind {
         }
     }
 
-    /*public void CalculateHolesVersion3(int[] relativeFlags) {
-        int w = ImageDataHolder.width;
+    public void calculatePerimiterAndHoles(byte[] relativeFlags, int width) { // O(NlogN)
+        shapeHolesBasedOnStart = new int[getTotalShapeCount()];
 
-        int[] globalEnclosureMap = new int[getTotalShapeCount()];
-        int[] localEnclosureMap = new int[getTotalShapeCount()];
-        Arrays.fill(globalEnclosureMap,-1); // mark as unproccessed
+        shapeParentFromHole = new int[getTotalShapeCount()];
+        int flatsize = parentPixels.length;
+        Arrays.fill(shapeParentFromHole, -1);
 
+        IntArrayList[] perimiterHolders = new IntArrayList[getTotalShapeCount()];
 
-        int[] jumpMap = new int[w]; // does not need set as it will only check if an index is less than the jump
-        int[] firstSeenUngrouped = new int[getTotalShapeCount()];
+        for (int i=0; i<rootIndexes.length; i++) {
+            int location = rootIndexes[i];
+            shapeIndexAddressTable[location] = i;
+            perimiterHolders[i] = new IntArrayList(16);
+        }
 
-        for (int yValue = 0; yValue<ImageDataHolder.height; yValue++) {
-            Arrays.fill(localEnclosureMap,-1); // mark as unproccessed
-            Arrays.fill(firstSeenUngrouped,-1); // mark as unseen
+        // NOTE: this might be better if its moved into finalize with a Width size array that tracks the left and above pixels aligned with the x-value
+        for (int currentIndex=0; currentIndex<relativeFlags.length; currentIndex++) {
+            int flag = relativeFlags[currentIndex];
 
-            for (int xValue=0; xValue<w; xValue++) {
-                int shapeID = shapeIndexAddressTable[parentPixels[IndexCalculator(w,xValue,yValue)]];
+            if (flag == 0) continue; // skip interior so i dont need all the other checks
 
-                if (firstSeenUngrouped[shapeID]==-1 || firstSeenUngrouped[shapeID]==xValue-1) {
-                    firstSeenUngrouped[shapeID]=xValue;
-                } else {
-                    // process shapes in between
-                    int startWall = firstSeenUngrouped[shapeID];
-                    int endWall = xValue;
-                    int reXValue = startWall + 1;
+            int address = shapeIndexAddressTable[parentPixels[currentIndex]];
+            IntArrayList currentHolder = perimiterHolders[address];
 
-                    while (reXValue < endWall) {
-                        // check jump map to prevent reprocessing
-                        if (jumpMap[reXValue] > reXValue) {
-                            reXValue = jumpMap[reXValue]; // jump to pocket end
-                            continue;
-                        }
-
-                        // get the inner shape
-                        int innerRawID = parentPixels[IndexCalculator(w, reXValue, yValue)];
-                        int innerShapeID = shapeIndexAddressTable[innerRawID];
-
-                        localEnclosureMap[innerShapeID] = shapeID;
-
-                        firstSeenUngrouped[innerShapeID] = -1; // remove its data
-
-                        reXValue++;
-                    }
-
-                    jumpMap[startWall] = endWall;
-                    firstSeenUngrouped[shapeID] = endWall;
-                }
+            if ((flag&8)!=0) { // if theres a top boundary
+                HandleSideTheSequel(currentIndex-width, currentHolder, flatsize);
+            }
+            if ((flag&4)!=0) { // if theres a bottom boundary
+                HandleSideTheSequel(currentIndex+width, currentHolder, flatsize);
+            }
+            if ((flag&2)!=0) { // if theres a right boundary
+                HandleSideTheSequel(currentIndex+1, currentHolder, flatsize);
+            }
+            if ((flag&1)!=0) { // if theres a left boundary
+                HandleSideTheSequel(currentIndex-1, currentHolder, flatsize);
             }
         }
-    }*/
+
+        // NOTE: may be better to make a primitve set for this
+
+        IntArrayDeque shapeQueue = new IntArrayDeque(getTotalShapeCount()); // make size is the amount of shapes
+
+        for (int i=0; i<perimiterHolders.length; i++) {
+            IntArrayList IAL = perimiterHolders[i];
+            IAL.removeDuplicatesUnsorted();
+
+            if (IAL.size()==1) {
+                shapeQueue.enqueue(i);
+            }
+        }
+
+        while (shapeQueue.getSize()!=0) {
+            int thisShape = shapeQueue.dequeue();
+            IntArrayList currentNeighbors = perimiterHolders[thisShape];
+
+            int parentShape = currentNeighbors.atIndex(0);
+            int parentShapeAddress = shapeIndexAddressTable[parentShape];
+
+            IntArrayList parentNeighbors = perimiterHolders[parentShapeAddress];
+            parentNeighbors.swapRemove(thisShape);
+            if (parentNeighbors.size()==1) {
+                shapeQueue.enqueue(parentShape);
+            }
+
+            shapeHolesBasedOnStart[parentShapeAddress]++;
+            shapeParentFromHole[thisShape] = parentShapeAddress;
+        }
+    }
+
+    private void HandleSideTheSequel(int newIndex, IntArrayList currentHolder, int flatsize) {
+        if (IndexInImage(newIndex, flatsize)) {
+            currentHolder.add(parentPixels[newIndex]);
+        } else {
+            currentHolder.add(-1); // represents the image edge
+        }
+    }
 
     private void HandleSideTheSequel(int newIndex, IntArrayList currentHolder) {
         if (IndexInImage(newIndex)) {

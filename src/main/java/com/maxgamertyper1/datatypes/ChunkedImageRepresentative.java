@@ -29,6 +29,10 @@ public class ChunkedImageRepresentative {
         this.metaData = metaData;
     }
 
+    public ImageMeta getMetaData() {
+        return metaData;
+    }
+
     private void InitializeChunkChannels() {
         if (grayScale) {
             ChunkedChannels = new ChunkedColorChannel[2];
