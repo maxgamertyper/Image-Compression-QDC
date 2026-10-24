@@ -1,6 +1,5 @@
 package com.maxgamertyper1.datatypes.records;
 
-import com.maxgamertyper1.imagereading.ImageDataHolder;
 import com.maxgamertyper1.imagereading.PixelHelper;
 
 import java.util.Arrays;
@@ -17,20 +16,17 @@ public record CornerDataRepresentative(
             int[] convexCornerIndexDeltas,
             int startingIndex,
             int[] cornerFlags,
-            int dataValue
-    ){
-        this (
+            int dataValue,
+            int width
+    ) {
+        this(
                 convexCornerIndexDeltas,
                 startingIndex,
                 cornerFlags,
                 dataValue,
-                calculateCornerDeltaDxDy(convexCornerIndexDeltas, startingIndex),
+                calculateCornerDeltaDxDy(convexCornerIndexDeltas, startingIndex, width),
                 zigzagEncode(dataValue)
         );
-    }
-    @Override
-    public String toString() {
-        return "Index Deltas: "+ Arrays.toString(convexCornerIndexDeltas) +"; StartingIndex: "+startingIndex+" Value: "+dataValue;
     }
 
     private static int zigzagEncode(int number) {
@@ -38,15 +34,15 @@ public record CornerDataRepresentative(
         return (number << 1) ^ (number >> 31);
     }
 
-    private static int[] calculateCornerDeltaDxDy(int[] convexCornerIndexDeltas, int startingIndex) {
+    private static int[] calculateCornerDeltaDxDy(int[] convexCornerIndexDeltas, int startingIndex, int width) {
         int[] returnHolder = new int[2 * convexCornerIndexDeltas.length];
 
         int currentAbsoluteIndex = startingIndex;
-        int[] prevData = PixelHelper.ReverseIndexCalculator(ImageDataHolder.width,currentAbsoluteIndex);
+        int[] prevData = PixelHelper.ReverseIndexCalculator(width, currentAbsoluteIndex);
 
-        for (int i=0; i < convexCornerIndexDeltas.length; i++) {
+        for (int i = 0; i < convexCornerIndexDeltas.length; i++) {
             currentAbsoluteIndex += convexCornerIndexDeltas[i];
-            int[] currentData = PixelHelper.ReverseIndexCalculator(ImageDataHolder.width,currentAbsoluteIndex);
+            int[] currentData = PixelHelper.ReverseIndexCalculator(width, currentAbsoluteIndex);
 
             returnHolder[2 * i] = zigzagEncode(currentData[0] - prevData[0]); // dx
             returnHolder[2 * i + 1] = zigzagEncode(currentData[1] - prevData[1]); // dy
@@ -55,5 +51,10 @@ public record CornerDataRepresentative(
         }
 
         return returnHolder;
+    }
+
+    @Override
+    public String toString() {
+        return "Index Deltas: " + Arrays.toString(convexCornerIndexDeltas) + "; StartingIndex: " + startingIndex + " Value: " + dataValue;
     }
 }

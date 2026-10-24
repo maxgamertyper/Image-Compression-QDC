@@ -9,10 +9,10 @@ import java.util.Arrays;
 public class CompressedColorChannel {
     private final RectangleRepresentative[] builtRectangles;
     private final CornerDataRepresentative[] builtCorners;
-    private int[] isolatedIndexes;
-    private int[] correspondingIsolatedValues;
     private final int initialPixel;
     private final ChannelColorTypes channelColor;
+    private int[] isolatedIndexes;
+    private int[] correspondingIsolatedValues;
     private ShapeUnionFind shapeOrganizer;
 
     //Corner override mapping
@@ -32,6 +32,11 @@ public class CompressedColorChannel {
         this.builtCorners = builtCorners;
         this.builtRectangles = builtRectangles;
         this.initialPixel = initialPixel;
+    }
+
+    public static int zigzagEncode(int number) {
+        //0: 0, 1: -1, 10: 1, 11:-2, ...
+        return (number << 1) ^ (number >> 31);
     }
 
     public void setShapeOrganizer(ShapeUnionFind shapeOrganizer) {
@@ -80,7 +85,7 @@ public class CompressedColorChannel {
     }
 
     public void zigzagIsolated() {
-        for (int i=0; i < correspondingIsolatedValues.length; i++) {
+        for (int i = 0; i < correspondingIsolatedValues.length; i++) {
             correspondingIsolatedValues[i] = zigzagEncode(correspondingIsolatedValues[i]);
         }
     }
@@ -99,16 +104,12 @@ public class CompressedColorChannel {
         int[] parentMap = shapeOrganizer.getRawData();
 
 
-        for (int i=0; i < builtCorners.length; i++) {
+        for (int i = 0; i < builtCorners.length; i++) {
             CornerDataRepresentative corner = builtCorners[i];
             int cornerShapeID = parentMap[corner.startingIndex()];
 
             cornerShapeMap[cornerShapeID] = i;
         }
-    }
-    public static int zigzagEncode(int number) {
-        //0: 0, 1: -1, 10: 1, 11:-2, ...
-        return (number << 1) ^ (number >> 31);
     }
 
     private void calculateCornerRectangleOverrides() {
@@ -117,7 +118,7 @@ public class CompressedColorChannel {
         Arrays.fill(cornerRectanglesMap, -1);
 
         // calculate the corner mappings
-        for (int i=0; i < builtRectangles.length; i++) {
+        for (int i = 0; i < builtRectangles.length; i++) {
             RectangleRepresentative thisRectangle = builtRectangles[i];
             int shapeIDParent = shapeOrganizer.getParentShapeID(thisRectangle.startingIndex());
 
@@ -138,7 +139,7 @@ public class CompressedColorChannel {
 
         int totalAttached = cornerRectOffsets[getCornerCount()];
         cornerRectanglesBucketed = new int[totalAttached];
-        int[] writeCursors = Arrays.copyOf(cornerRectOffsets,cornerRectOffsets.length);
+        int[] writeCursors = Arrays.copyOf(cornerRectOffsets, cornerRectOffsets.length);
 
         for (int i = 0; i < cornerRectanglesMap.length; i++) {
             int cornerIndex = cornerRectanglesMap[i];
@@ -154,7 +155,7 @@ public class CompressedColorChannel {
         Arrays.fill(cornerIndexesMap, -1);
 
         // calculate the corner mappings
-        for (int i=0; i < isolatedIndexes.length; i++) {
+        for (int i = 0; i < isolatedIndexes.length; i++) {
             int thisIndex = isolatedIndexes[i];
             int shapeIDParent = shapeOrganizer.getParentShapeID(thisIndex);
 
@@ -175,7 +176,7 @@ public class CompressedColorChannel {
 
         int totalAttached = cornerIndexOffsets[getCornerCount()];
         cornerIndexesBucketed = new int[totalAttached];
-        int[] writeCursors = Arrays.copyOf(cornerIndexOffsets,cornerIndexOffsets.length);
+        int[] writeCursors = Arrays.copyOf(cornerIndexOffsets, cornerIndexOffsets.length);
 
         for (int i = 0; i < cornerIndexesMap.length; i++) {
             int cornerIndex = cornerIndexesMap[i];
@@ -191,7 +192,7 @@ public class CompressedColorChannel {
         IntArrayList ownedCorners = new IntArrayList(8);
         shapeOrganizer.calculateChildrenMap();
 
-        for (int i=0; i < builtCorners.length; i++) {
+        for (int i = 0; i < builtCorners.length; i++) {
             CornerDataRepresentative corner = builtCorners[i];
             int shapeID = shapeIDMap[corner.startingIndex()];
 
@@ -216,7 +217,7 @@ public class CompressedColorChannel {
         int cornerStart = 0 == builtCorners.length ? Integer.MAX_VALUE : builtCorners[0].startingIndex();
         int rectStart = 0 == builtRectangles.length ? Integer.MAX_VALUE : builtRectangles[0].startingIndex();
         int rawStart = 0 == isolatedIndexes.length ? Integer.MAX_VALUE : isolatedIndexes[0];
-        return cornerStart==0 ? DataType.Corner : rectStart==0 ? DataType.Rectangle : DataType.Raw;
+        return cornerStart == 0 ? DataType.Corner : rectStart == 0 ? DataType.Rectangle : DataType.Raw;
     }
 
     public int[] getOwnedRectangles(int cornerIndex) {

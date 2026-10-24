@@ -6,16 +6,16 @@ import com.maxgamertyper1.imagereading.OriginalFileType;
 import java.io.*;
 
 public class FormattedWriter implements Closeable {
-    private static final int fileSignature = 0x3C4D4158; // this is <MAX when converted to ascii
-    private static final int fileEndBytes = 0x4D415821; // this is MAX! when converted to ascii
     public static final byte compressionVersionMajor = 0;
     public static final byte compressionVersionMinor = 3;
+    private static final int fileSignature = 0x3C4D4158; // this is <MAX when converted to ascii
+    private static final int fileEndBytes = 0x4D415821; // this is MAX! when converted to ascii
+    private final RawBitWriter bitWriter;
+    private final BufferedOutputStream bufferStream;
+    private final int[] channelSeekTable = {0, 0, 0, 0, 0};
     private short thisImageHeight; // unsigned but manually
     private short thisImageWidth; // unsigned but manually
     private byte flagByte;
-    private final RawBitWriter bitWriter;
-    private final BufferedOutputStream bufferStream;
-    private final int[] channelSeekTable = {0,0,0,0,0};
 
 
     public FormattedWriter(String outFile) throws FileNotFoundException {
@@ -43,16 +43,16 @@ public class FormattedWriter implements Closeable {
     }
 
     public void finalizeMetadata(byte[] initialColors) throws IOException {
-        bitWriter.writeRawValue(fileSignature,32);
-        bitWriter.writeRawValue(compressionVersionMajor,8);
-        bitWriter.writeRawValue(compressionVersionMinor,8);
-        bitWriter.writeRawValue(thisImageWidth,16);
-        bitWriter.writeRawValue(thisImageHeight,16);
-        bitWriter.writeRawValue(flagByte,8);
+        bitWriter.writeRawValue(fileSignature, 32);
+        bitWriter.writeRawValue(compressionVersionMajor, 8);
+        bitWriter.writeRawValue(compressionVersionMinor, 8);
+        bitWriter.writeRawValue(thisImageWidth, 16);
+        bitWriter.writeRawValue(thisImageHeight, 16);
+        bitWriter.writeRawValue(flagByte, 8);
 
         //RGBYA
         for (byte color : initialColors) {
-            bitWriter.writeRawValue(color,8);
+            bitWriter.writeRawValue(color, 8);
         }
         //metadata checksum
         bitWriter.flushIntermediaryAdler();
@@ -66,7 +66,7 @@ public class FormattedWriter implements Closeable {
         channelSeekTable[channelColor.getOrderValue()] = bitWriter.getBytesWritten();
         System.out.println(channelData.size());
 
-        bitWriter.writeRawValue(channelData.size()-4,32); // 4 bytes to hold the channel size (-4 from the integrity hash)
+        bitWriter.writeRawValue(channelData.size() - 4, 32); // 4 bytes to hold the channel size (-4 from the integrity hash)
         bitWriter.writeRawValue(emptyBits, 8);
         bitWriter.flushRemaining();
         channelData.writeTo(bufferStream);
@@ -78,7 +78,7 @@ public class FormattedWriter implements Closeable {
 
     public void writeTail() throws IOException {
         for (int byteLocation : channelSeekTable) {
-            bitWriter.writeRawValue(byteLocation,32); // writes the byte position and in order
+            bitWriter.writeRawValue(byteLocation, 32); // writes the byte position and in order
         }
     }
 

@@ -7,6 +7,7 @@ import java.io.IOException;
 
 public class Parser {
     private final FormattedReader reader;
+    private final IntArrayList values = new IntArrayList(4);
     private long storedByteLocation;
     private int storedBitLocation;
     private int[] unaryTable;
@@ -16,8 +17,6 @@ public class Parser {
     private DataType currentType;
     private int totalChannels;
     private StreamLocation channelEndLocaiton;
-    private final IntArrayList values = new IntArrayList(4);
-
     //data Tracking
     private boolean inOverride;
     private int dataLength;
@@ -63,7 +62,7 @@ public class Parser {
     }
 
     public StreamLocation cursorLocation() {
-        return new StreamLocation(reader.getTotalBytesRead(),reader.getTotalBitsRead());
+        return new StreamLocation(reader.getTotalBytesRead(), reader.getTotalBitsRead());
     }
 
     public StreamLocation getLoggedDistance() {
@@ -80,7 +79,7 @@ public class Parser {
     }
 
     public Dimensions readCanvasDimensions() throws IOException {
-        return new Dimensions(readInt16(),readInt16());
+        return new Dimensions(readInt16(), readInt16());
     }
 
     public Version readCompressionVersion() throws IOException {
@@ -94,7 +93,7 @@ public class Parser {
                 reader.readBits(2)
         );
         reader.readBits(4); // eat the rest
-        calculateChannelCount(returnHolder.isGrayscale(),returnHolder.isMaxAlpha());
+        calculateChannelCount(returnHolder.isGrayscale(), returnHolder.isMaxAlpha());
         return returnHolder;
     }
 
@@ -123,8 +122,8 @@ public class Parser {
     public ChannelSizeInfo readChannelSizeData() throws IOException {
         int byteLength = readInt32();
         int trailingBits = readInt8();
-        startChannelTracker(byteLength,trailingBits);
-        return new ChannelSizeInfo(byteLength,trailingBits);
+        startChannelTracker(byteLength, trailingBits);
+        return new ChannelSizeInfo(byteLength, trailingBits);
     }
 
     public DataType readExtendedOPCode() throws IOException {
@@ -178,7 +177,7 @@ public class Parser {
             default -> dataLength = -1;
         }
         if (inOverride) {
-            dataLength+=2; // for the corner deltas
+            dataLength += 2; // for the corner deltas
         }
     }
 
@@ -190,7 +189,7 @@ public class Parser {
         unaryTable = new int[reader.readBits(4)];
         overflowIndex = unaryTable.length - 1;
 
-        for (int i=0; i < unaryTable.length; i++) {
+        for (int i = 0; i < unaryTable.length; i++) {
             unaryTable[i] = reader.readBits(4);
         }
     }
@@ -272,7 +271,7 @@ public class Parser {
     }
 
     public void logCursorLocaiton() {
-        loggedPosition = new StreamLocation(reader.getTotalBytesRead(),reader.getTotalBitsRead());
+        loggedPosition = new StreamLocation(reader.getTotalBytesRead(), reader.getTotalBitsRead());
     }
 
     public DataType getCurrentType() {

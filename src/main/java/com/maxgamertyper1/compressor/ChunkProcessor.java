@@ -19,19 +19,37 @@ public class ChunkProcessor {
         imageToChunk = image;
     }
 
+    private static int[][] toEdgeArrays(BitSet[] edgeBits) {
+        int[][] edgeArray = new int[edgeBits.length][];
+
+        for (int i = 0; i < edgeBits.length; i++) {
+            BitSet bits = edgeBits[i];
+
+            edgeArray[i] = new int[bits.cardinality() + 1];
+            edgeArray[i][0] = IMAGE_WALL;
+
+            int j = 1;
+            for (int bit = bits.nextSetBit(0); bit >= 0; bit = bits.nextSetBit(bit + 1)) {
+                edgeArray[i][j++] = bit;
+            }
+        }
+
+        return edgeArray;
+    }
+
     public ChunkedImageRepresentative chunkImage() {
         ColorChannel[] currentChannels = imageToChunk.getColorChannels();
         ChunkedColorChannel[] returnData = new ChunkedColorChannel[currentChannels.length];
         ImageMeta metaData = imageToChunk.getMetaData();
 
-        for (int i=0;i<currentChannels.length;i++) {
+        for (int i = 0; i < currentChannels.length; i++) {
             ColorChannel CR = currentChannels[i];
             int[] rawValues = CR.getChannelData();
             NeighborScanResult NSR = neighborScan(CR);
 
             ShapeUnionFind shapeOrganizer = NSR.Shapes();
 
-            shapeOrganizer.solveShapes(NSR.Flags(),metaData);
+            shapeOrganizer.solveShapes(NSR.Flags(), metaData);
 
             ShapeGrouperResult SGR = convertToPixelChunks(NSR.Shapes(), CR, NSR.Flags());
 
@@ -48,17 +66,16 @@ public class ChunkProcessor {
 
             int[] correspondingIsolatedColors = new int[isoIndexes.length];
 
-            for (int j=0; j < isoIndexes.length; j++) {
+            for (int j = 0; j < isoIndexes.length; j++) {
                 correspondingIsolatedColors[j] = rawValues[isoIndexes[j]];
             }
 
-            CCC.setIsolatedIndexes(isoIndexes,correspondingIsolatedColors);
+            CCC.setIsolatedIndexes(isoIndexes, correspondingIsolatedColors);
             CCC.setChannelChunks(PCs);
             returnData[i] = CCC;
         }
 
-        ChunkedImageRepresentative CIR = new ChunkedImageRepresentative(metaData.grayscale());
-        CIR.setMetaData(metaData);
+        ChunkedImageRepresentative CIR = new ChunkedImageRepresentative(metaData);
 
         CIR.setChunkedChannels(returnData);
         CIR.SetImageCompressionInformation();
@@ -78,16 +95,16 @@ public class ChunkProcessor {
         BitSet[] rowRightEdgeBits = new BitSet[height];
         BitSet[] columnBottomEdgeBits = new BitSet[width];
 
-        for (int i=0; i<height;i++) {
+        for (int i = 0; i < height; i++) {
             rowRightEdgeBits[i] = new BitSet(width); // right edges indexed by the row
         }
-        for (int i=0; i<width;i++) {
+        for (int i = 0; i < width; i++) {
             columnBottomEdgeBits[i] = new BitSet(height); // bottom edges indexed by column
         }
 
         int flatIndex = 0; // this is basically the flat coordinate of the pixel
-        for (int y=0; y<height;y++) {
-            for (int x=0; x<width;x++,flatIndex++) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++, flatIndex++) {
                 int color = pixelData[flatIndex];
                 byte flagMask = 0;
                 // check EdgeFlags to understand how the mask works
@@ -95,9 +112,9 @@ public class ChunkProcessor {
                 int pixelAbove = flatIndex - width;
                 int pixelLeft = flatIndex - 1;
 
-                if (y==0) { // on the top of the image
+                if (y == 0) { // on the top of the image
                     flagMask |= EdgeFlags.UP;
-                } else if (pixelData[pixelAbove]==color) { // if the pixel above has the same color, union them
+                } else if (pixelData[pixelAbove] == color) { // if the pixel above has the same color, union them
                     shapeOrganizer.union(flatIndex, pixelAbove);
                 } else { // not the same color: mark as an edge
                     flagMask |= EdgeFlags.UP;
@@ -105,9 +122,9 @@ public class ChunkProcessor {
                     columnBottomEdgeBits[x].set(y - 1); // mark as a bottom edge
                 }
 
-                if (x==0) { // if on the left edge
+                if (x == 0) { // if on the left edge
                     flagMask |= EdgeFlags.LEFT;
-                } else if (pixelData[pixelLeft]==color) { // if the left pixel is the same color, union them
+                } else if (pixelData[pixelLeft] == color) { // if the left pixel is the same color, union them
                     shapeOrganizer.union(flatIndex, pixelLeft);
                 } else {
                     flagMask |= EdgeFlags.LEFT;
@@ -119,7 +136,7 @@ public class ChunkProcessor {
                     flagMask |= EdgeFlags.DOWN;
                     columnBottomEdgeBits[x].set(y);
                 }
-                if (x==width-1) { // add to the right since there isnt a pixel to mark as a left edge
+                if (x == width - 1) { // add to the right since there isnt a pixel to mark as a left edge
                     flagMask |= EdgeFlags.RIGHT;
                     rowRightEdgeBits[y].set(x);
                 }
@@ -131,25 +148,7 @@ public class ChunkProcessor {
         int[][] columnBottomEdges = toEdgeArrays(columnBottomEdgeBits);
         int[][] rowRightEdges = toEdgeArrays(rowRightEdgeBits);
 
-        return new NeighborScanResult(shapeOrganizer,pixelFlags,new EdgeMapHolder(columnBottomEdges,rowRightEdges));
-    }
-
-    private static int[][] toEdgeArrays(BitSet[] edgeBits) {
-        int[][] edgeArray = new int[edgeBits.length][];
-
-        for (int i=0; i<edgeBits.length;i++) {
-            BitSet bits = edgeBits[i];
-
-            edgeArray[i] = new int[bits.cardinality()+1];
-            edgeArray[i][0] = IMAGE_WALL;
-
-            int j =1;
-            for (int bit = bits.nextSetBit(0); bit >= 0; bit = bits.nextSetBit(bit + 1)) {
-                edgeArray[i][j++] = bit;
-            }
-        }
-
-        return edgeArray;
+        return new NeighborScanResult(shapeOrganizer, pixelFlags, new EdgeMapHolder(columnBottomEdges, rowRightEdges));
     }
 
     private ShapeGrouperResult convertToPixelChunks(ShapeUnionFind shapeOrganizer, ColorChannel colorChannel, byte[] computedFlags) {
@@ -160,19 +159,19 @@ public class ChunkProcessor {
         PixelChunk[] chunks = new PixelChunk[shapeOrganizer.getTotalShapeCount()];
         int[] chunkIndexByShape = new int[shapeHolder.length]; // same as flatsize
         int chunkCount = 0;
-        Arrays.fill(chunkIndexByShape,NO_CHUNK);
+        Arrays.fill(chunkIndexByShape, NO_CHUNK);
 
-        for (int pixel=0; pixel<shapeHolder.length; pixel++) {
+        for (int pixel = 0; pixel < shapeHolder.length; pixel++) {
             int shapeID = shapeHolder[pixel];
             int flag = computedFlags[pixel];
 
             int chunkIndex = chunkIndexByShape[shapeID];
             if (chunkIndex == NO_CHUNK) {
-                if (flag==EdgeFlags.ALL) {
+                if (flag == EdgeFlags.ALL) {
                     isolatedPixels.add(pixel);
                     continue;
                 }
-                PixelChunk chunk = new PixelChunk(colorChannel.getChannelType(),rawPixels[pixel]);
+                PixelChunk chunk = new PixelChunk(colorChannel.getChannelType(), rawPixels[pixel]);
 
                 chunk.setStartingIndex(shapeID);
                 chunk.setTotalArea(shapeOrganizer.getShapeArea(shapeID));
@@ -189,6 +188,6 @@ public class ChunkProcessor {
             }
         }
 
-        return new ShapeGrouperResult(Arrays.copyOf(chunks, chunkCount),isolatedPixels);
+        return new ShapeGrouperResult(Arrays.copyOf(chunks, chunkCount), isolatedPixels);
     }
 }

@@ -7,33 +7,33 @@ import java.util.zip.Adler32;
 
 public class RawBitWriter {
     private final OutputStream buffer;
+    private final Adler32 intermediaryAdler;
+    private final Adler32 masterAdler;
     private boolean closed = false;
     private int bytesWritten = 0;
     private int emptyBitsFromFlushRemaining = 0;
     private int bitHead = 0;
     private int intBuffer = 0;
-    private final Adler32 intermediaryAdler;
-    private final Adler32 masterAdler;
+
     public RawBitWriter(OutputStream stream) {
         this.buffer = stream;
         intermediaryAdler = new Adler32();
         masterAdler = new Adler32();
     }
-    // TODO: make a flush reminaing type fuction that adds the rest of the intbuffer to the actual buffer
 
     public void addBytesWritten(int count) {
-        bytesWritten+=count;
+        bytesWritten += count;
     }
 
     public void updateMasterAdler(ByteArrayOutputStream stream) {
         masterAdler.update(stream.toByteArray(), 0, stream.size());
     }
 
-    public void writeRawValue(int value, int numBits) throws IOException{
-        System.out.println("Writing value: "+ value + " with bit count: " + numBits);
-        if (bitHead+numBits>32) {
+    public void writeRawValue(int value, int numBits) throws IOException {
+        System.out.println("Writing value: " + value + " with bit count: " + numBits);
+        if (bitHead + numBits > 32) {
             System.out.println("Overflowing, splitting payload");
-            int bitsToFill = 32-bitHead;
+            int bitsToFill = 32 - bitHead;
             int overflowBits = numBits - bitsToFill;
 
             int upperBits = value >>> overflowBits; // cut off overflowbits
@@ -50,7 +50,7 @@ public class RawBitWriter {
             intBuffer |= maskedValue; // or the value into the slots
             bitHead += numBits;
 
-            if (bitHead==32) {
+            if (bitHead == 32) {
                 flushBuffer();
             }
         }
@@ -58,14 +58,14 @@ public class RawBitWriter {
 
     public void flushIntermediaryAdler() throws IOException {
         int hash = (int) intermediaryAdler.getValue();
-        writeRawValue(hash,32);
+        writeRawValue(hash, 32);
         intermediaryAdler.reset();
     }
 
     public void flushRemaining() throws IOException {
         System.out.println("Called FlushRemaining with buffer: " + intBuffer + " with size: " + bitHead);
         if (bitHead > 0) {
-            int bytesUsed = (bitHead+7) / 8;
+            int bytesUsed = (bitHead + 7) / 8;
             int emptyBits = 32 - bitHead;
 
             // shift so that any nonfilled bytes are then filled and the last byte has 0s
@@ -77,7 +77,7 @@ public class RawBitWriter {
             }
 
             emptyBitsFromFlushRemaining = (bytesUsed * 8) - bitHead;
-            bytesWritten+=bytesUsed;
+            bytesWritten += bytesUsed;
             bitHead = 0;
             intBuffer = 0;
         }
@@ -141,7 +141,11 @@ public class RawBitWriter {
         buffer.close();
     }
 
-    public int getBytesWritten() {return bytesWritten;}
+    public int getBytesWritten() {
+        return bytesWritten;
+    }
 
-    public int getEmptyBitsFromFlushRemaining() {return emptyBitsFromFlushRemaining;}
+    public int getEmptyBitsFromFlushRemaining() {
+        return emptyBitsFromFlushRemaining;
+    }
 }

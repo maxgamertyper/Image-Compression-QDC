@@ -12,6 +12,15 @@ public enum DataType {
         this.opCode = opCode;
     }
 
+    public static DataType fromOPCode(int opCode) {
+        for (DataType type : DataType.values()) {
+            if (type.getOpCode() == opCode) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Invalid OPCode");
+    }
+
     public int getOpCode() {
         return opCode;
     }
@@ -31,14 +40,5 @@ public enum DataType {
             case Rectangle -> (switchBit == 1) ? Corner : Raw;
             case Corner -> (switchBit == 1) ? Raw : Rectangle;
         };
-    }
-
-    public static DataType fromOPCode(int opCode) {
-        for (DataType type : DataType.values()) {
-            if (type.getOpCode() == opCode) {
-                return type;
-            }
-        }
-        throw new IllegalArgumentException("Invalid OPCode");
     }
 }

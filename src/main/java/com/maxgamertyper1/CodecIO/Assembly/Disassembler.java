@@ -12,10 +12,10 @@ public class Disassembler implements AutoCloseable {
     private final Parser parser;
     private final String inFileName;
     private final BufferedWriter fileStream;
-    private String[] channelNames;
     String OPCode;
-    private int[] colors;
     boolean inOverride = false;
+    private String[] channelNames;
+    private int[] colors;
 
     public Disassembler(String inFileName, String outFileName) throws IOException {
         this.inFileName = inFileName;
@@ -31,7 +31,7 @@ public class Disassembler implements AutoCloseable {
         }
 
         DissassembleMetadata();
-        for (int i=0; i < channelNames.length; i++) {
+        for (int i = 0; i < channelNames.length; i++) {
             processChannelMeta(i);
             processChannelData();
             channelTail();
@@ -61,22 +61,22 @@ public class Disassembler implements AutoCloseable {
             channelNames[2] = ".channel_blue";
         }
         if (!flags.isMaxAlpha()) {
-            channelNames[totalChannels-1] = ".channel_alpha";
+            channelNames[totalChannels - 1] = ".channel_alpha";
         }
 
         colors = parser.readInitialColors();
 
         writeWithNewLine(
                 "; HEADER: Version " + compressionVersion.major() + "." + compressionVersion.minor() +
-                "  |  Canvas: " + canvas.width() + "x" + canvas.height()
+                        "  |  Canvas: " + canvas.width() + "x" + canvas.height()
         );
         writeWithNewLine(
                 "; FLAGS: Grayscale: " + (flags.isGrayscale() ? "TRUE" : "FALSE") +
-                "  |  Max Alpha: " + (flags.isMaxAlpha() ? "TRUE" : "FALSE") +
-                "  |  Original File Flag: " + flags.originalType()
+                        "  |  Max Alpha: " + (flags.isMaxAlpha() ? "TRUE" : "FALSE") +
+                        "  |  Original File Flag: " + flags.originalType()
         );
         writeWithNewLine("; INITIAL COLORS: " + Arrays.toString(colors));
-        writeWithNewLine("; HEADER HASH: "+ formatHex(parser.readHash()));
+        writeWithNewLine("; HEADER HASH: " + formatHex(parser.readHash()));
         writeWithNewLine("; =====================================================================================");
         fileStream.newLine();
         fileStream.flush();
@@ -99,7 +99,7 @@ public class Disassembler implements AutoCloseable {
 
         writeWithLocation("[UNARY_TABLE]  Table Count: " + unaryTable.length + "; Table: " + Arrays.toString(unaryTable));
 
-        writeOPCodeSwitch(parser.readExtendedOPCode(),false);
+        writeOPCodeSwitch(parser.readExtendedOPCode(), false);
 
         fileStream.flush();
     }
@@ -180,11 +180,11 @@ public class Disassembler implements AutoCloseable {
             } else {
                 int[] shapeValues = parser.processShape();
                 System.out.println(Arrays.toString(shapeValues));
-                writeValueRead(shapeValues,parser.getCurrentType(),parser.isInOverride());
+                writeValueRead(shapeValues, parser.getCurrentType(), parser.isInOverride());
 
                 if (shapeValues[shapeValues.length - 1] == 1 && parser.getCurrentType() == DataType.Corner) { // if override
                     parser.updateOverrideData(true);
-                    writeOPCodeSwitch(parser.getCurrentType(),true);
+                    writeOPCodeSwitch(parser.getCurrentType(), true);
                 }
             }
         }
@@ -211,7 +211,7 @@ public class Disassembler implements AutoCloseable {
                 writeWithLocation(OPCode + ovr + "Paeth Value: " + values[offset]);
             }
             case Rectangle -> {
-                writeWithLocation(OPCode + ovr + values[1+offset] + "x" + values[2+offset] + " RECT: " + values[offset]);
+                writeWithLocation(OPCode + ovr + values[1 + offset] + "x" + values[2 + offset] + " RECT: " + values[offset]);
             }
             case Corner -> {
                 writeWithLocation(OPCode + ovr + formatCornerData(values));
@@ -231,10 +231,10 @@ public class Disassembler implements AutoCloseable {
         returnHolder.append("Paeth Value: ").append(value[offset]).append("; Override: ").append((value[value.length - 1] == 1))
                 .append("; Corner Deltas: [");
 
-        for (int i=1; i < value.length - 1; i++) {
+        for (int i = 1; i < value.length - 1; i++) {
             int val = value[i];
 
-            if ((i-1 + offset)%2==0) { // -1 from the color being the first
+            if ((i - 1 + offset) % 2 == 0) { // -1 from the color being the first
                 returnHolder.append("(").append(val).append(", ");
             } else {
                 returnHolder.append(val).append(")").append(", ");

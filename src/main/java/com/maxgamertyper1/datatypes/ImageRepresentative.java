@@ -3,26 +3,14 @@ package com.maxgamertyper1.datatypes;
 import com.maxgamertyper1.imagereading.ImageMeta;
 
 public class ImageRepresentative {
-    private ImageMeta metaData;
+    private final ImageMeta metaData;
+    private final int[] initialPixels;
     private ColorChannel[] colorChannels;
-    private boolean deltaEncoded = true;
-    private boolean grayScale = false;
-    private int[] initialPixels;
-    private boolean uniformMaxAlpha = false;
 
-    public ImageRepresentative(boolean grayScale, boolean uniformMaxAlpha, boolean deltaEncoded, int flatsize) {
-        this.grayScale=grayScale;
-        this.deltaEncoded=deltaEncoded;
-        this.uniformMaxAlpha = uniformMaxAlpha;
-        InitializeColorChannels(flatsize);
-
-        if (deltaEncoded) initialPixels = new int[grayScale ? 2 : 4];
-    }
-
-    public ImageRepresentative(int flatsize, ImageMeta metaData) {
+    public ImageRepresentative(ImageMeta metaData) {
         this.metaData = metaData;
 
-        initializeColorChannelsThroughMetadata();
+        intializeColorChannels();
         initialPixels = new int[colorChannels.length];
     }
 
@@ -34,25 +22,7 @@ public class ImageRepresentative {
         return colorChannels;
     }
 
-    public boolean isDeltaEncoded() {
-        return deltaEncoded;
-    }
-
-    private void InitializeColorChannels(int flatsize) {
-        if (grayScale) {
-            colorChannels = new ColorChannel[uniformMaxAlpha ? 1 : 2];
-            colorChannels[0] = new ColorChannel(ChannelColorTypes.Gray, flatsize);
-            if (!uniformMaxAlpha) colorChannels[1] = new ColorChannel(ChannelColorTypes.Alpha, flatsize);
-        } else {
-            colorChannels = new ColorChannel[uniformMaxAlpha ? 3 : 4];
-            colorChannels[0] = new ColorChannel(ChannelColorTypes.Red, flatsize);
-            colorChannels[1] = new ColorChannel(ChannelColorTypes.Green, flatsize);
-            colorChannels[2] = new ColorChannel(ChannelColorTypes.Blue, flatsize);
-            if (!uniformMaxAlpha) colorChannels[3] = new ColorChannel(ChannelColorTypes.Alpha, flatsize);
-        }
-    }
-
-    private void initializeColorChannelsThroughMetadata() {
+    private void intializeColorChannels() {
         int flatsize = metaData.flatsize();
         boolean opaque = metaData.opaque();
 
@@ -61,7 +31,7 @@ public class ImageRepresentative {
             colorChannels[0] = new ColorChannel(ChannelColorTypes.Gray, flatsize);
             if (!opaque) colorChannels[1] = new ColorChannel(ChannelColorTypes.Alpha, flatsize);
         } else {
-            colorChannels = new ColorChannel[uniformMaxAlpha ? 3 : 4];
+            colorChannels = new ColorChannel[opaque ? 3 : 4];
             colorChannels[0] = new ColorChannel(ChannelColorTypes.Red, flatsize);
             colorChannels[1] = new ColorChannel(ChannelColorTypes.Green, flatsize);
             colorChannels[2] = new ColorChannel(ChannelColorTypes.Blue, flatsize);
@@ -70,20 +40,9 @@ public class ImageRepresentative {
     }
 
     public int getChannelIndex(ChannelColorTypes channelType) {
+        int channelIndex = metaData.grayscale() ? channelType.ordinal() - 3 : channelType.ordinal();
 
-        if (metaData != null) {
-            int channelIndex = metaData.grayscale() ? channelType.ordinal()-3 : channelType.ordinal();
-
-            if (channelType==ChannelColorTypes.Alpha && !metaData.grayscale()) {
-                channelIndex--;
-            }
-
-            return channelIndex;
-        }
-
-        int channelIndex = grayScale ? channelType.ordinal()-3 : channelType.ordinal();
-
-        if (channelType==ChannelColorTypes.Alpha && !grayScale) {
+        if (channelType == ChannelColorTypes.Alpha && !metaData.grayscale()) {
             channelIndex--;
         }
 
@@ -91,12 +50,10 @@ public class ImageRepresentative {
     }
 
     public void setPixelColorChannel(ChannelColorTypes channelType, int flatindex, int value) {
-        getOneColorChannel(channelType).setChannelPixel(flatindex,value);
+        getOneColorChannel(channelType).setChannelPixel(flatindex, value);
     }
 
     public void setIntialPixel(ChannelColorTypes channelColor, int initialPixelColor) {
-        if (!this.deltaEncoded) return;
-
         int channelIndex = getChannelIndex(channelColor);
 
         this.initialPixels[channelIndex] = initialPixelColor;
@@ -108,14 +65,5 @@ public class ImageRepresentative {
 
     public ColorChannel getOneColorChannel(ChannelColorTypes channelType) {
         return this.getColorChannels()[this.getChannelIndex(channelType)];
-    }
-
-    public static int staticGetChannelIndex(ChannelColorTypes channelType, boolean grayScale, boolean uniformMaxAlpha) {
-        int channelIndex = grayScale ? channelType.ordinal()-3 : channelType.ordinal();
-
-        if (channelType==ChannelColorTypes.Alpha && !grayScale) channelIndex--;
-        if (uniformMaxAlpha && channelType==ChannelColorTypes.Alpha) return -1;
-
-        return channelIndex;
     }
 }

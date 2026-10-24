@@ -1,4 +1,5 @@
 package com.maxgamertyper1.imagereading;
+
 import com.maxgamertyper1.datatypes.ChannelColorTypes;
 import com.maxgamertyper1.datatypes.ImageRepresentative;
 
@@ -7,16 +8,14 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
-import static com.maxgamertyper1.imagereading.PixelHelper.IndexCalculator;
-
 public class ImageReader {
+    private final File imageFile;
     private int imageHeight;
     private int imageWidth;
     private String imageName;
     private OriginalFileType imageType;
     private boolean imageOpaque = true;
     private boolean imageGrayscale = true;
-    private final File imageFile;
 
     public ImageReader(File imageFile) {
         this.imageFile = imageFile;
@@ -56,12 +55,12 @@ public class ImageReader {
 
         try {
             imageType = OriginalFileType.valueOf(path.substring(lastIndexOfDot + 1).toUpperCase());
-        } catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             imageType = OriginalFileType.Unknown;
         }
     }
 
-    private  int[] getPixelData() throws IOException {
+    private int[] getPixelData() throws IOException {
         BufferedImage image;
 
         try {
@@ -80,6 +79,7 @@ public class ImageReader {
 
         return image.getRGB(0, 0, imageWidth, imageHeight, null, 0, imageWidth);
     }
+
     private void imageChannelVerification(int[] pixelData) {
         for (int color : pixelData) {
             if (!imageGrayscale && !imageOpaque) break;
@@ -98,9 +98,9 @@ public class ImageReader {
     }
 
     private ImageRepresentative splitColorArray(int[] pixelData, ImageMeta metaData) {
-        ImageRepresentative returnHolder = new ImageRepresentative(imageHeight*imageWidth, metaData);
+        ImageRepresentative returnHolder = new ImageRepresentative(metaData);
 
-        for (int cIndex=0;cIndex< pixelData.length; cIndex++) {
+        for (int cIndex = 0; cIndex < pixelData.length; cIndex++) {
             int color = pixelData[cIndex];
             int a = (color >> 24) & 0xFF;
             int r = (color >> 16) & 0xFF;

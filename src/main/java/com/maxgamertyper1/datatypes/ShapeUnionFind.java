@@ -1,13 +1,11 @@
 package com.maxgamertyper1.datatypes;
 
-import com.maxgamertyper1.imagereading.ImageDataHolder;
 import com.maxgamertyper1.imagereading.ImageMeta;
 
-import java.awt.*;
 import java.util.Arrays;
-import java.util.BitSet;
 
-import static com.maxgamertyper1.imagereading.PixelHelper.*;
+import static com.maxgamertyper1.imagereading.PixelHelper.IndexInImage;
+import static com.maxgamertyper1.imagereading.PixelHelper.IndexsInSameRow;
 
 // this stuff wastes a ton of space so i might try to figure out a primitive hash map or smth
 
@@ -31,24 +29,24 @@ public class ShapeUnionFind {
         }
     }
 
+    public ShapeUnionFind(int[] parentPixels) {
+        this.parentPixels = parentPixels;
+    }
+
     public void solveShapes(byte[] flags, ImageMeta metaData) {
         flatten();
         calculateShapeRoots(metaData);
         calculateShapeAreas(metaData);
         calculateShapeContinuity(metaData);
-        calculatePerimiterAndHoles(flags,metaData.width());
+        calculatePerimiterAndHoles(flags, metaData.width());
         calculateIndexGroupings(metaData);
-    }
-
-    public ShapeUnionFind(int[] parentPixels) {
-        this.parentPixels = parentPixels;
     }
 
     public void union(int pixelIndex1, int pixelIndex2) {
         int rootIndex1 = find(pixelIndex1);
         int rootIndex2 = find(pixelIndex2);
 
-        if (rootIndex1!=rootIndex2) {
+        if (rootIndex1 != rootIndex2) {
             // make it have the smalles root be the actual root!
             if (rootIndex1 < rootIndex2) {
                 parentPixels[rootIndex2] = rootIndex1;
@@ -59,7 +57,7 @@ public class ShapeUnionFind {
     }
 
     public int find(int pixelIndex) {
-        while (parentPixels[pixelIndex]!=pixelIndex) {
+        while (parentPixels[pixelIndex] != pixelIndex) {
             parentPixels[pixelIndex] = parentPixels[parentPixels[pixelIndex]];
 
             pixelIndex = parentPixels[pixelIndex];
@@ -68,29 +66,15 @@ public class ShapeUnionFind {
     }
 
     public void flatten() { // flatten the array to unique shape IDs, which the IDs are also the first index in the shape
-        for (int i=0; i<parentPixels.length; i++) {
+        for (int i = 0; i < parentPixels.length; i++) {
             parentPixels[i] = find(i);
         }
     }
 
-    public void calculateShapeRoots() {
-        IntArrayList uniqueBosses = new IntArrayList(16);
-        shapeIndexAddressTable = new int[ImageDataHolder.flatsize+1];
-        Arrays.fill(shapeIndexAddressTable,-1);
-
-        for (int i = 0; i < parentPixels.length; i++) {
-            if (parentPixels[i] == i) {
-                shapeIndexAddressTable[i] = uniqueBosses.size();
-                uniqueBosses.add(i);
-            }
-        }
-        rootIndexes = uniqueBosses.toIntArray();
-    }
-
     public void calculateShapeRoots(ImageMeta metaData) {
         IntArrayList uniqueBosses = new IntArrayList(16);
-        shapeIndexAddressTable = new int[metaData.flatsize()+1];
-        Arrays.fill(shapeIndexAddressTable,-1);
+        shapeIndexAddressTable = new int[metaData.flatsize() + 1];
+        Arrays.fill(shapeIndexAddressTable, -1);
 
         for (int i = 0; i < parentPixels.length; i++) {
             if (parentPixels[i] == i) {
@@ -109,16 +93,6 @@ public class ShapeUnionFind {
         return parentPixels;
     }
 
-    public void calculateShapeAreas() {
-        shapeAreasBasedOnStart = new int[getTotalShapeCount()];
-
-        for (int i = 0; i < ImageDataHolder.flatsize; i++) {
-            int root = parentPixels[i]; // find the root of a pixel
-
-            shapeAreasBasedOnStart[shapeIndexAddressTable[root]]++;
-        }
-    }
-
     public void calculateShapeAreas(ImageMeta metaData) {
         shapeAreasBasedOnStart = new int[getTotalShapeCount()];
 
@@ -129,29 +103,15 @@ public class ShapeUnionFind {
         }
     }
 
-    public void calculateIndexGroupings() {
-        shapeIndexGroupings = new int[getTotalShapeCount()][];
-
-        for (int i=0; i<shapeIndexGroupings.length; i++) {
-            shapeIndexGroupings[i] = new int[getShapeArea(rootIndexes[i])];
-        }
-        int[] shapePointers = new int[getTotalShapeCount()];
-
-        for (int index = 0; index<ImageDataHolder.flatsize; index++) {
-            int address = shapeIndexAddressTable[parentPixels[index]];
-            shapeIndexGroupings[address][shapePointers[address]++] = index;
-        }
-    }
-
     public void calculateIndexGroupings(ImageMeta metaData) {
         shapeIndexGroupings = new int[getTotalShapeCount()][];
 
-        for (int i=0; i<shapeIndexGroupings.length; i++) {
+        for (int i = 0; i < shapeIndexGroupings.length; i++) {
             shapeIndexGroupings[i] = new int[getShapeArea(rootIndexes[i])];
         }
         int[] shapePointers = new int[getTotalShapeCount()];
 
-        for (int index = 0; index<metaData.flatsize(); index++) {
+        for (int index = 0; index < metaData.flatsize(); index++) {
             int address = shapeIndexAddressTable[parentPixels[index]];
             shapeIndexGroupings[address][shapePointers[address]++] = index;
         }
@@ -161,37 +121,19 @@ public class ShapeUnionFind {
         return shapeIndexGroupings[shapeIndexAddressTable[shapeID]];
     }
 
-    public void calculateShapeContinuity() {
-        shapeContinuityBasedOnStart = new int[getTotalShapeCount()];
-
-        for (int i = 0; i < ImageDataHolder.flatsize; i++) {
-            int root = parentPixels[i];
-
-            int topIndex = i-ImageDataHolder.width;
-            int LeftIndex = i-1;
-
-            if (IndexInImage(topIndex) && parentPixels[topIndex]==root) {
-                shapeContinuityBasedOnStart[shapeIndexAddressTable[root]]++;
-            }
-            if (IndexInImage(LeftIndex) && IndexsInSameRow(LeftIndex,i) && parentPixels[LeftIndex]==root) {
-                shapeContinuityBasedOnStart[shapeIndexAddressTable[root]]++;
-            }
-        }
-    }
-
     public void calculateShapeContinuity(ImageMeta metaData) {
         shapeContinuityBasedOnStart = new int[getTotalShapeCount()];
 
         for (int i = 0; i < metaData.flatsize(); i++) {
             int root = parentPixels[i];
 
-            int topIndex = i-metaData.width();
-            int LeftIndex = i-1;
+            int topIndex = i - metaData.width();
+            int LeftIndex = i - 1;
 
-            if (IndexInImage(topIndex) && parentPixels[topIndex]==root) {
+            if (IndexInImage(topIndex, metaData.flatsize()) && parentPixels[topIndex] == root) {
                 shapeContinuityBasedOnStart[shapeIndexAddressTable[root]]++;
             }
-            if (IndexInImage(LeftIndex) && IndexsInSameRow(LeftIndex,i) && parentPixels[LeftIndex]==root) {
+            if (IndexInImage(LeftIndex, metaData.flatsize()) && IndexsInSameRow(LeftIndex, i, metaData.width()) && parentPixels[LeftIndex] == root) {
                 shapeContinuityBasedOnStart[shapeIndexAddressTable[root]]++;
             }
         }
@@ -205,75 +147,6 @@ public class ShapeUnionFind {
         return shapeContinuityBasedOnStart[shapeIndexAddressTable[startingIndex]]; // same as above
     }
 
-    public void calculatePerimiterAndHoles(int[] relativeFlags) { // O(NlogN)
-        shapeHolesBasedOnStart = new int[getTotalShapeCount()];
-
-        shapeParentFromHole = new int[getTotalShapeCount()];
-        Arrays.fill(shapeParentFromHole, -1);
-
-        IntArrayList[] perimiterHolders = new IntArrayList[getTotalShapeCount()];
-
-        for (int i=0; i<rootIndexes.length; i++) {
-            int location = rootIndexes[i];
-            shapeIndexAddressTable[location] = i;
-            perimiterHolders[i] = new IntArrayList(16);
-        }
-
-        // NOTE: this might be better if its moved into finalize with a Width size array that tracks the left and above pixels aligned with the x-value
-        for (int currentIndex=0; currentIndex<relativeFlags.length; currentIndex++) {
-            int flag = relativeFlags[currentIndex];
-
-            if (flag == 0) continue; // skip interior so i dont need all the other checks
-
-            int address = shapeIndexAddressTable[parentPixels[currentIndex]];
-            IntArrayList currentHolder = perimiterHolders[address];
-
-            if ((flag&8)!=0) { // if theres a top boundary
-                HandleSideTheSequel(currentIndex-ImageDataHolder.width, currentHolder);
-            }
-            if ((flag&4)!=0) { // if theres a bottom boundary
-                HandleSideTheSequel(currentIndex+ImageDataHolder.width, currentHolder);
-            }
-            if ((flag&2)!=0) { // if theres a right boundary
-                HandleSideTheSequel(currentIndex+1, currentHolder);
-            }
-            if ((flag&1)!=0) { // if theres a left boundary
-                HandleSideTheSequel(currentIndex-1, currentHolder);
-            }
-        }
-
-        // NOTE: may be better to make a primitve set for this
-
-        IntArrayDeque shapeQueue = new IntArrayDeque(getTotalShapeCount()); // make size is the amount of shapes
-        BitSet reusableBitset = new BitSet(getTotalShapeCount());
-
-        for (int i=0; i<perimiterHolders.length; i++) {
-            IntArrayList IAL = perimiterHolders[i];
-            IAL.removeDuplicatesUnsorted();
-
-            if (IAL.size()==1) {
-                shapeQueue.enqueue(i);
-            }
-        }
-
-        while (shapeQueue.getSize()!=0) {
-            int thisShape = shapeQueue.dequeue();
-            IntArrayList currentNeighbors = perimiterHolders[thisShape];
-
-            int parentShape = currentNeighbors.atIndex(0);
-            int parentShapeAddress = shapeIndexAddressTable[parentShape];
-
-            IntArrayList parentNeighbors = perimiterHolders[parentShapeAddress];
-            parentNeighbors.swapRemove(thisShape);
-            if (parentNeighbors.size()==1) {
-                shapeQueue.enqueue(parentShape);
-            }
-
-            shapeHolesBasedOnStart[parentShapeAddress]++;
-            shapeParentFromHole[thisShape] = parentShapeAddress;
-        }
-    }
-
     public void calculatePerimiterAndHoles(byte[] relativeFlags, int width) { // O(NlogN)
         shapeHolesBasedOnStart = new int[getTotalShapeCount()];
 
@@ -283,14 +156,14 @@ public class ShapeUnionFind {
 
         IntArrayList[] perimiterHolders = new IntArrayList[getTotalShapeCount()];
 
-        for (int i=0; i<rootIndexes.length; i++) {
+        for (int i = 0; i < rootIndexes.length; i++) {
             int location = rootIndexes[i];
             shapeIndexAddressTable[location] = i;
             perimiterHolders[i] = new IntArrayList(16);
         }
 
         // NOTE: this might be better if its moved into finalize with a Width size array that tracks the left and above pixels aligned with the x-value
-        for (int currentIndex=0; currentIndex<relativeFlags.length; currentIndex++) {
+        for (int currentIndex = 0; currentIndex < relativeFlags.length; currentIndex++) {
             int flag = relativeFlags[currentIndex];
 
             if (flag == 0) continue; // skip interior so i dont need all the other checks
@@ -298,17 +171,17 @@ public class ShapeUnionFind {
             int address = shapeIndexAddressTable[parentPixels[currentIndex]];
             IntArrayList currentHolder = perimiterHolders[address];
 
-            if ((flag&8)!=0) { // if theres a top boundary
-                HandleSideTheSequel(currentIndex-width, currentHolder, flatsize);
+            if ((flag & 8) != 0) { // if theres a top boundary
+                HandleSideTheSequel(currentIndex - width, currentHolder, flatsize);
             }
-            if ((flag&4)!=0) { // if theres a bottom boundary
-                HandleSideTheSequel(currentIndex+width, currentHolder, flatsize);
+            if ((flag & 4) != 0) { // if theres a bottom boundary
+                HandleSideTheSequel(currentIndex + width, currentHolder, flatsize);
             }
-            if ((flag&2)!=0) { // if theres a right boundary
-                HandleSideTheSequel(currentIndex+1, currentHolder, flatsize);
+            if ((flag & 2) != 0) { // if theres a right boundary
+                HandleSideTheSequel(currentIndex + 1, currentHolder, flatsize);
             }
-            if ((flag&1)!=0) { // if theres a left boundary
-                HandleSideTheSequel(currentIndex-1, currentHolder, flatsize);
+            if ((flag & 1) != 0) { // if theres a left boundary
+                HandleSideTheSequel(currentIndex - 1, currentHolder, flatsize);
             }
         }
 
@@ -316,16 +189,16 @@ public class ShapeUnionFind {
 
         IntArrayDeque shapeQueue = new IntArrayDeque(getTotalShapeCount()); // make size is the amount of shapes
 
-        for (int i=0; i<perimiterHolders.length; i++) {
+        for (int i = 0; i < perimiterHolders.length; i++) {
             IntArrayList IAL = perimiterHolders[i];
             IAL.removeDuplicatesUnsorted();
 
-            if (IAL.size()==1) {
+            if (IAL.size() == 1) {
                 shapeQueue.enqueue(i);
             }
         }
 
-        while (shapeQueue.getSize()!=0) {
+        while (shapeQueue.getSize() != 0) {
             int thisShape = shapeQueue.dequeue();
             IntArrayList currentNeighbors = perimiterHolders[thisShape];
 
@@ -334,7 +207,7 @@ public class ShapeUnionFind {
 
             IntArrayList parentNeighbors = perimiterHolders[parentShapeAddress];
             parentNeighbors.swapRemove(thisShape);
-            if (parentNeighbors.size()==1) {
+            if (parentNeighbors.size() == 1) {
                 shapeQueue.enqueue(parentShape);
             }
 
@@ -345,14 +218,6 @@ public class ShapeUnionFind {
 
     private void HandleSideTheSequel(int newIndex, IntArrayList currentHolder, int flatsize) {
         if (IndexInImage(newIndex, flatsize)) {
-            currentHolder.add(parentPixels[newIndex]);
-        } else {
-            currentHolder.add(-1); // represents the image edge
-        }
-    }
-
-    private void HandleSideTheSequel(int newIndex, IntArrayList currentHolder) {
-        if (IndexInImage(newIndex)) {
             currentHolder.add(parentPixels[newIndex]);
         } else {
             currentHolder.add(-1); // represents the image edge

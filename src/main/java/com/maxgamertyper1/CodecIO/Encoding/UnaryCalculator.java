@@ -17,7 +17,7 @@ public class UnaryCalculator {
         unaryCombinations = new int[512][];
         IntArrayList thisCombination = new IntArrayList(10);
 
-        for (int i=0; i < 512; i++) {
+        for (int i = 0; i < 512; i++) {
             thisCombination.clear();
 
             for (int bitNumber = 0; bitNumber < 9; bitNumber++) {
@@ -47,7 +47,7 @@ public class UnaryCalculator {
     private int getCombinationScore(int[] combination) {
         int totalCost = 0;
         for (int bitLength = 0; bitLength < bitCounts.length; bitLength++) {
-            int prefixIndex = Arrays.binarySearch(combination,bitLength + 1);
+            int prefixIndex = Arrays.binarySearch(combination, bitLength + 1);
 
             if (prefixIndex < 0) {
                 prefixIndex = -prefixIndex - 1; // undo the negative insertion

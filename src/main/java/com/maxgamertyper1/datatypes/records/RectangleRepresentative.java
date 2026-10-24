@@ -17,22 +17,23 @@ public record RectangleRepresentative(
                 zigzagEncode(value)
         );
     }
+
+    private static int zigzagEncode(int number) {
+        //0: 0, 1: -1, 10: 1, 11:-2, ...
+        return (number << 1) ^ (number >> 31);
+    }
+
     public int area() {
         return width * height;
     }
 
     public int storageCost() {
-        return dataBitLength(height)+dataBitLength(width)+dataBitLength(value);
+        return dataBitLength(height) + dataBitLength(width) + dataBitLength(value);
     }
 
     private int dataBitLength(int data) {
         int baseReturn = (32 - Integer.numberOfLeadingZeros(data));
         return baseReturn == 0 ? 1 : baseReturn;
-    }
-
-    private static int zigzagEncode(int number) {
-        //0: 0, 1: -1, 10: 1, 11:-2, ...
-        return (number << 1) ^ (number >> 31);
     }
 
     public boolean betterThan(RectangleRepresentative other) {

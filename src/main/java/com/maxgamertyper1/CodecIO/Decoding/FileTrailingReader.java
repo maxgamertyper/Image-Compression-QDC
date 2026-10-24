@@ -15,7 +15,7 @@ public class FileTrailingReader {
         }
 
         try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
-            raf.seek( fileSize - 4);
+            raf.seek(fileSize - 4);
 
             byte[] last4Bytes = new byte[4];
             raf.readFully(last4Bytes);

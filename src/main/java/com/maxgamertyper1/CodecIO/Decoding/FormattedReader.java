@@ -3,7 +3,7 @@ package com.maxgamertyper1.CodecIO.Decoding;
 import java.io.*;
 import java.util.Arrays;
 
-public class FormattedReader implements AutoCloseable{
+public class FormattedReader implements AutoCloseable {
     private final FileInputStream fileInputStream;
     private final BufferedInputStream inputBuffer;
     private long bitBuffer = 0;
@@ -12,7 +12,7 @@ public class FormattedReader implements AutoCloseable{
     private int bitsTracker = 0;
     private long cursorByte = 0;
     private int cursorBit = 0;
-    private String inFileName;
+    private final String inFileName;
 
     public FormattedReader(String fileName) throws FileNotFoundException {
         inFileName = fileName;
@@ -45,14 +45,14 @@ public class FormattedReader implements AutoCloseable{
         cursorBit += numBits;
 
         int bytesToAddTracker = bitsTracker / 8;
-        if (bytesToAddTracker!=0) {
-            byteTracker+=bytesToAddTracker;
+        if (bytesToAddTracker != 0) {
+            byteTracker += bytesToAddTracker;
             bitsTracker %= 8;
         }
 
         int bytesToAddCursor = cursorBit / 8;
-        if (bytesToAddCursor!=0) {
-            cursorByte+=bytesToAddCursor;
+        if (bytesToAddCursor != 0) {
+            cursorByte += bytesToAddCursor;
             cursorBit %= 8;
         }
     }
@@ -72,7 +72,7 @@ public class FormattedReader implements AutoCloseable{
     }
 
     public int readBits(int numBits) throws IOException {
-        if (numBits==0) return 0;
+        if (numBits == 0) return 0;
         boolean canRead = enoughBits(numBits);
 
         if (!canRead) fillBuffer();
@@ -99,12 +99,12 @@ public class FormattedReader implements AutoCloseable{
     }
 
     private void fillBuffer() throws IOException {
-        int bytesCanFill = 8 - (((int)bitsStored + 7) / 8);
+        int bytesCanFill = 8 - ((bitsStored + 7) / 8);
 
-        for (int i=0; i < bytesCanFill; i++) {
+        for (int i = 0; i < bytesCanFill; i++) {
             int nextByte = inputBuffer.read();
 
-            if (nextByte==-1) {
+            if (nextByte == -1) {
                 return;
             }
 

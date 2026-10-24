@@ -5,7 +5,7 @@ import com.maxgamertyper1.datatypes.CompressedColorChannel;
 import com.maxgamertyper1.datatypes.CompressedImageRepresentative;
 import com.maxgamertyper1.datatypes.records.CornerDataRepresentative;
 import com.maxgamertyper1.datatypes.records.RectangleRepresentative;
-import com.maxgamertyper1.imagereading.ImageDataHolder;
+import com.maxgamertyper1.imagereading.ImageMeta;
 import com.maxgamertyper1.imagereading.PixelHelper;
 
 import java.io.FileNotFoundException;
@@ -15,24 +15,31 @@ import java.util.Arrays;
 public class EncodingManager {
     final FormattedWriter fileWritter;
     final ChannelWriter channelWriter;
-    CompressedImageRepresentative finalImage;
     final CompressionConfig config;
+    private final CompressedImageRepresentative finalImage;
+    private final ImageMeta metaData;
 
     public EncodingManager(CompressedImageRepresentative imageRepresentative, String outFile, CompressionConfig config) throws FileNotFoundException {
         finalImage = imageRepresentative;
+        metaData = finalImage.getMetaData();
         fileWritter = new FormattedWriter(outFile);
         channelWriter = new ChannelWriter();
         this.config = config;
     }
 
+    private static int zigzagEncode(int number) {
+        //0: 0, 1: -1, 10: 1, 11:-2, ...
+        return (number << 1) ^ (number >> 31);
+    }
+
     public void writeMetadata() throws IOException {
-        boolean maxAlpha = finalImage.isUniformMaxAlpha();
-        boolean grayScale = finalImage.isGrayScale();
+        boolean maxAlpha = metaData.opaque();
+        boolean grayScale = metaData.grayscale();
 
         CompressedColorChannel[] channels = finalImage.getCompressedChannels();
         byte[] initialPixels = new byte[channels.length];
 
-        for (int i=0; i < channels.length; i++) {
+        for (int i = 0; i < channels.length; i++) {
             initialPixels[i] = (byte) channels[i].getInitialPixel();
         }
 
@@ -40,12 +47,12 @@ public class EncodingManager {
             fileWritter.calculateMetadataFlagByte(
                     grayScale,
                     maxAlpha,
-                    finalImage.getOriginalFileType()
+                    metaData.fileType()
             );
 
             fileWritter.setImageData(
-                    finalImage.getImageHeight(),
-                    finalImage.getImageWidth()
+                    (short) metaData.height(),
+                    (short) metaData.width()
             );
 
             fileWritter.finalizeMetadata(initialPixels);
@@ -61,7 +68,7 @@ public class EncodingManager {
         //System.out.println(Arrays.toString(optimalUnary));
 
         //write the channel-META but not byte size, the formattedWriter will do that
-        channelWriter.setData(colorChannel.getFirstType(),optimalUnary);
+        channelWriter.setData(colorChannel.getFirstType(), optimalUnary);
     }
 
     private int[] calculateChannelUnary(CompressedColorChannel colorChannel) {
@@ -92,7 +99,7 @@ public class EncodingManager {
         }
 
         //compress >9
-        for (int i=10; i < 32; i++) {
+        for (int i = 10; i < 32; i++) {
             bitCounts[9] += bitCounts[i]; //bitcounts[9] requires the OVERFLOW prefix and the rest of it does too so it just pushes all of them there
         }
         return Arrays.copyOf(bitCounts, 10);
@@ -107,7 +114,6 @@ public class EncodingManager {
         fileWritter.writeTail();
         fileWritter.finishFile();
     }
-
 
     public void processChannel(int index) throws IOException { // orchestrator
         CompressedColorChannel thisChannel = finalImage.getCompressedChannels()[index];
@@ -155,7 +161,7 @@ public class EncodingManager {
         int[] rawValues = thisChannel.getCorrespondingIsolatedValues();
 
         try (channelWriter) {
-            for (int i = 0; i <= totalItems;) {
+            for (int i = 0; i <= totalItems; ) {
                 //System.out.println(i);
                 int rectPosition = (rectIdx < builtRectangles.length) ? builtRectangles[rectIdx].startingIndex() : Integer.MAX_VALUE;
                 int cornerPosition = (cornerIdx < builtCorners.length) ? builtCorners[cornerIdx].startingIndex() : Integer.MAX_VALUE;
@@ -173,7 +179,7 @@ public class EncodingManager {
                     i++;
                 } else { //corner
                     CornerDataRepresentative thisCorner = builtCorners[cornerIdx];
-                    i += processCornerWrite(thisChannel,thisCorner,cornerIdx);
+                    i += processCornerWrite(thisChannel, thisCorner, cornerIdx);
                     System.out.println("Wrote + " + thisCorner);
                     cornerIdx++;
                 }
@@ -190,15 +196,15 @@ public class EncodingManager {
             CompressedColorChannel thisChannel,
             CornerDataRepresentative corner,
             int cornerIdx
-    ) throws IOException{
+    ) throws IOException {
         int[] rectOverrides = thisChannel.getOwnedRectangles(cornerIdx);
         int[] rawOverrides = thisChannel.getOwnedIndexes(cornerIdx);
         int[] cornerOverrides = thisChannel.getOwnedCorners(cornerIdx);
-        int totalOverrides = rectOverrides.length+rawOverrides.length+cornerOverrides.length;
+        int totalOverrides = rectOverrides.length + rawOverrides.length + cornerOverrides.length;
 
-        boolean hasOverrides = totalOverrides!=0;
+        boolean hasOverrides = totalOverrides != 0;
 
-        channelWriter.writeCornerData(corner,hasOverrides);
+        channelWriter.writeCornerData(corner, hasOverrides);
 
         if (!hasOverrides) {
             return 1;
@@ -212,39 +218,39 @@ public class EncodingManager {
         int[] builtRaws = thisChannel.getIsolatedIndexes();
         int[] rawValues = thisChannel.getCorrespondingIsolatedValues();
         int totalChanges = 1;
-        int[] previousLocation = PixelHelper.ReverseIndexCalculator(ImageDataHolder.width,builtCorners[cornerIdx].startingIndex());
+        int[] previousLocation = PixelHelper.ReverseIndexCalculator(metaData.width(), builtCorners[cornerIdx].startingIndex());
         int[] deltaInfo = new int[2];
 
-        if (rectOverrides.length!=0) totalOverrides--;
-        if (rawOverrides.length!=0) totalOverrides--;
-        if (cornerOverrides.length!=0) totalOverrides--;
+        if (rectOverrides.length != 0) totalOverrides--;
+        if (rawOverrides.length != 0) totalOverrides--;
+        if (cornerOverrides.length != 0) totalOverrides--;
 
-        for (int i=0; i <= totalOverrides;) {
+        for (int i = 0; i <= totalOverrides; ) {
             int rectPosition = (rectOverrideIdx < rectOverrides.length) ? builtRects[rectOverrides[rectOverrideIdx]].startingIndex() : Integer.MAX_VALUE;
             int cornerPosition = (cornerOverrideIdx < cornerOverrides.length) ? builtCorners[cornerOverrides[cornerOverrideIdx]].startingIndex() : Integer.MAX_VALUE;
             int rawPosition = (rawOverrideIdx < rawOverrides.length) ? builtRaws[rawOverrides[rawOverrideIdx]] : Integer.MAX_VALUE;
             int[] thisLocation;
 
             if (rectPosition < rawPosition && rectPosition < cornerPosition) { // rect
-                if (i==0) {
+                if (i == 0) {
                     channelWriter.writeRawOPCode(DataType.Rectangle);
                 }
                 RectangleRepresentative thisRect = builtRects[rectOverrides[rectOverrideIdx++]];
-                thisLocation = PixelHelper.ReverseIndexCalculator(ImageDataHolder.width,thisRect.startingIndex());
+                thisLocation = PixelHelper.ReverseIndexCalculator(metaData.width(), thisRect.startingIndex());
                 deltaInfo[0] = zigzagEncode(thisLocation[0] - previousLocation[0]);
                 deltaInfo[1] = zigzagEncode(thisLocation[1] - previousLocation[1]);
 
-                channelWriter.writeOverriden(deltaInfo,thisRect);
+                channelWriter.writeOverriden(deltaInfo, thisRect);
                 totalChanges += 1;
             } else if (rawPosition < cornerPosition) { //raw
-                if (i==0) {
+                if (i == 0) {
                     channelWriter.writeRawOPCode(DataType.Raw);
                 }
                 int overrideIndex = rawOverrides[rawOverrideIdx++];
                 int thisRawValue = rawValues[overrideIndex];
                 int thisRawIndex = builtRaws[overrideIndex];
 
-                thisLocation = PixelHelper.ReverseIndexCalculator(ImageDataHolder.width,thisRawIndex);
+                thisLocation = PixelHelper.ReverseIndexCalculator(metaData.width(), thisRawIndex);
                 deltaInfo[0] = zigzagEncode(thisLocation[0] - previousLocation[0]);
                 deltaInfo[1] = zigzagEncode(thisLocation[1] - previousLocation[1]);
                 System.out.println(Arrays.toString(deltaInfo) + ", " + thisRawValue);
@@ -252,18 +258,18 @@ public class EncodingManager {
                 channelWriter.writeOverriden(deltaInfo, thisRawValue);
                 totalChanges += 1;
             } else { //corner
-                if (i==0) {
+                if (i == 0) {
                     channelWriter.writeRawOPCode(DataType.Corner);
                 }
                 int thisCornerIdx = cornerOverrides[cornerOverrideIdx];
                 CornerDataRepresentative thisCorner = builtCorners[thisCornerIdx];
 
-                thisLocation = PixelHelper.ReverseIndexCalculator(ImageDataHolder.width,thisCorner.startingIndex());
+                thisLocation = PixelHelper.ReverseIndexCalculator(metaData.width(), thisCorner.startingIndex());
                 deltaInfo[0] = zigzagEncode(thisLocation[0] - previousLocation[0]);
                 deltaInfo[1] = zigzagEncode(thisLocation[1] - previousLocation[1]);
 
                 channelWriter.writeDeltas(deltaInfo);
-                totalChanges += processCornerWrite(thisChannel,thisCorner,thisCornerIdx);
+                totalChanges += processCornerWrite(thisChannel, thisCorner, thisCornerIdx);
                 cornerOverrideIdx++;
             }
 
@@ -273,10 +279,5 @@ public class EncodingManager {
         channelWriter.writeEscapeData();
 
         return totalChanges;
-    }
-
-    private static int zigzagEncode(int number) {
-        //0: 0, 1: -1, 10: 1, 11:-2, ...
-        return (number << 1) ^ (number >> 31);
     }
 }

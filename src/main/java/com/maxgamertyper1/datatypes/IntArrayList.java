@@ -12,10 +12,10 @@ public class IntArrayList {
     }
 
     public void add(int data) {
-        if (size==InternalArray.length) {
+        if (size == InternalArray.length) {
             ensureCapacity(size + (size >> 1) + 1);
         }
-        InternalArray[size++]=data;
+        InternalArray[size++] = data;
     }
 
     public int size() {
@@ -23,7 +23,7 @@ public class IntArrayList {
     }
 
     public void clear() {
-        size=0;
+        size = 0;
     }
 
     public void swapRemove(int value) {
@@ -46,7 +46,7 @@ public class IntArrayList {
     }
 
     private void ensureCapacity(int size) {
-        InternalArray = Arrays.copyOf(InternalArray,size);
+        InternalArray = Arrays.copyOf(InternalArray, size);
     }
 
     public void removeDuplicatesUnsorted() {
