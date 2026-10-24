@@ -1,6 +1,5 @@
 package com.maxgamertyper1.imagereading;
 import com.maxgamertyper1.datatypes.ChannelColorTypes;
-import com.maxgamertyper1.datatypes.records.DataSimplifyingReturn;
 import com.maxgamertyper1.datatypes.ImageRepresentative;
 
 import javax.imageio.ImageIO;
@@ -17,17 +16,22 @@ public class ImageReader {
     private OriginalFileType imageType;
     private boolean imageOpaque = true;
     private boolean imageGrayscale = true;
-    private final File imageFile2;
-    private int[] pixelData;
+    private final File imageFile;
 
+    public ImageReader(File imageFile) {
+        this.imageFile = imageFile;
+    }
 
-    public static void ReadAllImageContent(String ImagePath) {
-        File imageFile = ImageReader.FillDataHolder(ImagePath);
-        int[] rawpixels = ImageReader.GetRGBValues(imageFile);
-        DataSimplifyingReturn DSR = GrayScaleVerification();
-        ImageDataHolder.isGrayscale = DSR.grayscale();
-        ImageDataHolder.UniformMaxAlpha = DSR.uniformAlpha();
-        SplitColorArray(ImageDataHolder.flatsize,ImageDataHolder.isGrayscale,rawpixels);
+    public ImageRepresentative readImageFile() throws IOException {
+        getFileData();
+
+        int[] pixelData = getPixelData();
+
+        imageChannelVerification(pixelData);
+
+        ImageMeta metaData = consolidateMetaData();
+
+        return splitColorArray(pixelData, metaData);
     }
 
     private ImageMeta consolidateMetaData() {
@@ -42,8 +46,8 @@ public class ImageReader {
     }
 
     private void getFileData() {
-        imageName = imageFile2.getName();
-        String path = imageFile2.getAbsolutePath();
+        imageName = imageFile.getName();
+        String path = imageFile.getAbsolutePath();
 
         int lastIndexOfDot = path.lastIndexOf('.');
         if (lastIndexOfDot == -1) {
@@ -57,48 +61,26 @@ public class ImageReader {
         }
     }
 
-    private  int[] getPixelData() {
+    private  int[] getPixelData() throws IOException {
         BufferedImage image;
 
         try {
-            image = ImageIO.read(imageFile2);
+            image = ImageIO.read(imageFile);
         } catch (IOException e) {
             System.out.println("Error occured when reading the image file");
             throw new RuntimeException(e);
         }
 
-        imageWidth = image.getWidth();
-        imageHeight = image.getHeight();
-        int[] Colors = new int[imageHeight * imageWidth];
-
-        for (int y = 0; y < imageHeight; y++) {
-            for (int x = 0; x < imageWidth; x++) {
-                int colors = image.getRGB(x, y);
-                Colors[IndexCalculator(imageWidth, x, y)] = colors;
-            }
+        if (image == null) {
+            throw new IOException("Unsupported Image Format: " + imageFile);
         }
 
-        return Colors;
+        imageWidth = image.getWidth();
+        imageHeight = image.getHeight();
+
+        return image.getRGB(0, 0, imageWidth, imageHeight, null, 0, imageWidth);
     }
-
-    public ImageRepresentative readImageFile() {
-        getFileData();
-
-        pixelData = getPixelData();
-        imageChannelVerification();
-
-        ImageRepresentative returnHolder = splitColorArray();
-
-        returnHolder.setMetaData(consolidateMetaData());
-
-        return returnHolder;
-    }
-
-    public ImageReader(File imageFile) {
-        imageFile2 = imageFile;
-    }
-
-    private void imageChannelVerification() {
+    private void imageChannelVerification(int[] pixelData) {
         for (int color : pixelData) {
             if (!imageGrayscale && !imageOpaque) break;
 
@@ -115,8 +97,8 @@ public class ImageReader {
         }
     }
 
-    private ImageRepresentative splitColorArray() {
-        ImageRepresentative returnHolder = new ImageRepresentative(imageHeight*imageWidth);
+    private ImageRepresentative splitColorArray(int[] pixelData, ImageMeta metaData) {
+        ImageRepresentative returnHolder = new ImageRepresentative(imageHeight*imageWidth, metaData);
 
         for (int cIndex=0;cIndex< pixelData.length; cIndex++) {
             int color = pixelData[cIndex];
@@ -136,94 +118,5 @@ public class ImageReader {
         }
 
         return returnHolder;
-    }
-
-    private static File FillDataHolder(String ImagePath) {
-        File imageFile = new File(ImagePath);
-        ImageDataHolder.metaImageName = imageFile.getName();
-
-        int lastIndexOfDot = ImagePath.lastIndexOf('.');
-        if (lastIndexOfDot == -1) {
-            System.err.println("No file path found, continuing");
-        }
-
-        try {
-            ImageDataHolder.fileType = OriginalFileType.valueOf(ImagePath.substring(lastIndexOfDot + 1).toUpperCase());
-        } catch (IllegalArgumentException e){
-            ImageDataHolder.fileType = OriginalFileType.Unknown;
-        }
-        return imageFile;
-    }
-
-    private static int[] GetRGBValues(File imageFile) {
-        System.out.println(imageFile.getAbsolutePath());
-        BufferedImage image;
-
-        try {
-            image = ImageIO.read(imageFile);
-        } catch (IOException e) {
-            System.out.println("Error occured when reading the image file");
-            throw new RuntimeException(e);
-        }
-
-        int width = image.getWidth();
-        int height = image.getHeight();
-        int[] Colors = new int[height * width];
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int colors = image.getRGB(x, y);
-                Colors[IndexCalculator(width, x, y)] = colors;
-            }
-        }
-
-        ImageDataHolder.width = width;
-        ImageDataHolder.height = height;
-        ImageDataHolder.flatsize = height*width;
-        ImageDataHolder.rawPixels = Colors;
-        return Colors;
-    }
-
-    private static void SplitColorArray(int flatsize, boolean baseGrayscale, int[] rawPixels) {
-        ImageDataHolder.channeledColors = new ImageRepresentative(baseGrayscale,ImageDataHolder.UniformMaxAlpha, false,flatsize);
-
-        for (int cIndex=0;cIndex< rawPixels.length; cIndex++) {
-            int color = rawPixels[cIndex];
-            int a = (color >> 24) & 0xFF;
-            int r = (color >> 16) & 0xFF;
-            int g = (color >> 8) & 0xFF;
-            int b = color & 0xFF;
-
-            if (baseGrayscale) {
-                ImageDataHolder.channeledColors.setPixelColorChannel(ChannelColorTypes.Gray, cIndex, r);
-            } else {
-                ImageDataHolder.channeledColors.setPixelColorChannel(ChannelColorTypes.Red, cIndex, r);
-                ImageDataHolder.channeledColors.setPixelColorChannel(ChannelColorTypes.Green, cIndex, g);
-                ImageDataHolder.channeledColors.setPixelColorChannel(ChannelColorTypes.Blue, cIndex, b);
-            }
-            if (!ImageDataHolder.UniformMaxAlpha) ImageDataHolder.channeledColors.setPixelColorChannel(ChannelColorTypes.Alpha, cIndex, a);
-        }
-    }
-
-    private static DataSimplifyingReturn GrayScaleVerification() {
-        boolean grayscale = true;
-        boolean maxAlpha = true;
-
-        for (int color : ImageDataHolder.rawPixels) {
-            if (!grayscale && !maxAlpha) break;
-
-            if (maxAlpha && ((color >> 24) & 0xFF) != 255) maxAlpha = false;
-
-            if (grayscale) {
-                int r = (color >> 16) & 0xFF;
-                int g = (color >> 8) & 0xFF;
-                int b = color & 0xFF;
-                if (r != g || g != b) {
-                    grayscale = false;
-                }
-            }
-        }
-
-        return new DataSimplifyingReturn(grayscale,maxAlpha);
     }
 }

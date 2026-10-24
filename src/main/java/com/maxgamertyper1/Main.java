@@ -19,7 +19,7 @@ import java.util.Arrays;
 public class Main {
     public static void main(String[] args) throws IOException {
         String inFileName = "testing.qdc";
-        String encodeFileName = "TestingImages/holePicture.png";
+        String encodeFileName = "TestingImages/cross.png";
         String outFileName = "newTesting.qdca";
 
         //encode(encodeFileName);
@@ -117,91 +117,91 @@ public class Main {
         }
     }
 
-    public static void encode(String fileName) throws IOException {
-        System.out.println("PRESS ENTER TO START PROFILING...");
-        System.in.read();
-
-        long start = System.currentTimeMillis();
-        long Truestart = System.currentTimeMillis();
-        long end;
-
-        ImageReader.ReadAllImageContent(fileName);
-        System.out.println("Image Data: \n" +"Name: "+ ImageDataHolder.metaImageName +"\nWidth: "+ImageDataHolder.width + "\nHeight: " + ImageDataHolder.height + "\n Flatsize: " + ImageDataHolder.flatsize + " (Megapixels: "+ (float)ImageDataHolder.flatsize/1000000 +")" + "\nExtension: "+ImageDataHolder.fileType +"\nGrayscale:"+ImageDataHolder.isGrayscale + "\nUniform Maximum Alpha:" + ImageDataHolder.UniformMaxAlpha + "\nUsing Version: "+ FormattedWriter.compressionVersionMajor+"."+FormattedWriter.compressionVersionMinor);
-
-        end = System.currentTimeMillis();
-        long IOprocessingTime = end - start;
-        System.out.println("IO processing took: " + (IOprocessingTime) + "ms");
-        start = System.currentTimeMillis();
-
-        QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
-        QDC.PaethDeltaEncoder();
-
-        end = System.currentTimeMillis();
-        System.out.println("Paeth encoding took: " + (end - start) + "ms");
-        start = System.currentTimeMillis();
-
-        ChunkedImageRepresentative chunkedImage;
-        chunkedImage = QDC.chunkImage(QDC.DeltaEncodedImage);
-
-        chunkedImage.sequentiallyOrder();
-
-        end = System.currentTimeMillis();
-        System.out.println("Flag Processing and Shaping (concurrent) took: " + (end - start) + "ms");
-        start = System.currentTimeMillis();
-
-        CompressedImageRepresentative FinalCompression = QDC.QuadralizedDataCompressed(chunkedImage, false);
-        FinalCompression.setMetaData((short) ImageDataHolder.height,(short) ImageDataHolder.width,ImageDataHolder.fileType);
-
-        end = System.currentTimeMillis();
-        System.out.println("Calculating Rectangles and Corners took: " + (end - start) + "ms");
-        start = System.currentTimeMillis();
-
-        for (CompressedColorChannel channel : FinalCompression.getCompressedChannels()) {
-            System.out.println("\n\nChannel (Color: " + channel.getChannelColorType() + ", Paeth? " + !FinalCompression.isPaethEncoded() + ") Breakdown:");
-            System.out.println("\t Rectangles: "+ channel.getRectangleCount() + " Corners: "+channel.getCornerCount()+" Isolated Indexes: "+channel.getIsolatedCount());
-
-            System.out.println("----------- Detailed Breakdown: ");
-            System.out.println("Channel Starting Index: "+channel.getInitialPixel());
-
-            System.out.println("------------------------------------");
-            System.out.println("\t Isolated Indexes: ");
-            System.out.println(Arrays.toString(channel.getIsolatedIndexes()));
-            System.out.println("\t Corresponding Values: ");
-            System.out.println(Arrays.toString(channel.getCorrespondingIsolatedValues()));
-
-            System.out.println("------------------------------------");
-            System.out.println("\t Rectangles: ");
-            System.out.println(Arrays.toString(channel.getBuiltRectangles()));
-
-            System.out.println("------------------------------------");
-            System.out.println("\t Corners: ");
-            System.out.println(Arrays.toString(channel.getBuiltCorners()));
-        }
-
-        EncodingManager tempManager = new EncodingManager(FinalCompression,"testing.qdc", CompressionConfig.OLD);
-        FinalCompression.sortChannelOrder();
-
-        System.out.println(FinalCompression.getCompressedChannels().length);
-        for ( CompressedColorChannel ccc : FinalCompression.getCompressedChannels()) {
-            System.out.println(ccc.getInitialPixel());
-        }
-
-        tempManager.writeMetadata();
-        for (int i=0; i < FinalCompression.getCompressedChannels().length; i++) {
-            tempManager.processChannel(i);
-        }
-        tempManager.finalizeFile();
-
-        end = System.currentTimeMillis();
-        System.out.println("Encoding: " + (end - start) + "ms");
-        start = System.currentTimeMillis();
-
-
-        long entireTime = System.currentTimeMillis() - Truestart;
-
-        System.out.println("Entire thing took: " + (entireTime) + "ms");
-        System.out.println("IO Time (non-encoding): " + (IOprocessingTime) + "ms");
-        System.out.println("Computational Time: " + (entireTime - IOprocessingTime) + "ms");
-        System.out.println("MP thorughput: " + (((float)ImageDataHolder.flatsize/1000000)/((float)(entireTime - IOprocessingTime)/1000)) + "MP/s");
-    }
+//    public static void encode(String fileName) throws IOException {
+//        System.out.println("PRESS ENTER TO START PROFILING...");
+//        System.in.read();
+//
+//        long start = System.currentTimeMillis();
+//        long Truestart = System.currentTimeMillis();
+//        long end;
+//
+//        ImageReader.ReadAllImageContent(fileName);
+//        System.out.println("Image Data: \n" +"Name: "+ ImageDataHolder.metaImageName +"\nWidth: "+ImageDataHolder.width + "\nHeight: " + ImageDataHolder.height + "\n Flatsize: " + ImageDataHolder.flatsize + " (Megapixels: "+ (float)ImageDataHolder.flatsize/1000000 +")" + "\nExtension: "+ImageDataHolder.fileType +"\nGrayscale:"+ImageDataHolder.isGrayscale + "\nUniform Maximum Alpha:" + ImageDataHolder.UniformMaxAlpha + "\nUsing Version: "+ FormattedWriter.compressionVersionMajor+"."+FormattedWriter.compressionVersionMinor);
+//
+//        end = System.currentTimeMillis();
+//        long IOprocessingTime = end - start;
+//        System.out.println("IO processing took: " + (IOprocessingTime) + "ms");
+//        start = System.currentTimeMillis();
+//
+//        QuadralizedDataCompressor QDC = new QuadralizedDataCompressor();
+//        QDC.PaethDeltaEncoder();
+//
+//        end = System.currentTimeMillis();
+//        System.out.println("Paeth encoding took: " + (end - start) + "ms");
+//        start = System.currentTimeMillis();
+//
+//        ChunkedImageRepresentative chunkedImage;
+//        chunkedImage = QDC.chunkImage(QDC.DeltaEncodedImage);
+//
+//        chunkedImage.sequentiallyOrder();
+//
+//        end = System.currentTimeMillis();
+//        System.out.println("Flag Processing and Shaping (concurrent) took: " + (end - start) + "ms");
+//        start = System.currentTimeMillis();
+//
+//        CompressedImageRepresentative FinalCompression = QDC.QuadralizedDataCompressed(chunkedImage, false);
+//        FinalCompression.setMetaData((short) ImageDataHolder.height,(short) ImageDataHolder.width,ImageDataHolder.fileType);
+//
+//        end = System.currentTimeMillis();
+//        System.out.println("Calculating Rectangles and Corners took: " + (end - start) + "ms");
+//        start = System.currentTimeMillis();
+//
+//        for (CompressedColorChannel channel : FinalCompression.getCompressedChannels()) {
+//            System.out.println("\n\nChannel (Color: " + channel.getChannelColorType() + ", Paeth? " + !FinalCompression.isPaethEncoded() + ") Breakdown:");
+//            System.out.println("\t Rectangles: "+ channel.getRectangleCount() + " Corners: "+channel.getCornerCount()+" Isolated Indexes: "+channel.getIsolatedCount());
+//
+//            System.out.println("----------- Detailed Breakdown: ");
+//            System.out.println("Channel Starting Index: "+channel.getInitialPixel());
+//
+//            System.out.println("------------------------------------");
+//            System.out.println("\t Isolated Indexes: ");
+//            System.out.println(Arrays.toString(channel.getIsolatedIndexes()));
+//            System.out.println("\t Corresponding Values: ");
+//            System.out.println(Arrays.toString(channel.getCorrespondingIsolatedValues()));
+//
+//            System.out.println("------------------------------------");
+//            System.out.println("\t Rectangles: ");
+//            System.out.println(Arrays.toString(channel.getBuiltRectangles()));
+//
+//            System.out.println("------------------------------------");
+//            System.out.println("\t Corners: ");
+//            System.out.println(Arrays.toString(channel.getBuiltCorners()));
+//        }
+//
+//        EncodingManager tempManager = new EncodingManager(FinalCompression,"testing.qdc", CompressionConfig.OLD);
+//        FinalCompression.sortChannelOrder();
+//
+//        System.out.println(FinalCompression.getCompressedChannels().length);
+//        for ( CompressedColorChannel ccc : FinalCompression.getCompressedChannels()) {
+//            System.out.println(ccc.getInitialPixel());
+//        }
+//
+//        tempManager.writeMetadata();
+//        for (int i=0; i < FinalCompression.getCompressedChannels().length; i++) {
+//            tempManager.processChannel(i);
+//        }
+//        tempManager.finalizeFile();
+//
+//        end = System.currentTimeMillis();
+//        System.out.println("Encoding: " + (end - start) + "ms");
+//        start = System.currentTimeMillis();
+//
+//
+//        long entireTime = System.currentTimeMillis() - Truestart;
+//
+//        System.out.println("Entire thing took: " + (entireTime) + "ms");
+//        System.out.println("IO Time (non-encoding): " + (IOprocessingTime) + "ms");
+//        System.out.println("Computational Time: " + (entireTime - IOprocessingTime) + "ms");
+//        System.out.println("MP thorughput: " + (((float)ImageDataHolder.flatsize/1000000)/((float)(entireTime - IOprocessingTime)/1000)) + "MP/s");
+//    }
 }

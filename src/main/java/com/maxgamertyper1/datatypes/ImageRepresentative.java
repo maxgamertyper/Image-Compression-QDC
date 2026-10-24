@@ -19,15 +19,11 @@ public class ImageRepresentative {
         if (deltaEncoded) initialPixels = new int[grayScale ? 2 : 4];
     }
 
-    public ImageRepresentative(int flatsize) {
-        InitializeColorChannels(flatsize);
-    }
-
-    public void setMetaData(ImageMeta metaData) {
+    public ImageRepresentative(int flatsize, ImageMeta metaData) {
         this.metaData = metaData;
 
-        int alphaModifier = metaData.opaque() ? 1 : 0;
-        initialPixels = new int[(metaData.grayscale() ? 2 : 4)];
+        initializeColorChannelsThroughMetadata();
+        initialPixels = new int[colorChannels.length];
     }
 
     public ImageMeta getMetaData() {
@@ -40,14 +36,6 @@ public class ImageRepresentative {
 
     public boolean isDeltaEncoded() {
         return deltaEncoded;
-    }
-
-    public boolean isGrayScale() {
-        return grayScale;
-    }
-
-    public boolean isUniformMaxAlpha() {
-        return uniformMaxAlpha;
     }
 
     private void InitializeColorChannels(int flatsize) {
@@ -64,7 +52,35 @@ public class ImageRepresentative {
         }
     }
 
+    private void initializeColorChannelsThroughMetadata() {
+        int flatsize = metaData.flatsize();
+        boolean opaque = metaData.opaque();
+
+        if (metaData.grayscale()) {
+            colorChannels = new ColorChannel[opaque ? 1 : 2];
+            colorChannels[0] = new ColorChannel(ChannelColorTypes.Gray, flatsize);
+            if (!opaque) colorChannels[1] = new ColorChannel(ChannelColorTypes.Alpha, flatsize);
+        } else {
+            colorChannels = new ColorChannel[uniformMaxAlpha ? 3 : 4];
+            colorChannels[0] = new ColorChannel(ChannelColorTypes.Red, flatsize);
+            colorChannels[1] = new ColorChannel(ChannelColorTypes.Green, flatsize);
+            colorChannels[2] = new ColorChannel(ChannelColorTypes.Blue, flatsize);
+            if (!opaque) colorChannels[3] = new ColorChannel(ChannelColorTypes.Alpha, flatsize);
+        }
+    }
+
     public int getChannelIndex(ChannelColorTypes channelType) {
+
+        if (metaData != null) {
+            int channelIndex = metaData.grayscale() ? channelType.ordinal()-3 : channelType.ordinal();
+
+            if (channelType==ChannelColorTypes.Alpha && !metaData.grayscale()) {
+                channelIndex--;
+            }
+
+            return channelIndex;
+        }
+
         int channelIndex = grayScale ? channelType.ordinal()-3 : channelType.ordinal();
 
         if (channelType==ChannelColorTypes.Alpha && !grayScale) {

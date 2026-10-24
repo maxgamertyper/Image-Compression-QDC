@@ -33,6 +33,7 @@ public class ShapeUnionFind {
 
     public void solveShapes(byte[] flags, ImageMeta metaData) {
         flatten();
+        calculateShapeRoots(metaData);
         calculateShapeAreas(metaData);
         calculateShapeContinuity(metaData);
         calculatePerimiterAndHoles(flags,metaData.width());
@@ -70,7 +71,6 @@ public class ShapeUnionFind {
         for (int i=0; i<parentPixels.length; i++) {
             parentPixels[i] = find(i);
         }
-        calculateShapeRoots();
     }
 
     public void calculateShapeRoots() {

@@ -33,8 +33,7 @@ public class PaethProcessor {
         ImageMeta metaData = image.getMetaData();
         int width = metaData.width();
 
-        ImageRepresentative paethImage = new ImageRepresentative((int) metaData.flatsize());
-        paethImage.setMetaData(metaData);
+        ImageRepresentative paethImage = new ImageRepresentative(metaData.flatsize(), metaData);
 
         for (ColorChannel channel : image.getColorChannels()) {
             int[] rawPixelData = channel.getChannelData();
