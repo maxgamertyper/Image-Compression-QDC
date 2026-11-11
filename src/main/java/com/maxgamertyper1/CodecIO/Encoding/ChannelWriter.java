@@ -118,7 +118,6 @@ public class ChannelWriter implements Closeable {
         } else {
             bitWriter.writeRawValue(value, unaryPrefixValueSet[prefixIndex]);
         }
-        //System.out.println("Prefix: " + unaryValueRaw[prefixIndex] + " Value: " + value);
     }
 
     private int getPrefixIndex(int bitLength) {

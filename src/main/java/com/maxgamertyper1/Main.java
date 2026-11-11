@@ -18,12 +18,12 @@ import java.util.Arrays;
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
     public static void main(String[] args) throws IOException {
-        String encodeFileName = "TestingImages/cross.png";
+        String encodeFileName = "TestingImages/codeScreenshot.png";
         String outEncodeFile = "testing.qdc";
         testImageReaderRefactor(encodeFileName, outEncodeFile);
 
         String inDisassembleName = "testing.qdc";
-        String outDisassembleName = "testing.qdc";
+        String outDisassembleName = "testing.qdca";
         disassemble(inDisassembleName, outDisassembleName);
     }
 
@@ -97,12 +97,12 @@ public class Main {
             System.out.println(Arrays.toString(channel.getCorrespondingIsolatedValues()));
         }
 
-        EncodingManager encoder = new EncodingManager(compressedImage, outFileName, CompressionConfig.DEFAULT);
-
         System.out.println(compressedImage.getCompressedChannels().length);
         for (CompressedColorChannel ccc : compressedImage.getCompressedChannels()) {
             System.out.println(ccc.getInitialPixel());
         }
+
+        EncodingManager encoder = new EncodingManager(compressedImage, outFileName, CompressionConfig.DEFAULT);
 
         encoder.writeMetadata();
         for (int i = 0; i < compressedImage.getCompressedChannels().length; i++) {
@@ -112,7 +112,7 @@ public class Main {
     }
 
     public static void disassemble(String inFileName, String outFileName) throws IOException {
-        try (Disassembler ds = new Disassembler(inFileName, outFileName)) {
+        try (Disassembler ds = new Disassembler(inFileName, outFileName,CompressionConfig.DEFAULT)) {
             ds.Dissassemble();
         }
     }

@@ -22,6 +22,7 @@ public class EncodingManager {
     public EncodingManager(CompressedImageRepresentative imageRepresentative, String outFile, CompressionConfig config) throws FileNotFoundException {
         finalImage = imageRepresentative;
         metaData = finalImage.getMetaData();
+
         fileWritter = new FormattedWriter(outFile);
         channelWriter = new ChannelWriter();
         this.config = config;
@@ -60,12 +61,13 @@ public class EncodingManager {
     }
 
     public void preprocessChannel(CompressedColorChannel colorChannel) throws IOException {
-
         // find what shapes belong to what corners (hierarchy basically, but its directly used later)
-        colorChannel.calculateCornerOverrides();
+        if (config.cornersEnabled()) {
+            colorChannel.calculateCornerOverrides();
+        }
+
         colorChannel.zigzagIsolated(); // turn the isolated values into zigzag form
         int[] optimalUnary = calculateChannelUnary(colorChannel);
-        //System.out.println(Arrays.toString(optimalUnary));
 
         //write the channel-META but not byte size, the formattedWriter will do that
         channelWriter.setData(colorChannel.getFirstType(), optimalUnary);
@@ -142,6 +144,10 @@ public class EncodingManager {
                 channelWriter.writeRawData(rawValues[currentPixel++]);
             }
         }
+
+        try (fileWritter) {
+            fileWritter.writeChannel(channelWriter.getByteStream(), channelWriter.lastEmptyBits(), channel.getChannelColorType());
+        }
     }
 
     // old processing method
@@ -191,7 +197,7 @@ public class EncodingManager {
         }
     }
 
-    //this is actually disgusting
+    //this is actually disgusting (old)
     private int processCornerWrite(
             CompressedColorChannel thisChannel,
             CornerDataRepresentative corner,

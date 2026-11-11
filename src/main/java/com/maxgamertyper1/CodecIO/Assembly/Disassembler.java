@@ -2,6 +2,7 @@ package com.maxgamertyper1.CodecIO.Assembly;
 
 import com.maxgamertyper1.CodecIO.Decoding.*;
 import com.maxgamertyper1.CodecIO.Encoding.DataType;
+import com.maxgamertyper1.compressor.CompressionConfig;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -12,15 +13,17 @@ public class Disassembler implements AutoCloseable {
     private final Parser parser;
     private final String inFileName;
     private final BufferedWriter fileStream;
+    private final CompressionConfig config;
     String OPCode;
     boolean inOverride = false;
     private String[] channelNames;
     private int[] colors;
 
-    public Disassembler(String inFileName, String outFileName) throws IOException {
+    public Disassembler(String inFileName, String outFileName, CompressionConfig config) throws IOException {
         this.inFileName = inFileName;
         fileStream = new BufferedWriter(new FileWriter(outFileName));
         parser = new Parser(inFileName);
+        this.config = config;
     }
 
     public void Dissassemble() throws IOException {
@@ -28,6 +31,7 @@ public class Disassembler implements AutoCloseable {
 
         if (!isQDCFile) {
             System.out.println("Error: not QDC file");
+            return;
         }
 
         DissassembleMetadata();

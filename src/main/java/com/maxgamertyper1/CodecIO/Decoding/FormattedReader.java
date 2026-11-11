@@ -57,11 +57,6 @@ public class FormattedReader implements AutoCloseable {
         }
     }
 
-    public void resetTracker() {
-        byteTracker = 0L;
-        bitsTracker = 0;
-    }
-
     public int readZigZag(int numBits) throws IOException {
         int raw = readBits(numBits);
         return (raw >>> 1) ^ -(raw & 1);
@@ -77,7 +72,8 @@ public class FormattedReader implements AutoCloseable {
 
         if (!canRead) fillBuffer();
         canRead = enoughBits(numBits);
-        if (!canRead) throw new EOFException("EOF with " + bitsStored + " bits left");
+
+        if (!canRead) throw new EOFException("EOF with " + bitsStored + " bits left; needing: " + numBits);
 
         updateTracker(numBits);
         int shift = bitsStored - numBits;

@@ -6,10 +6,10 @@ import com.maxgamertyper1.imagereading.OriginalFileType;
 import java.io.*;
 
 public class FormattedWriter implements Closeable {
-    public static final byte compressionVersionMajor = 0;
-    public static final byte compressionVersionMinor = 3;
-    private static final int fileSignature = 0x3C4D4158; // this is <MAX when converted to ascii
-    private static final int fileEndBytes = 0x4D415821; // this is MAX! when converted to ascii
+    public static final byte COMPRESSION_VERSION_MAJOR = 0;
+    public static final byte COMPRESSION_VERSION_MINOR = 3;
+    private static final int FILE_SIGNATURE = 0x3C4D4158; // this is <MAX when converted to ascii
+    private static final int FILE_END_BYTES = 0x4D415821; // this is MAX! when converted to ascii
     private final RawBitWriter bitWriter;
     private final BufferedOutputStream bufferStream;
     private final int[] channelSeekTable = {0, 0, 0, 0, 0};
@@ -43,9 +43,9 @@ public class FormattedWriter implements Closeable {
     }
 
     public void finalizeMetadata(byte[] initialColors) throws IOException {
-        bitWriter.writeRawValue(fileSignature, 32);
-        bitWriter.writeRawValue(compressionVersionMajor, 8);
-        bitWriter.writeRawValue(compressionVersionMinor, 8);
+        bitWriter.writeRawValue(FILE_SIGNATURE, 32);
+        bitWriter.writeRawValue(COMPRESSION_VERSION_MAJOR, 8);
+        bitWriter.writeRawValue(COMPRESSION_VERSION_MINOR, 8);
         bitWriter.writeRawValue(thisImageWidth, 16);
         bitWriter.writeRawValue(thisImageHeight, 16);
         bitWriter.writeRawValue(flagByte, 8);
@@ -59,7 +59,7 @@ public class FormattedWriter implements Closeable {
     }
 
     public void finishFile() throws IOException {
-        bitWriter.close(fileEndBytes); // write the ending bytes, flush, save
+        bitWriter.close(FILE_END_BYTES); // write the ending bytes, flush, save
     }
 
     public void writeChannel(ByteArrayOutputStream channelData, int emptyBits, ChannelColorTypes channelColor) throws IOException {

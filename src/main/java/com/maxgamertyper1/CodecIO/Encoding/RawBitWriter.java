@@ -30,9 +30,7 @@ public class RawBitWriter {
     }
 
     public void writeRawValue(int value, int numBits) throws IOException {
-        System.out.println("Writing value: " + value + " with bit count: " + numBits);
         if (bitHead + numBits > 32) {
-            System.out.println("Overflowing, splitting payload");
             int bitsToFill = 32 - bitHead;
             int overflowBits = numBits - bitsToFill;
 
@@ -122,6 +120,7 @@ public class RawBitWriter {
         buffer.write((endingBytes >>> 8) & 0xFF);
         buffer.write(endingBytes & 0xFF);
 
+        buffer.flush();
         buffer.close();
     }
 

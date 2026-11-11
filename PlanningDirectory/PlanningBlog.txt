@@ -1603,3 +1603,12 @@ i have work to do but want to try and fix this the best i can before i submit my
 I just realized i could just remove the corner components for now and just use rectangles until i get it working and pretty then add them back
 so ill do that
 lets start the refactor
+
+11/11/26
+ok i refactored most of it
+and im exclusively working on rectangles
+but holy moly it worked
+on complicated images...
+
+its actually so cool to see
+for some reason the config isnt working so theres like 2x1 rectangles but ill fix that
