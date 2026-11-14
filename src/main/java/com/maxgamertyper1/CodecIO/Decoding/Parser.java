@@ -57,10 +57,6 @@ public class Parser {
         return loggedPosition;
     }
 
-    public StreamLocation getTrackedPosition() {
-        return new StreamLocation(reader.getByteTracker(), reader.getBitsTracker());
-    }
-
     public StreamLocation cursorLocation() {
         return new StreamLocation(reader.getTotalBytesRead(), reader.getTotalBitsRead());
     }
@@ -93,7 +89,7 @@ public class Parser {
                 reader.readBits(2)
         );
         reader.readBits(4); // eat the rest
-        calculateChannelCount(returnHolder.isGrayscale(), returnHolder.isMaxAlpha());
+        calculateChannelCount(returnHolder.isGrayscale(), returnHolder.opaque());
         return returnHolder;
     }
 
@@ -132,11 +128,6 @@ public class Parser {
         setDataLength();
         return currentType;
     }
-
-    public boolean justExitedOverride() {
-        return justExitedOverride;
-    }
-
 
     public int processEscape() throws IOException {
         int branch = 0;
@@ -230,7 +221,6 @@ public class Parser {
     }
 
     public int processDataEntry(int iDataLength) throws IOException {
-        System.out.println("Prefix bit read count: " + valueLength);
         if (inOverride && iDataLength > dataLength - 3) { // the override deltas and first color
             return readDataEntry(true);
         } else if (!inOverride && iDataLength > dataLength - 1) { // first color

@@ -31,10 +31,9 @@ public class FormattedWriter implements Closeable {
     }
 
     public void calculateMetadataFlagByte(boolean isGrayscale, boolean isMaximumAlpha, OriginalFileType originalFileType) {
-        // isGrayscale (1 bit), isMaxAlpha (1 bit), original type (2 bits), empty bits (4)
+        // isGrayscale (1 bit), opaque (1 bit), original type (2 bits), empty bits (4)
         flagByte = 0;
-        byte typeBits = originalFileType == OriginalFileType.Unknown ? (byte) 0 :
-                originalFileType == OriginalFileType.PNG ? (byte) 3 : 2;
+        int typeBits = originalFileType.ordinal();
 
         flagByte |= isGrayscale ? (byte) (1 << 7) : 0;
         flagByte |= isMaximumAlpha ? (byte) (1 << 6) : 0;
@@ -64,7 +63,6 @@ public class FormattedWriter implements Closeable {
 
     public void writeChannel(ByteArrayOutputStream channelData, int emptyBits, ChannelColorTypes channelColor) throws IOException {
         channelSeekTable[channelColor.getOrderValue()] = bitWriter.getBytesWritten();
-        System.out.println(channelData.size());
 
         bitWriter.writeRawValue(channelData.size() - 4, 32); // 4 bytes to hold the channel size (-4 from the integrity hash)
         bitWriter.writeRawValue(emptyBits, 8);

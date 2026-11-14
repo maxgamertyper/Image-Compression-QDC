@@ -16,4 +16,20 @@ public enum ChannelColorTypes {
     public int getOrderValue() {
         return value;
     }
+
+    public static ChannelColorTypes getChannelColor(boolean grayscale, boolean opaque, int index) {
+        int colorChannels = grayscale ? 1 : 3;
+
+        if (index == colorChannels) {
+            return ChannelColorTypes.Alpha;
+        }
+        if (grayscale) {
+            return ChannelColorTypes.Gray;
+        }
+        return switch (index) {
+            case 0 -> ChannelColorTypes.Red;
+            case 1 -> ChannelColorTypes.Green;
+            default -> ChannelColorTypes.Blue;
+        };
+    }
 }

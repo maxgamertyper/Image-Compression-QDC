@@ -1,7 +1,8 @@
 package com.maxgamertyper1;
 
-import com.maxgamertyper1.CodecIO.Assembly.Disassembler;
-import com.maxgamertyper1.CodecIO.Encoding.EncodingManager;
+import com.maxgamertyper1.CodecIO.Assembly.QDCDisassembler;
+import com.maxgamertyper1.CodecIO.Decoding.QDCDecoder;
+import com.maxgamertyper1.CodecIO.Encoding.QDCEncoder;
 import com.maxgamertyper1.compressor.ChunkProcessor;
 import com.maxgamertyper1.compressor.CompressionConfig;
 import com.maxgamertyper1.compressor.PaethProcessor;
@@ -13,18 +14,23 @@ import com.maxgamertyper1.imagereading.ImageReader;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.zip.DataFormatException;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
-    public static void main(String[] args) throws IOException {
-        String encodeFileName = "TestingImages/codeScreenshot.png";
+    public static void main(String[] args) throws IOException, DataFormatException {
+        String encodeFile = "TestingImages/QDCHelloWorld.png";
         String outEncodeFile = "testing.qdc";
-        testImageReaderRefactor(encodeFileName, outEncodeFile);
+        testImageReaderRefactor(encodeFile, outEncodeFile);
 
-        String inDisassembleName = "testing.qdc";
-        String outDisassembleName = "testing.qdca";
-        disassemble(inDisassembleName, outDisassembleName);
+        String inDisassembleFile = "testing.qdc";
+        String outDisassembleFile = "testing.qdca";
+        disassemble(inDisassembleFile, outDisassembleFile);
+
+        String inDecodingFile = "testing.qdc";
+        String outDecodingName = "outputTest";
+        decode(inDecodingFile,outDecodingName);
     }
 
     public static void testImageReaderRefactor(String encodeFileName, String outFileName) throws IOException {
@@ -47,13 +53,11 @@ public class Main {
         for (ColorChannel channel : image.getColorChannels()) {
             System.out.println("Channel: " + channel.getChannelType());
             System.out.println("Pixels: ");
-            System.out.println(Arrays.toString(channel.getChannelData()));
+            //System.out.println(Arrays.toString(channel.getChannelData()));
         }
 
         //NOTE: will need to adjust the ImageRep instantiation
-
-        PaethProcessor paethProccessor = new PaethProcessor(image);
-        ImageRepresentative paethImage = paethProccessor.paethEncode();
+        ImageRepresentative paethImage = PaethProcessor.paethEncode(image);
 
         System.out.println("Paeth Encoding Output: ");
         for (ColorChannel channel : paethImage.getColorChannels()) {
@@ -61,7 +65,7 @@ public class Main {
             System.out.println("Initial Value: ");
             System.out.println(paethImage.getInitialPixels()[paethImage.getChannelIndex(channel.getChannelType())]);
             System.out.println("Paeth Values: ");
-            System.out.println(Arrays.toString(channel.getChannelData()));
+            //System.out.println(Arrays.toString(channel.getChannelData()));
         }
         //NOTE: had to adjust initial pixel length since it needs to be set before, related to above note
 
@@ -102,7 +106,7 @@ public class Main {
             System.out.println(ccc.getInitialPixel());
         }
 
-        EncodingManager encoder = new EncodingManager(compressedImage, outFileName, CompressionConfig.DEFAULT);
+        QDCEncoder encoder = new QDCEncoder(compressedImage, outFileName, CompressionConfig.DEFAULT);
 
         encoder.writeMetadata();
         for (int i = 0; i < compressedImage.getCompressedChannels().length; i++) {
@@ -112,8 +116,14 @@ public class Main {
     }
 
     public static void disassemble(String inFileName, String outFileName) throws IOException {
-        try (Disassembler ds = new Disassembler(inFileName, outFileName,CompressionConfig.DEFAULT)) {
-            ds.Dissassemble();
+        try (QDCDisassembler ds = new QDCDisassembler(inFileName, outFileName)) {
+            ds.dissassemble();
+        }
+    }
+
+    public static void decode(String inFileName, String outFileName) throws IOException, DataFormatException {
+        try (QDCDecoder dc = new QDCDecoder(inFileName, outFileName)) {
+            dc.decode();
         }
     }
 }

@@ -1612,3 +1612,18 @@ on complicated images...
 
 its actually so cool to see
 for some reason the config isnt working so theres like 2x1 rectangles but ill fix that
+
+11/13
+I hghk have no idea how im supposed to do the adler while reading tbh
+since its bit-by-bit im not sure, ill figure that out later lwk...
+
+accidentally forgot about the initial pixels so the output image is just the paeth lmao
+so my test image is just fully transparent
+oh i also need to implement the opaque so thats also probably an issue
+
+now its just a black image which is correct
+now i gotta reverse-paeth it
+
+well, i got the yellow square to work!!!
+i just gotta make the rest of it work lmao, idk where the bugs are since theres no errors
+time to make some tests again!!!!

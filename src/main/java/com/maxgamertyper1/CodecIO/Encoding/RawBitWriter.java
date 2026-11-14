@@ -61,7 +61,6 @@ public class RawBitWriter {
     }
 
     public void flushRemaining() throws IOException {
-        System.out.println("Called FlushRemaining with buffer: " + intBuffer + " with size: " + bitHead);
         if (bitHead > 0) {
             int bytesUsed = (bitHead + 7) / 8;
             int emptyBits = 32 - bitHead;
@@ -88,7 +87,6 @@ public class RawBitWriter {
         writeAndHash((intBuffer >>> 16) & 0xFF);
         writeAndHash((intBuffer >>> 8) & 0xFF);
         writeAndHash(intBuffer & 0xFF);
-        System.out.println("Flushing buffer with value: " + intBuffer);
 
 
         bytesWritten += 4;

@@ -2,6 +2,7 @@ package com.maxgamertyper1.CodecIO.Decoding;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.zip.Adler32;
 
 public class FormattedReader implements AutoCloseable {
     private final FileInputStream fileInputStream;

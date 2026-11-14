@@ -5,14 +5,10 @@ import com.maxgamertyper1.datatypes.ImageRepresentative;
 import com.maxgamertyper1.imagereading.ImageMeta;
 import com.maxgamertyper1.imagereading.PixelHelper;
 
-public class PaethProcessor {
-    ImageRepresentative image;
+public final class PaethProcessor {
+    private PaethProcessor() {}
 
-    public PaethProcessor(ImageRepresentative imageToProcess) {
-        image = imageToProcess;
-    }
-
-    private int getPrediction(int leftPixelColor, int topPixelColor, int upperLeftPixelColor) {
+    private static int getPrediction(int leftPixelColor, int topPixelColor, int upperLeftPixelColor) {
         int paethPrediction = leftPixelColor + topPixelColor - upperLeftPixelColor;
 
         int leftDistance = Math.abs(paethPrediction - leftPixelColor);
@@ -30,7 +26,7 @@ public class PaethProcessor {
         return prediction;
     }
 
-    public ImageRepresentative paethEncode() {
+    public static ImageRepresentative paethEncode(ImageRepresentative image) {
         ImageMeta metaData = image.getMetaData();
         int width = metaData.width();
 
@@ -39,7 +35,7 @@ public class PaethProcessor {
         for (ColorChannel channel : image.getColorChannels()) {
             int[] rawPixelData = channel.getChannelData();
 
-            for (int pixelIndex = 0; pixelIndex < rawPixelData.length - 1; pixelIndex++) {
+            for (int pixelIndex = 0; pixelIndex < rawPixelData.length; pixelIndex++) {
                 int pixelColor = rawPixelData[pixelIndex];
                 boolean onTop = false;
 
@@ -74,5 +70,22 @@ public class PaethProcessor {
         }
 
         return paethImage;
+    }
+
+    public static void paethDecode(int[] pixelData, int initialPixel, int width) {
+        pixelData[0] = initialPixel;
+
+        int height = pixelData.length / width;
+
+        for (int y = 0; y < height; y++) {
+            int row = y * width;
+            for (int x = (y == 0 ? 1 : 0); x < width; x++) {
+                int i = row + x;
+                int left = x > 0 ? pixelData[i - 1] : 0;
+                int up = y > 0 ? pixelData[i - width] : 0;
+                int upperLeft = (x > 0 && y > 0) ? pixelData[i - width - 1] : 0;
+                pixelData[i] += getPrediction(left, up, upperLeft);
+            }
+        }
     }
 }

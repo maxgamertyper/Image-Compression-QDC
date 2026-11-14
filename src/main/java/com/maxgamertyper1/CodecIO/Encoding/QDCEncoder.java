@@ -12,14 +12,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class EncodingManager {
+public class QDCEncoder {
     final FormattedWriter fileWritter;
     final ChannelWriter channelWriter;
     final CompressionConfig config;
     private final CompressedImageRepresentative finalImage;
     private final ImageMeta metaData;
 
-    public EncodingManager(CompressedImageRepresentative imageRepresentative, String outFile, CompressionConfig config) throws FileNotFoundException {
+    public QDCEncoder(CompressedImageRepresentative imageRepresentative, String outFile, CompressionConfig config) throws FileNotFoundException {
         finalImage = imageRepresentative;
         metaData = finalImage.getMetaData();
 
@@ -168,7 +168,6 @@ public class EncodingManager {
 
         try (channelWriter) {
             for (int i = 0; i <= totalItems; ) {
-                //System.out.println(i);
                 int rectPosition = (rectIdx < builtRectangles.length) ? builtRectangles[rectIdx].startingIndex() : Integer.MAX_VALUE;
                 int cornerPosition = (cornerIdx < builtCorners.length) ? builtCorners[cornerIdx].startingIndex() : Integer.MAX_VALUE;
                 int rawPosition = (rawIdx < builtRaws.length) ? builtRaws[rawIdx] : Integer.MAX_VALUE;
@@ -176,17 +175,14 @@ public class EncodingManager {
                 if (rectPosition < rawPosition && rectPosition < cornerPosition && !thisChannel.isOwnedRectangle(rectIdx)) { // rect
                     RectangleRepresentative thisRect = builtRectangles[rectIdx++];
                     channelWriter.writeRectangleData(thisRect);
-                    System.out.println("Wrote + " + thisRect);
                     i++;
                 } else if (rawPosition < cornerPosition && !thisChannel.isOwnedIndex(rawIdx)) { //raw
                     int thisRawValue = rawValues[rawIdx++];
                     channelWriter.writeRawData(thisRawValue);
-                    System.out.println("Wrote + (zigzag)" + thisRawValue);
                     i++;
                 } else { //corner
                     CornerDataRepresentative thisCorner = builtCorners[cornerIdx];
                     i += processCornerWrite(thisChannel, thisCorner, cornerIdx);
-                    System.out.println("Wrote + " + thisCorner);
                     cornerIdx++;
                 }
             }
@@ -259,7 +255,6 @@ public class EncodingManager {
                 thisLocation = PixelHelper.ReverseIndexCalculator(metaData.width(), thisRawIndex);
                 deltaInfo[0] = zigzagEncode(thisLocation[0] - previousLocation[0]);
                 deltaInfo[1] = zigzagEncode(thisLocation[1] - previousLocation[1]);
-                System.out.println(Arrays.toString(deltaInfo) + ", " + thisRawValue);
 
                 channelWriter.writeOverriden(deltaInfo, thisRawValue);
                 totalChanges += 1;

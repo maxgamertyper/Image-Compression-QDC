@@ -2,31 +2,28 @@ package com.maxgamertyper1.CodecIO.Assembly;
 
 import com.maxgamertyper1.CodecIO.Decoding.*;
 import com.maxgamertyper1.CodecIO.Encoding.DataType;
-import com.maxgamertyper1.compressor.CompressionConfig;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class Disassembler implements AutoCloseable {
+public class QDCDisassembler implements AutoCloseable {
     private final Parser parser;
     private final String inFileName;
     private final BufferedWriter fileStream;
-    private final CompressionConfig config;
     String OPCode;
     boolean inOverride = false;
     private String[] channelNames;
     private int[] colors;
 
-    public Disassembler(String inFileName, String outFileName, CompressionConfig config) throws IOException {
+    public QDCDisassembler(String inFileName, String outFileName) throws IOException {
         this.inFileName = inFileName;
         fileStream = new BufferedWriter(new FileWriter(outFileName));
         parser = new Parser(inFileName);
-        this.config = config;
     }
 
-    public void Dissassemble() throws IOException {
+    public void dissassemble() throws IOException {
         boolean isQDCFile = parser.checkFile();
 
         if (!isQDCFile) {
@@ -48,7 +45,7 @@ public class Disassembler implements AutoCloseable {
 
     private void DissassembleMetadata() throws IOException {
         writeWithNewLine("; =====================================================================================");
-        writeWithNewLine("; FILE: " + inFileName + "  |  SIZE: " + parser.getFileSize());
+        writeWithNewLine("; FILE: " + inFileName + "  |  SIZE: " + String.format("%,d", parser.getFileSize()) + " Bytes");
 
         Version compressionVersion = parser.readCompressionVersion();
         Dimensions canvas = parser.readCanvasDimensions();
@@ -64,7 +61,7 @@ public class Disassembler implements AutoCloseable {
             channelNames[1] = ".channel_green";
             channelNames[2] = ".channel_blue";
         }
-        if (!flags.isMaxAlpha()) {
+        if (!flags.opaque()) {
             channelNames[totalChannels - 1] = ".channel_alpha";
         }
 
@@ -76,7 +73,7 @@ public class Disassembler implements AutoCloseable {
         );
         writeWithNewLine(
                 "; FLAGS: Grayscale: " + (flags.isGrayscale() ? "TRUE" : "FALSE") +
-                        "  |  Max Alpha: " + (flags.isMaxAlpha() ? "TRUE" : "FALSE") +
+                        "  |  Max Alpha: " + (flags.opaque() ? "TRUE" : "FALSE") +
                         "  |  Original File Flag: " + flags.originalType()
         );
         writeWithNewLine("; INITIAL COLORS: " + Arrays.toString(colors));
@@ -176,14 +173,12 @@ public class Disassembler implements AutoCloseable {
             if (parser.prepareNextLength()) { // set the value length and return if its an escape or not
                 //ESCAPE code (not overflow, already handled)
                 escapeBranch = parser.processEscape(); // NOTE: maybe later
-                System.out.println("ESCAPE: " + escapeBranch);
                 newType = parser.getCurrentType();
                 inOverride = parser.isInOverride();
 
                 writeOPCodeSwitch(newType, inOverride);
             } else {
                 int[] shapeValues = parser.processShape();
-                System.out.println(Arrays.toString(shapeValues));
                 writeValueRead(shapeValues, parser.getCurrentType(), parser.isInOverride());
 
                 if (shapeValues[shapeValues.length - 1] == 1 && parser.getCurrentType() == DataType.Corner) { // if override
