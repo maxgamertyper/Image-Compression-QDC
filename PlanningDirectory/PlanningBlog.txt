@@ -1627,3 +1627,33 @@ now i gotta reverse-paeth it
 well, i got the yellow square to work!!!
 i just gotta make the rest of it work lmao, idk where the bugs are since theres no errors
 time to make some tests again!!!!
+
+11/14
+fixed a bug, theres some more issues tho gotta figure out what
+
+anyway
+i've lwk been thinking
+what if i encoded straight from chunks?
+it would remove a lot of the ram issues and the cpu-intense blocking needed
+basically you do boundary encoding
+and only do convex corners since theyre easily detectable
+basically you get the normal chunk data i get
+worst case, they are all isolated and you get practically a PNG
+best case, you can describe a big group of data with a few corners
+you could probably make some heuristic on complexity *similar to my rectangle and corner ones*
+I think like worst case would be like a sub-8 area shape needing 8 corners, any other value would have at least one pixel represented through the coreners
+but idk
+i might have to look into this more once i fix my rectangle code
+since it would just be corner index + flags and you could structure it as a BST to make it easy to decode
+
+i.e
+
+first corner + flag
+left: vertical change change
+right: horizontal corner change
+
+then those split also
+
+11/21/26:
+I FIXED IT, IT WORKS, ITS ALIVE!
+I forgot to make the same fix in the rectangle code to the square code and that was literally the only issue

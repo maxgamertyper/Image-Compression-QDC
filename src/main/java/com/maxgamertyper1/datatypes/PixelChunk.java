@@ -45,7 +45,8 @@ public class PixelChunk {
 
     @Override
     public String toString() {
-        return "Color Type: " + colorType + "; Color Value: " + colorValue + "; Starting Index: " + startingIndex + "\nCorners: " + cornerPoints;
+        return "Color Type: " + colorType + "; Color Value: " + colorValue + "; Starting Index: " + startingIndex +
+                "; Area: " + totalArea + "\nCorners: " + cornerPoints;
     }
 
 }

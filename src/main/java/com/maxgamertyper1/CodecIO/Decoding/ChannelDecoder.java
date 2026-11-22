@@ -2,8 +2,10 @@ package com.maxgamertyper1.CodecIO.Decoding;
 
 import com.maxgamertyper1.CodecIO.Encoding.DataType;
 import com.maxgamertyper1.imagereading.ImageMeta;
+import com.sun.nio.sctp.InvalidStreamException;
 
 import java.io.IOException;
+import java.nio.charset.MalformedInputException;
 import java.util.Arrays;
 import java.util.BitSet;
 
@@ -107,7 +109,10 @@ public class ChannelDecoder {
         }
     }
 
-    public void processChannelTail()  throws IOException {
+    public void processChannelTail()  throws IOException, IllegalStateException {
+        int firstClearPixel = processedMap.nextClearBit(0);
+        if (firstClearPixel < metaData.flatsize()) throw new IllegalStateException("Did not recieve full pixel data, some pixel(s) [" + firstClearPixel + "] was not proccessed; Abandoning");
+
         parser.readHash();
         System.out.println("ADLER CHANNEL HASH NEEDS IMPLEMENTATION");
     }

@@ -14,24 +14,22 @@ import java.util.zip.DataFormatException;
 
 public class QDCDecoder implements AutoCloseable {
     private static final Version DECODER_VERSION = new Version(0,3);
+    private final boolean verbose;
 
     private final String outFileName;
     private File outFile;
     private final Parser QDCParser;
-
-    private boolean grayscale;
-    private boolean opaque;
-    private OriginalFileType originalType;
 
     private int[] initialPixels;
     private int[] imagePixels;
     private ImageMeta metaData;
     private int channelCount;
 
-    public QDCDecoder(String inFileName, String outFileName) throws IOException {
+    public QDCDecoder(String inFileName, String outFileName, boolean verbose) throws IOException {
         this.outFileName = outFileName;
         QDCParser = new Parser(inFileName);
         boolean isQDCFile = QDCParser.checkFile();
+        this.verbose = verbose;
 
         if (!isQDCFile) throw new IOException("File is not a valid QDC file. File may be corrupt or missing");
     }

@@ -74,17 +74,17 @@ public final class PaethProcessor {
 
     public static void paethDecode(int[] pixelData, int initialPixel, int width) {
         pixelData[0] = initialPixel;
-
         int height = pixelData.length / width;
 
         for (int y = 0; y < height; y++) {
             int row = y * width;
             for (int x = (y == 0 ? 1 : 0); x < width; x++) {
-                int i = row + x;
-                int left = x > 0 ? pixelData[i - 1] : 0;
-                int up = y > 0 ? pixelData[i - width] : 0;
-                int upperLeft = (x > 0 && y > 0) ? pixelData[i - width - 1] : 0;
-                pixelData[i] += getPrediction(left, up, upperLeft);
+                int index = row + x;
+                int left = x > 0 ? pixelData[index - 1] : 0;
+                int up = y > 0 ? pixelData[index - width] : 0;
+                int upperLeft = (x > 0 && y > 0) ? pixelData[index - width - 1] : 0;
+
+                pixelData[index] += getPrediction(left, up, upperLeft);
             }
         }
     }
