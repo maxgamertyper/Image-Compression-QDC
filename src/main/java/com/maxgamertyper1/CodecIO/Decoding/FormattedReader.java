@@ -1,8 +1,8 @@
 package com.maxgamertyper1.CodecIO.Decoding;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.zip.Adler32;
 
 public class FormattedReader implements AutoCloseable {
     private final FileInputStream fileInputStream;
@@ -13,11 +13,11 @@ public class FormattedReader implements AutoCloseable {
     private int bitsTracker = 0;
     private long cursorByte = 0;
     private int cursorBit = 0;
-    private final String inFileName;
+    private final Path filePath;
 
-    public FormattedReader(String fileName) throws FileNotFoundException {
-        inFileName = fileName;
-        fileInputStream = new FileInputStream(fileName);
+    public FormattedReader(Path filePath) throws FileNotFoundException {
+        this.filePath = filePath;
+        fileInputStream = new FileInputStream(filePath.toFile());
         inputBuffer = new BufferedInputStream(fileInputStream);
     }
 
@@ -138,7 +138,7 @@ public class FormattedReader implements AutoCloseable {
             return false;
         }
 
-        byte[] last4Bytes = FileTrailingReader.readTrailingBytes(inFileName);
+        byte[] last4Bytes = FileTrailingReader.readTrailingBytes(String.valueOf(filePath));
         byte[] expectedBytes = new byte[]{0x4D, 0x41, 0x58, 0x21};
 
         return Arrays.equals(last4Bytes, expectedBytes);

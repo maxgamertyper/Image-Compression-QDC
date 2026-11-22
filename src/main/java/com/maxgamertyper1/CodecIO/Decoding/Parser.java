@@ -4,6 +4,7 @@ import com.maxgamertyper1.CodecIO.Encoding.DataType;
 import com.maxgamertyper1.datatypes.IntArrayList;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 public class Parser {
     private final FormattedReader reader;
@@ -22,8 +23,8 @@ public class Parser {
     private int dataLength;
     private boolean justExitedOverride = false;
 
-    public Parser(String inFileName) throws IOException {
-        reader = new FormattedReader(inFileName);
+    public Parser(Path filePath) throws IOException {
+        reader = new FormattedReader(filePath);
     }
 
     private int readBit() throws IOException {

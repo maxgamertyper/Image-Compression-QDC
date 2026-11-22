@@ -9,14 +9,14 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.zip.DataFormatException;
 
 public class QDCDecoder implements AutoCloseable {
     private static final Version DECODER_VERSION = new Version(0,3);
-    private final boolean verbose;
 
-    private final String outFileName;
+    private final Path outFilePath;
     private File outFile;
     private final Parser QDCParser;
 
@@ -25,11 +25,10 @@ public class QDCDecoder implements AutoCloseable {
     private ImageMeta metaData;
     private int channelCount;
 
-    public QDCDecoder(String inFileName, String outFileName, boolean verbose) throws IOException {
-        this.outFileName = outFileName;
-        QDCParser = new Parser(inFileName);
+    public QDCDecoder(Path inFilePath, Path outFileName) throws IOException {
+        this.outFilePath = outFileName;
+        QDCParser = new Parser(inFilePath);
         boolean isQDCFile = QDCParser.checkFile();
-        this.verbose = verbose;
 
         if (!isQDCFile) throw new IOException("File is not a valid QDC file. File may be corrupt or missing");
     }
@@ -78,7 +77,14 @@ public class QDCDecoder implements AutoCloseable {
         OriginalFileType fileType = OriginalFileType.values()[flags.originalType()];
         if (fileType==OriginalFileType.Unknown) fileType = OriginalFileType.PNG; // default to png
 
-        outFile = new File(outFileName+"."+fileType.name()); // concatenate to XYZ.png / .jpg
+        String fileName = outFilePath.getFileName().toString();
+        int dotIndex = fileName.lastIndexOf('.');
+        fileName = (dotIndex > 0) ? fileName.substring(0, dotIndex) : fileName;
+        Path extensionLess = (outFilePath.getParent() != null)
+                ? outFilePath.getParent().resolve(fileName)
+                : Path.of(fileName);
+
+        outFile = new File(extensionLess +"."+fileType.name().toLowerCase()); // concatenate to XYZ.png / .jpg
 
         initialPixels = QDCParser.readInitialColors();
 
@@ -89,7 +95,7 @@ public class QDCDecoder implements AutoCloseable {
                 flags.isGrayscale(),
                 flags.opaque(),
                 fileType,
-                outFileName
+                outFilePath.getFileName().toString()
         );
     }
 

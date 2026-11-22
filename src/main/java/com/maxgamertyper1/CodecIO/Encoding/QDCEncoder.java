@@ -10,6 +10,7 @@ import com.maxgamertyper1.imagereading.PixelHelper;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 
 public class QDCEncoder {
@@ -19,7 +20,7 @@ public class QDCEncoder {
     private final CompressedImageRepresentative finalImage;
     private final ImageMeta metaData;
 
-    public QDCEncoder(CompressedImageRepresentative imageRepresentative, String outFile, CompressionConfig config) throws FileNotFoundException {
+    public QDCEncoder(CompressedImageRepresentative imageRepresentative, Path outFile, CompressionConfig config) throws FileNotFoundException {
         finalImage = imageRepresentative;
         metaData = finalImage.getMetaData();
 

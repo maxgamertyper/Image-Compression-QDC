@@ -6,6 +6,7 @@ import com.maxgamertyper1.CodecIO.Encoding.DataType;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 
 public class QDCDisassembler implements AutoCloseable {
@@ -16,13 +17,11 @@ public class QDCDisassembler implements AutoCloseable {
     boolean inOverride = false;
     private String[] channelNames;
     private int[] colors;
-    private final boolean verbose;
 
-    public QDCDisassembler(String inFileName, String outFileName, boolean verbose) throws IOException {
-        this.inFileName = inFileName;
-        fileStream = new BufferedWriter(new FileWriter(outFileName));
+    public QDCDisassembler(Path inFileName, Path outFileName) throws IOException {
+        this.inFileName = inFileName.toString();
+        fileStream = new BufferedWriter(new FileWriter(outFileName.toFile()));
         parser = new Parser(inFileName);
-        this.verbose = verbose;
     }
 
     public void dissassemble() throws IOException {

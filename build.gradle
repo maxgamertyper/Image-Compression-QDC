@@ -2,6 +2,20 @@ plugins {
     id 'java'
 }
 
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'com.maxgamertyper1.Main'
+        )
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(23)
+    }
+}
+
 group = 'com.maxgamertyper1'
 version = '1.0-SNAPSHOT'
 

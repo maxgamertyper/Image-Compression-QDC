@@ -4,6 +4,7 @@ import com.maxgamertyper1.datatypes.ChannelColorTypes;
 import com.maxgamertyper1.imagereading.OriginalFileType;
 
 import java.io.*;
+import java.nio.file.Path;
 
 public class FormattedWriter implements Closeable {
     public static final byte COMPRESSION_VERSION_MAJOR = 0;
@@ -18,8 +19,8 @@ public class FormattedWriter implements Closeable {
     private byte flagByte;
 
 
-    public FormattedWriter(String outFile) throws FileNotFoundException {
-        FileOutputStream fileStream = new FileOutputStream(outFile);
+    public FormattedWriter(Path outFile) throws FileNotFoundException {
+        FileOutputStream fileStream = new FileOutputStream(outFile.toFile());
         bufferStream = new BufferedOutputStream(fileStream);
         bitWriter = new RawBitWriter(bufferStream);
     }

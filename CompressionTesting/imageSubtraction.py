@@ -2,7 +2,7 @@ from PIL import Image
 import numpy as np
 from rich import print
 
-IMAGE1_FILE = "QDCHelloWorld.png"
+IMAGE1_FILE = "Lenna.png"
 IMAGE2_FILE = "outputTest.png"
 
 #checks parent directory by default as well
