@@ -40,5 +40,5 @@ bin/
 .DS_Store
 
 ### testing Images that might have copyright on them idk ###
-TestingImages/
+TestingData/
 *.class
